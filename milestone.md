@@ -51,6 +51,11 @@ Current branches created for the initial foundation work:
 | M13 | Quality assurance and release readiness | Not Started | Formatting, static analysis, automated tests, migration/backup tests, Android build, permissions, and release checks pass; limitations are documented. |
 | M14 | Android distribution | Not Started | User-approved distribution method and signing configuration are in place; release artifact is generated and verified. |
 
+## Confirmed decisions
+
+- Money is displayed as rupees: whole values without unnecessary decimals (e.g. `₹500`) and fractional values with two decimal places (e.g. `₹500.50`).
+- Database and domain calculations use integer paise (₹500 = `50000`, ₹500.50 = `50050`); binary floating-point is not used for stored money.
+
 ## Latest implementation update — 2026-11-08
 
 - Confirmed Android application ID: `com.shubhams.myaccountsmanager`.
