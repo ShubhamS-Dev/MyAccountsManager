@@ -42,6 +42,14 @@ The Add Transaction action is a floating action button.
 - Database migrations create and validate a recovery snapshot before applying changes.
 - Deleted records remain in Trash for 30 days before permanent cleanup, subject to the approved audit and retention rules.
 
+## Branching strategy
+
+- `master`: production/release.
+- `development/YYYYMMDD`: daily development integration branch.
+- `feature/YYYYMMDD/<short-description>`: feature/task branch created from the active development branch.
+
+Feature work is implemented on feature branches, reviewed into the matching development branch, and promoted to `master` only for an explicitly approved release. See `agent.md` for the full workflow.
+
 ## Development workflow
 
 Implementation must follow the approved requirements and architecture. Do not silently assume behavior where a requirement is unclear. Clarify material decisions before changing product behavior, data models, security, or deployment.
