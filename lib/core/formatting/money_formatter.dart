@@ -41,8 +41,8 @@ class MoneyFormatter {
     final absolute = paise.abs();
     final rupees = _groupIndian((absolute ~/ 100).toString());
     final fraction = absolute % 100;
-    final amount = fraction == 0 ? rupees : '$rupees.\${fraction.toString().padLeft(2, '0')}';
-    return '\${negative ? '-' : ''}\${includeSymbol ? '₹' : ''}$amount';
+    final amount = fraction == 0 ? rupees : rupees + '.' + fraction.toString().padLeft(2, '0');
+    return (negative ? '-' : '') + (includeSymbol ? '₹' : '') + amount;
   }
 
   static String _ungroup(String value) {
@@ -71,6 +71,6 @@ class MoneyFormatter {
       leading = leading.substring(0, leading.length - 2);
     }
     groups.insert(0, leading);
-    return '\${groups.join(',')},\${digits.substring(digits.length - 3)}';
+    return groups.join(',') + ',' + digits.substring(digits.length - 3);
   }
 }
