@@ -37,7 +37,7 @@ Current branches created for the initial foundation work:
 |---|---|---|---|
 | M0 | Repository and project instructions | Done | README, agent instructions, and this milestone tracker are committed and consistent. |
 | M1 | Product requirements finalization | In Progress | PRD covers all approved modules, workflows, edge cases, and open decisions. Material ambiguities are resolved with the user. |
-| M2 | Technical architecture and data design | Not Started | Architecture, feature boundaries, database entities/relations, migration strategy, security design, and backup format are documented and reviewed. |
+| M2 | Technical architecture and data design | In Progress | Architecture, feature boundaries, database entities/relations, migration strategy, security design, and backup format are documented and reviewed. |
 | M3 | Flutter project foundation | In Progress | Real Flutter/Dart source project exists; app launches; approved dependencies, routing, Riverpod setup, theme, and feature structure are in place. |
 | M4 | Local database and integrity foundation | Not Started | Drift schema, repositories, migrations, UUID strategy, transaction boundaries, and recovery behavior are implemented and tested. |
 | M5 | Accounts, categories, and transactions | Not Started | Account management, categories, income/expense, adjustments, future-dated records, history, attachments, and Trash meet approved requirements. |
@@ -57,7 +57,7 @@ Current branches created for the initial foundation work:
 - Created Flutter/Dart source foundation on `feature/20261108/project-foundation`.
 - Added `pubspec.yaml` with Flutter, Riverpod, go_router, and Flutter test/lint baselines.
 - Added `lib/main.dart`, app theme host, GoRouter configuration, five-destination navigation shell, initial Home placeholder, and Expense/Income entry-form scaffold.
-- Added Dart static-analysis configuration.
+- Added Dart static-analysis configuration.\n- Added initial widget tests for app launch, navigation shell, FAB route, and Expense/Income selection.\n- Added draft `docs/ARCHITECTURE.md` documenting approved boundaries, dependency direction, data principles, security design work, and open decisions.
 - These screens are intentionally scaffolds: persistence, validation, account/category selection, and saving are not implemented yet.
 - Android native platform scaffolding and package identifier wiring remain pending; it must be generated/configured and built before this milestone can be marked Done.
 - Flutter formatting, analysis, tests, and Android build have **not** been run in this environment. No successful build is claimed.
