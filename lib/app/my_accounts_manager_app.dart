@@ -21,14 +21,6 @@ class MyAccountsManagerApp extends StatelessWidget {
           backgroundColor: Color(0xFFF7F8F6),
           surfaceTintColor: Colors.transparent,
         ),
-        cardTheme: CardTheme(
-          elevation: 0,
-          color: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-            side: const BorderSide(color: Color(0xFFE8ECE8)),
-          ),
-        ),
       ),
       darkTheme: ThemeData(
         useMaterial3: true,
