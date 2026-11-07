@@ -35,7 +35,7 @@ Current branches created for the initial foundation work:
 
 | ID | Milestone | Status | Completion evidence / acceptance criteria |
 |---|---|---|---|
-| M0 | Repository and project instructions | In Progress | README, agent instructions, and this milestone tracker are committed and consistent. |
+| M0 | Repository and project instructions | Done | README, agent instructions, and this milestone tracker are committed and consistent. |
 | M1 | Product requirements finalization | In Progress | PRD covers all approved modules, workflows, edge cases, and open decisions. Material ambiguities are resolved with the user. |
 | M2 | Technical architecture and data design | Not Started | Architecture, feature boundaries, database entities/relations, migration strategy, security design, and backup format are documented and reviewed. |
 | M3 | Flutter project foundation | Not Started | Real Flutter/Dart source project exists; app launches; approved dependencies, routing, Riverpod setup, theme, and feature structure are in place. |
