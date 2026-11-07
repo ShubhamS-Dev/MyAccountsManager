@@ -79,8 +79,11 @@ MyKhata person profiles, lending/borrowing entries, installment schedules, repay
 Payment method definitions and local attachment storage may be shared as infrastructure, but ownership links must preserve each feature's ledger boundary.
 
 ## 6. Database design principles
+
 - Use stable UUID identifiers for user-created records and references.
-- Store money as integer minor units (paise) rather than binary floating-point values.
+- **Money storage:** store every monetary amount as an integer number of paise in the database and domain calculations. Example: ₹500 is stored as `50000`; ₹500.50 is stored as `50050`. Never use binary floating-point values for financial arithmetic.
+- **Money display:** present amounts in Indian rupee format, showing whole rupees without unnecessary decimals (for example, `₹500`) and showing exactly two decimal places when paise are present (for example, `₹500.50`). Use a shared formatter so all screens, reports, and exports follow the same display rule; exports must retain exact monetary precision.
+- Convert between rupees entered/displayed and integer paise at the input/presentation boundary using decimal-safe parsing and formatting. Do not round-trip through `double` for persisted money.
 - Store timestamps/dates in a documented canonical representation and convert at the presentation boundary.
 - Use foreign keys and explicit delete behavior.
 - Use database transactions for multi-record operations such as repayment allocation, restore/merge, and bulk cleanup.
@@ -90,7 +93,6 @@ Payment method definitions and local attachment storage may be shared as infrast
 - Derived balances and summaries must have one authoritative calculation path and tests.
 
 Exact entity definitions, indexes, date/time representation, and migration policy will be specified in the detailed data model before those features are implemented.
-
 ## 7. Security and backup architecture
 - Keep local data within application-private storage unless the user explicitly exports/shares a file.
 - Store device-held secrets using Android Keystore-backed secure storage.
