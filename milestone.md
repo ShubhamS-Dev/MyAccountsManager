@@ -57,7 +57,9 @@ Current branches created for the initial foundation work:
 - Created Flutter/Dart source foundation on `feature/20261108/project-foundation`.
 - Added `pubspec.yaml` with Flutter, Riverpod, go_router, and Flutter test/lint baselines.
 - Added `lib/main.dart`, app theme host, GoRouter configuration, five-destination navigation shell, initial Home placeholder, and Expense/Income entry-form scaffold.
-- Added Dart static-analysis configuration.\n- Added initial widget tests for app launch, navigation shell, FAB route, and Expense/Income selection.\n- Added draft `docs/ARCHITECTURE.md` documenting approved boundaries, dependency direction, data principles, security design work, and open decisions.
+- Added Dart static-analysis configuration.
+- Added initial widget tests for app launch, navigation shell, FAB route, and Expense/Income selection.
+- Added draft `docs/ARCHITECTURE.md` documenting approved boundaries, dependency direction, data principles, security design work, and open decisions.
 - These screens are intentionally scaffolds: persistence, validation, account/category selection, and saving are not implemented yet.
 - Android native platform scaffolding and package identifier wiring remain pending; it must be generated/configured and built before this milestone can be marked Done.
 - Flutter formatting, analysis, tests, and Android build have **not** been run in this environment. No successful build is claimed.
