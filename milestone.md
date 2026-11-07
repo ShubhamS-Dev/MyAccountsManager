@@ -65,6 +65,7 @@ Current branches created for the initial foundation work:
 - Added Dart static-analysis configuration.
 - Added initial widget tests for app launch, navigation shell, FAB route, and Expense/Income selection.
 - Added draft `docs/ARCHITECTURE.md` documenting approved boundaries, dependency direction, data principles, security design work, and open decisions.
+- Added a shared `MoneyFormatter` utility for integer-paise parsing and Indian rupee display, plus unit tests covering whole/fractional values, grouping, and invalid input. These tests have been committed but not executed because Flutter tooling is not available in this environment.
 - These screens are intentionally scaffolds: persistence, validation, account/category selection, and saving are not implemented yet.
 - Android native platform scaffolding and package identifier wiring remain pending; it must be generated/configured and built before this milestone can be marked Done.
 - Flutter formatting, analysis, tests, and Android build have **not** been run in this environment. No successful build is claimed.
@@ -87,6 +88,7 @@ Remove an item only after the decision is recorded in the approved requirements 
 | Date | Update |
 |---|---|
 | 2026-11-08 | Added project-level agent instructions and milestone tracker. No Flutter application source implementation is claimed by this documentation change. |
+| 2026-11-08 | Added decimal-safe integer-paise money parsing/formatting utility and unit tests on `feature/20261108/project-foundation`; execution remains pending Flutter toolchain availability. |
 
 ## Change log format
 
