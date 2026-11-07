@@ -111,3 +111,28 @@ Update `milestone.md` after meaningful verified progress. Keep statuses honest: 
 Read this file, `README.md`, `milestone.md`, and the relevant approved requirements/architecture documents before changing code. Inspect the current repository state rather than assuming previous work is present.
 
 If the repository does not yet contain application source code, do not pretend a feature has been implemented. First establish the approved requirements and project structure, then implement the source code.
+
+## 11. Branching strategy
+
+Use these exact branch naming conventions:
+
+- Production/release branch: `master`.
+- Development integration branch: `development/YYYYMMDD` (date is the branch creation date).
+- Feature or task branch: `feature/YYYYMMDD/<short-description>` (date is the branch creation date; description is lowercase kebab-case).
+
+Workflow:
+
+1. Create the daily development branch from the latest `master`, unless that date's development branch already exists.
+2. Create each feature branch from the active `development/YYYYMMDD` branch.
+3. Implement the requested application source changes on the feature branch. Keep commits focused and descriptive.
+4. Open a pull request from the feature branch into the matching development branch after checks pass.
+5. Integrate development into `master` only for an explicitly approved release.
+6. Never commit feature work directly to `master`.
+7. Do not create a new date branch if the correct branch already exists; inspect and continue it.
+8. Keep CI workflows aligned with this policy, but remember that workflow changes never substitute for application source changes.
+
+Example for a project-foundation task created on 8 November 2026:
+
+- `development/20261108`
+- `feature/20261108/project-foundation`
+
