@@ -17,6 +17,20 @@ This file is the project progress tracker. Update it whenever a milestone change
 - Android APK/release: **Not Started**
 - Current baseline commit: see repository history.
 
+## Branching workflow
+
+- Production/release: `master`.
+- Daily development integration: `development/YYYYMMDD`.
+- Feature/task work: `feature/YYYYMMDD/<short-description>`.
+- Create the development branch from the latest `master`; create feature branches from the active development branch.
+- Merge feature branches into the matching development branch through review/validation. Merge development into `master` only for an explicitly approved release.
+- Never implement features directly on `master`; never treat YAML-only changes as application implementation.
+
+Current branches created for the initial foundation work:
+
+- `development/20261108`
+- `feature/20261108/project-foundation`
+
 ## Milestone tracker
 
 | ID | Milestone | Status | Completion evidence / acceptance criteria |
