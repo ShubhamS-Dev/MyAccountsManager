@@ -27,6 +27,11 @@ Requirements and the baseline technical architecture are being finalized. Implem
 - Secure device storage backed by Android Keystore
 - Encrypted versioned `.khata` backups
 
+## Application identity
+
+- Android application ID: `com.shubhams.myaccountsmanager`
+- Flutter package name: `my_accounts_manager`
+
 ## Navigation
 
 Home | Accounts | History | MyKhata | More
