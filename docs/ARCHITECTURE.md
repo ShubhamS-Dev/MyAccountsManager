@@ -84,7 +84,9 @@ Payment method definitions and local attachment storage may be shared as infrast
 - **Money storage:** store every monetary amount as an integer number of paise in the database and domain calculations. Example: ₹500 is stored as `50000`; ₹500.50 is stored as `50050`. Never use binary floating-point values for financial arithmetic.
 - **Money display:** present amounts in Indian rupee format, showing whole rupees without unnecessary decimals (for example, `₹500`) and showing exactly two decimal places when paise are present (for example, `₹500.50`). Use a shared formatter so all screens, reports, and exports follow the same display rule; exports must retain exact monetary precision.
 - Convert between rupees entered/displayed and integer paise at the input/presentation boundary using decimal-safe parsing and formatting. Do not round-trip through `double` for persisted money.
-- Store timestamps/dates in a documented canonical representation and convert at the presentation boundary.
+- **Date-only business fields:** store the selected calendar date as a UTC-normalized timestamp (UTC midnight for that calendar date) and render it as a date in UTC, without converting it to the device timezone. This preserves the exact selected date and prevents a date-only transaction from shifting when the device timezone changes. The UI displays only the calendar date (for example, `08 Nov 2026`).
+- **Audit/event timestamps:** store actual instants as UTC timestamps (for example, `created_at` and `updated_at`) and convert them to the device's local timezone for display when a time is shown.
+- Keep date-only fields and actual event timestamps semantically distinct even though both use timestamp storage.
 - Use foreign keys and explicit delete behavior.
 - Use database transactions for multi-record operations such as repayment allocation, restore/merge, and bulk cleanup.
 - Add versioned Drift migrations for every schema change.
