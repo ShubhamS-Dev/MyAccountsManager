@@ -10,7 +10,7 @@ class TransactionTrashPage extends ConsumerWidget {
   String _money(int paise) {
     final absolute = paise.abs();
     final digits = (absolute ~/ 100).toString();
-    final grouped = digits.replaceAllMapped(RegExp(r'(?<=\\d)(?=(\\d{2})+\\d{3}$)'), (_) => ',');
+    final grouped = digits.replaceAllMapped(RegExp(r'(?<=\d)(?=(\d{2})+\d{3}$)'), (_) => ',');
     final fraction = absolute % 100;
     return '${paise < 0 ? '-' : ''}₹$grouped${fraction == 0 ? '' : '.${fraction.toString().padLeft(2, '0')}'}';
   }
