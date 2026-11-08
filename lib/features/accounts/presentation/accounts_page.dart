@@ -41,7 +41,6 @@ class AccountsPage extends ConsumerWidget {
           ]);
         },
       ),
-      floatingActionButton: FloatingActionButton.extended(onPressed: () => context.push('/accounts/new'), icon: const Icon(Icons.add), label: const Text('Add Account')),
     );
   }
 }
