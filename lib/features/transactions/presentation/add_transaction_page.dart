@@ -196,8 +196,9 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                           'No active categories for this transaction type.');
                     }
                     if (_categoryId != null &&
-                        !categoryRows.any((c) => c.id == _categoryId))
+                        !categoryRows.any((c) => c.id == _categoryId)) {
                       _categoryId = null;
+                    }
                     return DropdownButtonFormField<String>(
                       initialValue: _categoryId,
                       decoration: const InputDecoration(
