@@ -225,7 +225,7 @@ void main() {
       await (database.select(database.transactions)..where((row) => row.id.equals(id))).getSingleOrNull(),
       isNull,
     );
-    expect(() => transactions.permanentlyDeleteTransaction(id), throwsStateError);
+    expect(() async => await transactions.permanentlyDeleteTransaction(id), throwsStateError);
   });
 
 }
