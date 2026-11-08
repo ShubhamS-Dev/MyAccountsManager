@@ -61,7 +61,7 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
             accounts.when(
               loading: () => const LinearProgressIndicator(),
               error: (error, stack) => const Text('Account filters unavailable.'),
-              data: (rows) => DropdownButtonFormField<String?>(
+              data: (rows) => DropdownButtonFormField<String>(
                 value: _accountId ?? '__all__',
                 decoration: const InputDecoration(labelText: 'Account', border: OutlineInputBorder(), isDense: true),
                 items: [
