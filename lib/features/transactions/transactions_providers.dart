@@ -38,3 +38,7 @@ final transactionHistoryProvider = StreamProvider.family<List<TransactionHistory
 final transactionTrashProvider = StreamProvider<List<TransactionHistoryItem>>((ref) {
   return ref.watch(transactionsRepositoryProvider).watchTrash();
 });
+
+final transactionByIdProvider = FutureProvider.family((ref, String id) {
+  return ref.watch(transactionsRepositoryProvider).getTransaction(id);
+});
