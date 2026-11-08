@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/database/database_provider.dart';
+import '../../core/database/app_database.dart';
 import 'data/transactions_repository.dart';
 
 class TransactionHistoryFilter {
@@ -39,6 +40,6 @@ final transactionTrashProvider = StreamProvider<List<TransactionHistoryItem>>((r
   return ref.watch(transactionsRepositoryProvider).watchTrash();
 });
 
-final transactionByIdProvider = FutureProvider.family((ref, String id) {
+final transactionByIdProvider = FutureProvider.family<TransactionRow?, String>((ref, id) {
   return ref.watch(transactionsRepositoryProvider).getTransaction(id);
 });
