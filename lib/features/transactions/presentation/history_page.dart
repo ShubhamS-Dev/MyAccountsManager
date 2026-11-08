@@ -59,9 +59,9 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
       ref.invalidate(accountBalancePaiseProvider(accountId));
     } catch (_) {
       if (mounted)
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        ScaffoldMessenger.of(context) { .showSnackBar(const SnackBar(
             content: Text(
-                'Could not move transaction to Trash. Refresh and try again.')));
+                'Could not move transaction to Trash. Refresh and try again.'))); }
     }
   }
 
@@ -222,10 +222,10 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                             onSelected: (action) {
                               if (action == 'edit')
                                 context.push(
-                                    '/transaction/${transaction.id}/edit');
+                                    '/transaction/${transaction.id}/edit') { ; }
                               if (action == 'trash')
                                 _moveToTrash(
-                                    transaction.id, transaction.accountId);
+                                    transaction.id, transaction.accountId) { ; }
                             },
                             itemBuilder: (_) => const [
                               PopupMenuItem(
