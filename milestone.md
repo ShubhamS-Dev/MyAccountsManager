@@ -39,7 +39,7 @@ Current branches created for the initial foundation work:
 | M1 | Product requirements finalization | In Progress | PRD covers all approved modules, workflows, edge cases, and open decisions. Material ambiguities are resolved with the user. |
 | M2 | Technical architecture and data design | In Progress | Architecture, feature boundaries, database entities/relations, migration strategy, security design, and backup format are documented and reviewed. |
 | M3 | Flutter project foundation | In Progress | Real Flutter/Dart source project exists; app launches; approved dependencies, routing, Riverpod setup, theme, and feature structure are in place. |
-| M4 | Local database and integrity foundation | Not Started | Drift schema, repositories, migrations, UUID strategy, transaction boundaries, and recovery behavior are implemented and tested. |
+| M4 | Local database and integrity foundation | In Progress | Version 1 schema and migration policy are documented in docs/DATABASE_SCHEMA_V1.md. Drift table definitions, generated database code, repositories, migrations, and tests remain to be implemented and verified. |
 | M5 | Accounts, categories, and transactions | Not Started | Account management, categories, income/expense, adjustments, future-dated records, history, attachments, and Trash meet approved requirements. |
 | M6 | Dashboards and budgets | Not Started | Global and Account dashboards, date filters, configurable sections, budgets, and alerts work as specified. |
 | M7 | Recurring transactions and notifications | Not Started | Automatic and reminder-based recurrence, catch-up/idempotency, notification center, preferences, and Quiet Hours are implemented and tested. |
@@ -67,6 +67,7 @@ Current branches created for the initial foundation work:
 - Added initial widget tests for app launch, navigation shell, FAB route, and Expense/Income selection.
 - Added draft `docs/ARCHITECTURE.md` documenting approved boundaries, dependency direction, data principles, security design work, and open decisions.
 - Added a shared `MoneyFormatter` utility for integer-paise parsing and Indian rupee display, plus unit tests covering whole/fractional values, grouping, and invalid input. These tests have been committed but not executed because Flutter tooling is not available in this environment.
+- Documented the initial SQLite/Drift schema and migration policy in `docs/DATABASE_SCHEMA_V1.md`, covering Accounts, Categories, and regular Transactions, including fields, indexes, integrity rules, seed behavior, and deferred feature tables.
 - Confirmed timestamp storage with date-only UI display. Architecture distinguishes UTC-normalized calendar-date timestamps from actual UTC audit/event timestamps.
 - Added `DateOnly` and `AuditTimestamp` utilities with tests for UTC-midnight date storage, date-only formatting, and UTC audit instants. Tests are committed but not yet executed.
 - These screens are intentionally scaffolds: persistence, validation, account/category selection, and saving are not implemented yet.
@@ -94,6 +95,7 @@ Remove an item only after the decision is recorded in the approved requirements 
 | 2026-11-08 | Added decimal-safe integer-paise money parsing/formatting utility and unit tests on `feature/20261108/project-foundation`; execution remains pending Flutter toolchain availability. |
 | 2026-11-08 | Recorded timestamp storage with date-only UI presentation and explicit UTC semantics for business dates versus audit timestamps. |
 | 2026-11-08 | Added date-only and audit timestamp utilities plus unit tests; Flutter test execution remains pending toolchain availability. |
+| 2026-11-08 | Documented initial SQLite/Drift schema version 1 and migration strategy; Drift source definitions and validation remain pending. |
 
 ## Change log format
 
