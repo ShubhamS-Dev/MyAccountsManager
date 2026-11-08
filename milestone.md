@@ -151,3 +151,12 @@ Corrective approach: explicitly wrap each complete intended statement body, pres
 - Updated the Flutter validation workflow to generate the missing Android platform scaffold only when absent, using the confirmed application ID `com.shubhams.myaccountsmanager`.
 - The workflow now builds a debug APK after formatting, analysis, and all tests pass, then uploads `app-debug.apk` as the `myaccountsmanager-debug-apk` artifact for 14 days.
 - The generated `android/` folder is committed only after the full validation and APK build succeed. No APK or Android scaffold completion is claimed until that run passes.
+
+
+## Gradle download failure RCA and mitigation — 2026-11-08
+
+- Run #187 passed Android scaffold generation, dependency resolution, Drift generation, Dart formatting, static analysis, and all 28 automated tests.
+- APK assembly failed before compilation because the Gradle wrapper could not download Gradle 9.3.1 from the Gradle GitHub release endpoint; the endpoint returned HTTP 504. APK upload and generated Android scaffold commit were consequently skipped.
+- Root cause is a transient external distribution-download gateway timeout. The run contains no evidence of an application source, Android manifest, or Gradle build-script compilation defect.
+- Updated CI to cache Gradle wrapper distributions and dependency caches using the wrapper properties as the cache key. Added up to three bounded APK build attempts, with increasing delays, only when logs indicate transient HTTP 5xx/network failures. Non-network build failures fail immediately and are not masked.
+- The mitigation is committed; it is not yet verified. A subsequent successful APK build is required before marking Android scaffold/APK milestone complete.
