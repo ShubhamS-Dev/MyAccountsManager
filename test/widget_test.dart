@@ -49,9 +49,7 @@ void main() {
 
   Future<void> pumpApp(WidgetTester tester) async {
     addTearDown(() async {
-      // Unmount the widget tree before closing the database. Database-backed
-      // stream providers are overridden below, so teardown owns no Drift
-      // query subscriptions and cannot leave Drift's deferred close timers.
+      // Unmount consumers before closing the in-memory database.
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump();
       await testDatabase.close();
@@ -62,15 +60,20 @@ void main() {
         overrides: [
           appDatabaseProvider.overrideWithValue(testDatabase),
 
-          // These UI tests verify navigation and form rendering, not Drift's
-          // SQL stream implementation. Keep their data deterministic and
-          // prevent StreamQueryStore timers from being created by the widget
-          // tree during test execution.
+          // These are navigation/form tests. Repository stream behavior is
+          // covered separately, so use deterministic streams here and avoid
+          // opening Drift query subscriptions from the widget tree.
           activeAccountsProvider.overrideWith(
             (ref) => Stream.value([testAccount]),
           ),
           allAccountsProvider.overrideWith(
             (ref) => Stream.value([testAccount]),
+          ),
+          totalActiveBalancePaiseProvider.overrideWith(
+            (ref) => Stream.value(0),
+          ),
+          accountBalancePaiseProvider.overrideWith(
+            (ref, accountId) => Stream.value(0),
           ),
           activeCategoriesByTypeProvider.overrideWith(
             (ref, type) => Stream.value(<CategoryRow>[]),

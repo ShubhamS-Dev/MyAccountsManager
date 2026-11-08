@@ -219,3 +219,12 @@ The source changes are committed, but the new workflow must pass before this sli
 - `flutter analyze` failed with five lint/info findings only: import directive ordering in AppShell, Add Transaction, and History, plus missing braces around one conditional in Add Transaction.
 - Tests and Android APK build were skipped because the workflow stops on analyzer failure.
 - Corrected those source findings and queued a new validation run. Do not mark this implementation slice complete until the replacement run passes analysis, tests, and APK build.
+
+
+### CI root-cause analysis — Run #200
+
+- Run #200 passed Flutter setup, Android scaffold generation, Gradle endpoint configuration, dependency resolution, Drift code generation, Dart formatting, and static analysis.
+- The test job failed in the first dashboard widget test with Flutter's pending-timer assertion. The timer stack points to Drift's `StreamQueryStore.markAsClosed`, invoked when a Riverpod `StreamProvider` backed by a Drift query is disposed.
+- Root cause: the widget test already replaced the account/category/history streams with deterministic streams, but the new Home dashboard also watches `totalActiveBalancePaiseProvider`. That provider was not overridden, so the test unexpectedly opened a real Drift SQL stream. Its deferred close timer remained in the widget-test fake-async zone. The subsequent widget tests then timed out after the first test failed and left the binding in a failed state.
+- Corrective change: override both reactive balance providers in navigation/form widget tests with deterministic in-memory streams. These tests validate navigation and form rendering; the real Drift stream behavior remains covered by repository-level stream tests. Teardown continues to unmount the widget tree before closing the test database.
+- This is a test-isolation correction; production reactive balance providers and application behavior are unchanged. Run #201 must verify tests and the Android debug APK before this fix is considered validated.
