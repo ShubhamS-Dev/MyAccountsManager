@@ -45,6 +45,40 @@ jobs:
             exit 1
           fi
 
+      - name: Configure reliable Gradle distribution endpoint
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          wrapper = Path("android/gradle/wrapper/gradle-wrapper.properties")
+          if not wrapper.is_file():
+              raise SystemExit(f"Gradle wrapper properties not found: {wrapper}")
+
+          lines = wrapper.read_text().splitlines()
+          updated = False
+          for index, line in enumerate(lines):
+              if line.startswith("distributionUrl="):
+                  raw_url = line.split("=", 1)[1].replace(r"\\:", ":")
+                  filename = raw_url.rsplit("/", 1)[-1]
+                  if not re.fullmatch(r"gradle-[0-9]+(?:\\.[0-9]+)*-(?:all|bin)\\.zip", filename):
+                      raise SystemExit(f"Unexpected Gradle distribution filename: {filename}")
+                  lines[index] = rf"distributionUrl=https\\://downloads.gradle.org/distributions/{filename}"
+                  updated = True
+                  break
+
+          if not updated:
+              raise SystemExit("Gradle wrapper distributionUrl property was not found.")
+
+          if not any(line.startswith("networkTimeout=") for line in lines):
+              lines.append("networkTimeout=120000")
+
+          wrapper.write_text("\\n".join(lines) + "\\n")
+          print(f"Configured Gradle wrapper to use downloads.gradle.org: {filename}")
+          PY
+          grep -E '^(distributionUrl|networkTimeout)=' android/gradle/wrapper/gradle-wrapper.properties
+
       - name: Install Linux SQLite development library
         run: sudo apt-get update && sudo apt-get install -y libsqlite3-dev
 
