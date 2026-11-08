@@ -62,14 +62,14 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
               loading: () => const LinearProgressIndicator(),
               error: (error, stack) => const Text('Account filters unavailable.'),
               data: (rows) => DropdownButtonFormField<String?>(
-                value: _accountId,
+                value: _accountId ?? '__all__',
                 decoration: const InputDecoration(labelText: 'Account', border: OutlineInputBorder(), isDense: true),
                 items: [
-                  const DropdownMenuItem<String?>(value: null, child: Text('All Accounts')),
+                  const DropdownMenuItem<String>(value: '__all__', child: Text('All Accounts')),
                   for (final account in rows)
-                    DropdownMenuItem<String?>(value: account.id, child: Text('${account.name}${account.archivedAt == null ? '' : ' (Archived)'}')),
+                    DropdownMenuItem<String>(value: account.id, child: Text('${account.name}${account.archivedAt == null ? '' : ' (Archived)'}')),
                 ],
-                onChanged: (value) => setState(() => _accountId = value),
+                onChanged: (value) => setState(() => _accountId = value == '__all__' ? null : value),
               ),
             ),
             const SizedBox(height: 10),
