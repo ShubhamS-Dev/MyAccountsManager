@@ -14,7 +14,7 @@ This file is the project progress tracker. Update it whenever a milestone change
 
 - Overall status: **In Progress — requirements and implementation planning**
 - Application source implementation: **In Progress — project foundation and initial local database source**
-- Android APK/release: **Not Started**
+- Android native scaffold and debug APK: **In Progress** — CI now generates the missing Android platform folder, verifies the confirmed application ID, builds a debug APK, and uploads it as a workflow artifact; execution is pending.
 - Current baseline commit: see repository history.
 
 ## Branching workflow
@@ -144,3 +144,10 @@ Run #144 completed dependency resolution, Drift generation, Dart formatting, and
 Root cause: (1) 24 unbraced control-flow statements remained across money formatting, Account/adjustment screens, transaction repository, and transaction screens. (2) analysis_options.yaml includes package:flutter_lints/flutter.yaml, which enables this rule; the current CI analyzer command fails on info-level findings. (3) The previous cleanup used unsafe text-level brace insertion rather than wrapping each complete statement body, causing semicolon loss, extra braces, and malformed chained ScaffoldMessenger calls. (4) CI formatting and code generation succeeded in run #144 and were not the cause of that run's failure.
 
 Corrective approach: explicitly wrap each complete intended statement body, preserve expression chains and semicolons, and keep dart fix --apply and blind brace insertion out of the workflow. All analyzer-reported sites have now been edited with complete blocks. Validation remains pending the next CI run.
+
+
+## Android build pipeline update — 2026-11-08
+
+- Updated the Flutter validation workflow to generate the missing Android platform scaffold only when absent, using the confirmed application ID `com.shubhams.myaccountsmanager`.
+- The workflow now builds a debug APK after formatting, analysis, and all tests pass, then uploads `app-debug.apk` as the `myaccountsmanager-debug-apk` artifact for 14 days.
+- The generated `android/` folder is committed only after the full validation and APK build succeed. No APK or Android scaffold completion is claimed until that run passes.
