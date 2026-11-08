@@ -85,7 +85,7 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
     setState(() {
       _saving = true;
       _error = null;
-    });
+    }) { ; }
     try {
       final dateOnlyUtc = DateTime.utc(_date!.year, _date!.month, _date!.day)
           .millisecondsSinceEpoch;
@@ -132,7 +132,7 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
           if (row == null || row.deletedAt != null)
             return const Center(
                 child: Text(
-                    'This transaction is unavailable or has been moved to Trash.'));
+                    'This transaction is unavailable or has been moved to Trash.')) { ; }
           _initialize(row);
           return accounts.when(
             loading: () => const Center(child: CircularProgressIndicator()),
@@ -143,7 +143,7 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
             data: (accountRows) {
               if (!accountRows.any((account) => account.id == _accountId))
                 return const Center(
-                    child: Text('The original Account is unavailable.'));
+                    child: Text('The original Account is unavailable.')) { ; }
               final categories =
                   ref.watch(activeCategoriesByTypeProvider(_kind!));
               return Form(
@@ -216,9 +216,8 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
                             !categoryRows
                                 .any((category) => category.id == _categoryId))
                           _categoryId = null;
-                        if (categoryRows.isEmpty)
-                          return const Text(
-                              'No active categories for this transaction type.');
+                        if (categoryRows.isEmpty) { return const Text(
+                              'No active categories for this transaction type.') { ; }
                         return DropdownButtonFormField<String>(
                           initialValue: _categoryId,
                           decoration: const InputDecoration(
@@ -234,7 +233,7 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
                               setState(() => _categoryId = value),
                           validator: (value) =>
                               value == null ? 'Select a category.' : null,
-                        );
+                        ); }
                       },
                     ),
                     const SizedBox(height: 8),
