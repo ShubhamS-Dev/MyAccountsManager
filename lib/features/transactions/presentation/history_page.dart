@@ -61,7 +61,7 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
       if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text(
-                'Could not move transaction to Trash. Refresh and try again.'))); }
+                'Could not move transaction to Trash. Refresh and try again.')));
     }
   }
 
