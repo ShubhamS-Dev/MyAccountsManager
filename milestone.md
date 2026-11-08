@@ -160,3 +160,12 @@ Corrective approach: explicitly wrap each complete intended statement body, pres
 - Root cause is a transient external distribution-download gateway timeout. The run contains no evidence of an application source, Android manifest, or Gradle build-script compilation defect.
 - Updated CI to cache Gradle wrapper distributions and dependency caches using the wrapper properties as the cache key. Added up to three bounded APK build attempts, with increasing delays, only when logs indicate transient HTTP 5xx/network failures. Non-network build failures fail immediately and are not masked.
 - The mitigation is committed; it is not yet verified. A subsequent successful APK build is required before marking Android scaffold/APK milestone complete.
+
+
+## Android Gradle distribution endpoint repair — 2026-11-08
+
+- Run #190 passed Android scaffold generation, dependency resolution, Drift code generation, formatting, static analysis, and all 28 tests.
+- APK assembly again failed before Android compilation: all three configured attempts received HTTP 504 from the generated wrapper's GitHub release URL for Gradle 9.3.1. The Gradle cache had no prior distribution to restore, so the wrapper had to download it.
+- The previous retry-only mitigation was insufficient because the failing endpoint remained unchanged across all attempts.
+- Updated the workflow to rewrite the generated Gradle wrapper distribution URL to the Gradle downloads host (downloads.gradle.org) while preserving the generated Gradle version and archive type. Added a 120-second wrapper network timeout. Existing wrapper/dependency caching and bounded retry behavior remain in place.
+- This endpoint change is not yet validated. The next successful run must pass Gradle distribution download, Android compilation, APK upload, and generated scaffold commit before Android build completion is claimed.
