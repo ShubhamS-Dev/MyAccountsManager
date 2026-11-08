@@ -64,7 +64,14 @@ class TransactionTrashPage extends ConsumerWidget {
                   title: Text(transaction.note?.isNotEmpty == true ? transaction.note! : item.categoryName, maxLines: 1, overflow: TextOverflow.ellipsis),
                   subtitle: Text('${item.categoryName} · ${item.accountName}\n${_dateLabel(transaction.transactionDate)} · Deleted ${_dateLabel(transaction.deletedAt!)}'),
                   isThreeLine: true,
-                  trailing: PopupMenuButton<String>(
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '${income ? '+' : '-'}${_money(transaction.amountPaise)}',
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                      PopupMenuButton<String>(
                     tooltip: 'Trash actions',
                     onSelected: (action) async {
                       if (action == 'restore') {
@@ -85,9 +92,8 @@ class TransactionTrashPage extends ConsumerWidget {
                     ],
                   ),
                   leading: CircleAvatar(child: Icon(income ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded)),
-                  trailing: Text(
-                    '${income ? '+' : '-'}${_money(transaction.amountPaise)}',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                    ],
                   ),
                   dense: false,
                 ),
