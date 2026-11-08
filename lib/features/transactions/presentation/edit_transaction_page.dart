@@ -111,7 +111,6 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
         data: (row) {
           if (row == null || row.deletedAt != null) return const Center(child: Text('This transaction is unavailable or has been moved to Trash.'));
           _initialize(row);
-          final categories = ref.watch(activeCategoriesByTypeProvider(_kind ?? 'expense'));
           return accounts.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (error, stack) => Center(child: TextButton(onPressed: () => ref.invalidate(allAccountsProvider), child: const Text('Could not load Accounts. Retry'))),
