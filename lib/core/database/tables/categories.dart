@@ -14,7 +14,7 @@ class Categories extends Table {
   IntColumn get updatedAt => integer()();
 
   @override
-  Set<Column<Object>> get primaryKey => {id};
+  Set<Column> get primaryKey => {id};
 
   @override
   List<String> get customConstraints => [
