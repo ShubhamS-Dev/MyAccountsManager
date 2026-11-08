@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/database/app_database.dart';
+
 import '../../accounts/accounts_providers.dart';
 import '../../categories/categories_providers.dart';
 import '../transactions_providers.dart';
@@ -44,16 +46,16 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
     return rupees * 100 + paise;
   }
 
-  void _initialize(dynamic transaction) {
+  void _initialize(TransactionRow transaction) {
     if (_initialized) return;
     _initialized = true;
-    _accountId = transaction.accountId as String;
-    _categoryId = transaction.categoryId as String;
-    _kind = transaction.type as String;
-    _date = DateTime.fromMillisecondsSinceEpoch(transaction.transactionDate as int, isUtc: true);
-    final amount = transaction.amountPaise as int;
+    _accountId = transaction.accountId;
+    _categoryId = transaction.categoryId;
+    _kind = transaction.type;
+    _date = DateTime.fromMillisecondsSinceEpoch(transaction.transactionDate, isUtc: true);
+    final amount = transaction.amountPaise;
     _amountController.text = '${amount ~/ 100}.${(amount % 100).toString().padLeft(2, '0')}';
-    _noteController.text = (transaction.note as String?) ?? '';
+    _noteController.text = transaction.note ?? '';
   }
 
   Future<void> _pickDate() async {
@@ -100,7 +102,6 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
   Widget build(BuildContext context) {
     final transaction = ref.watch(transactionByIdProvider(widget.transactionId));
     final accounts = ref.watch(allAccountsProvider);
-    final categories = ref.watch(activeCategoriesByTypeProvider(_kind ?? 'expense'));
 
     return Scaffold(
       appBar: AppBar(title: const Text('Edit transaction')),
@@ -110,6 +111,7 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
         data: (row) {
           if (row == null || row.deletedAt != null) return const Center(child: Text('This transaction is unavailable or has been moved to Trash.'));
           _initialize(row);
+          final categories = ref.watch(activeCategoriesByTypeProvider(_kind ?? 'expense'));
           return accounts.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (error, stack) => Center(child: TextButton(onPressed: () => ref.invalidate(allAccountsProvider), child: const Text('Could not load Accounts. Retry'))),
