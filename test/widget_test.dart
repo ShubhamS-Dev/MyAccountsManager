@@ -6,16 +6,21 @@ import 'package:my_accounts_manager/app/app_router.dart';
 import 'package:my_accounts_manager/app/my_accounts_manager_app.dart';
 import 'package:my_accounts_manager/core/database/app_database.dart';
 import 'package:my_accounts_manager/core/database/database_provider.dart';
+import 'package:my_accounts_manager/features/accounts/accounts_providers.dart';
 import 'package:my_accounts_manager/features/accounts/data/accounts_repository.dart';
+import 'package:my_accounts_manager/features/categories/categories_providers.dart';
+import 'package:my_accounts_manager/features/transactions/transactions_providers.dart';
 
 late AppDatabase testDatabase;
+late AccountRow testAccount;
 
 void main() {
   setUp(() async {
     testDatabase = AppDatabase.forTesting(NativeDatabase.memory());
-    await AccountsRepository(testDatabase).createAccount(
+    final accountId = await AccountsRepository(testDatabase).createAccount(
       name: 'Widget test Account',
     );
+    testAccount = (await AccountsRepository(testDatabase).getAccount(accountId))!;
     appRouter.go('/');
   });
 
@@ -40,24 +45,35 @@ void main() {
 
   Future<void> pumpApp(WidgetTester tester) async {
     addTearDown(() async {
-      // Dispose focused text fields, route transitions, and Riverpod stream
-      // subscriptions before closing the in-memory database. This prevents
-      // periodic cursor/stream timers from surviving the widget test.
+      // Unmount the widget tree before closing the database. Database-backed
+      // stream providers are overridden below, so teardown owns no Drift
+      // query subscriptions and cannot leave Drift's deferred close timers.
       await tester.pumpWidget(const SizedBox.shrink());
-      // Unmounting Riverpod stream providers schedules Drift's deferred
-      // StreamQueryStore cleanup. Closing the database can schedule the same
-      // zero-duration cleanup timers, so drain the fake-async event queue
-      // after the database has finished closing as well.
       await tester.pump();
       await testDatabase.close();
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 1));
     });
 
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           appDatabaseProvider.overrideWithValue(testDatabase),
+
+          // These UI tests verify navigation and form rendering, not Drift's
+          // SQL stream implementation. Keep their data deterministic and
+          // prevent StreamQueryStore timers from being created by the widget
+          // tree during test execution.
+          activeAccountsProvider.overrideWith(
+            (ref) => Stream.value([testAccount]),
+          ),
+          allAccountsProvider.overrideWith(
+            (ref) => Stream.value([testAccount]),
+          ),
+          activeCategoriesByTypeProvider.overrideWith(
+            (ref, type) => Stream.value(<CategoryRow>[]),
+          ),
+          transactionHistoryProvider.overrideWith(
+            (ref, filter) => Stream.value(<TransactionHistoryItem>[]),
+          ),
         ],
         child: const MyAccountsManagerApp(),
       ),
