@@ -35,7 +35,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
 
   int? _parsePaise(String raw) {
     final value = raw.trim().replaceAll(',', '');
-    if (!RegExp(r'^\\d{1,12}(\\.\\d{1,2})?).hasMatch(value)) return null;
+    if (!RegExp(r'^\\d{1,12}(\\.\\d{1,2})?$').hasMatch(value)) return null;
     final parts = value.split('.');
     final rupees = int.tryParse(parts[0]);
     if (rupees == null) return null;
