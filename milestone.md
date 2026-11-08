@@ -135,3 +135,12 @@ Keep this tracker concise and evidence-based.
 | 2026-11-08 | M5: fixed static-analysis findings in transaction editing, Trash list layout, and Drift/Matcher test imports. Validation is running again; test results remain pending. |
 
 | 2026-11-08 | M5/M13: traced formatter failures to nine earlier commits that incorrectly appended empty `{ ; }` blocks or malformed `ScaffoldMessenger` member access while attempting to fix curly-brace lint. Restored the original valid statements across transaction, Account, adjustment, and money-formatting source files. Root cause identified as an unsafe source-editing transformation, not Flutter tooling. Formatting, analysis, tests, and Android build must be rerun before validation is claimed. |
+
+
+## CI root-cause analysis — 2026-11-08
+
+Run #144 completed dependency resolution, Drift generation, Dart formatting, and the generated/formatted-source commit. It failed only at flutter analyze: 24 informational curly_braces_in_flow_control_structures findings caused analyzer exit code 1; tests were skipped. The syntax repairs therefore restored parseability but did not clear the analyzer gate.
+
+Root cause: (1) 24 unbraced control-flow statements remained across money formatting, Account/adjustment screens, transaction repository, and transaction screens. (2) analysis_options.yaml includes package:flutter_lints/flutter.yaml, which enables this rule; the current CI analyzer command fails on info-level findings. (3) The previous cleanup used unsafe text-level brace insertion rather than wrapping each complete statement body, causing semicolon loss, extra braces, and malformed chained ScaffoldMessenger calls. (4) CI formatting and code generation succeeded in run #144 and were not the cause of that run's failure.
+
+Corrective approach: explicitly wrap each complete intended statement body, preserve expression chains and semicolons, and keep dart fix --apply and blind brace insertion out of the workflow. All analyzer-reported sites have now been edited with complete blocks. Validation remains pending the next CI run.
