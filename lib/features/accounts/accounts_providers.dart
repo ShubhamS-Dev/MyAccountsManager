@@ -9,3 +9,7 @@ final accountsRepositoryProvider = Provider<AccountsRepository>((ref) {
 final activeAccountsProvider = StreamProvider<List<AccountRow>>((ref) {
   return ref.watch(accountsRepositoryProvider).watchActiveAccounts();
 });
+
+final accountByIdProvider = FutureProvider.family<AccountRow?, String>((ref, id) {
+  return ref.watch(accountsRepositoryProvider).getAccount(id);
+});
