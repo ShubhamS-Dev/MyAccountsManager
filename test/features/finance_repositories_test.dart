@@ -310,4 +310,73 @@ void main() {
     );
   });
 
+
+  test('balance adjustments affect Account balance by date and preserve reason history', () async {
+    final accountId = await accounts.createAccount(
+      name: 'Home',
+      openingBalancePaise: 100000,
+    );
+    final today = DateTime.utc(2026, 11, 8).millisecondsSinceEpoch;
+    final tomorrow = DateTime.utc(2026, 11, 9).millisecondsSinceEpoch;
+
+    await accounts.createBalanceAdjustment(
+      accountId: accountId,
+      amountPaise: 25000,
+      reason: 'Cash found during reconciliation',
+      adjustmentDate: today,
+    );
+    await accounts.createBalanceAdjustment(
+      accountId: accountId,
+      amountPaise: -10000,
+      reason: 'Correct entry mistake',
+      adjustmentDate: tomorrow,
+    );
+
+    expect(
+      await accounts.calculateBalancePaise(accountId: accountId, asOfDate: today),
+      125000,
+    );
+    expect(
+      await accounts.calculateBalancePaise(accountId: accountId, asOfDate: tomorrow),
+      115000,
+    );
+    final history = await accounts.watchBalanceAdjustments(accountId).first;
+    expect(history, hasLength(2));
+    expect(history.first.reason, 'Correct entry mistake');
+    expect(history.first.amountPaise, -10000);
+  });
+
+  test('rejects zero, blank-reason, and archived Account balance adjustments', () async {
+    final activeAccountId = await accounts.createAccount(name: 'Active');
+    expect(
+      () => accounts.createBalanceAdjustment(
+        accountId: activeAccountId,
+        amountPaise: 0,
+        reason: 'Invalid zero',
+        adjustmentDate: DateTime.utc(2026, 11, 8).millisecondsSinceEpoch,
+      ),
+      throwsArgumentError,
+    );
+    expect(
+      () => accounts.createBalanceAdjustment(
+        accountId: activeAccountId,
+        amountPaise: 100,
+        reason: '   ',
+        adjustmentDate: DateTime.utc(2026, 11, 8).millisecondsSinceEpoch,
+      ),
+      throwsArgumentError,
+    );
+
+    await accounts.archiveAccount(activeAccountId);
+    expect(
+      () => accounts.createBalanceAdjustment(
+        accountId: activeAccountId,
+        amountPaise: 100,
+        reason: 'Should not be allowed',
+        adjustmentDate: DateTime.utc(2026, 11, 8).millisecondsSinceEpoch,
+      ),
+      throwsStateError,
+    );
+  });
+
 }
