@@ -44,8 +44,14 @@ void main() {
       // subscriptions before closing the in-memory database. This prevents
       // periodic cursor/stream timers from surviving the widget test.
       await tester.pumpWidget(const SizedBox.shrink());
+      // Unmounting Riverpod stream providers schedules Drift's deferred
+      // StreamQueryStore cleanup. Closing the database can schedule the same
+      // zero-duration cleanup timers, so drain the fake-async event queue
+      // after the database has finished closing as well.
       await tester.pump();
       await testDatabase.close();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1));
     });
 
     await tester.pumpWidget(
