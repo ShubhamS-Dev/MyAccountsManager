@@ -62,8 +62,9 @@ class _EditAccountPageState extends ConsumerState<EditAccountPage> {
         error: (error, stack) =>
             const Center(child: Text('Account could not be loaded.')),
         data: (row) {
-          if (row == null)
+          if (row == null) {
             return const Center(child: Text('Account not found.'));
+          }
           if (!_initialized) {
             _nameController.text = row.name;
             _descriptionController.text = row.description ?? '';
