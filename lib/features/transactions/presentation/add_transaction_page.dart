@@ -59,7 +59,9 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
     if (amount == null ||
         amount <= 0 ||
         _accountId == null ||
-        _categoryId == null) return;
+        _categoryId == null) {
+      return;
+    }
 
     setState(() {
       _saving = true;
