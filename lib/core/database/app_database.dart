@@ -30,6 +30,7 @@ class AppDatabase extends _$AppDatabase {
           await customStatement('CREATE INDEX transactions_date_idx ON transactions (transaction_date)');
           await customStatement('CREATE INDEX transactions_deleted_date_idx ON transactions (deleted_at, transaction_date)');
           await customStatement('CREATE INDEX accounts_archived_sort_idx ON accounts (archived_at, sort_order)');
+          await customStatement('CREATE INDEX accounts_pinned_sort_idx ON accounts (is_pinned, sort_order)');
           await customStatement('CREATE INDEX categories_type_active_sort_idx ON categories (type, is_active, sort_order)');
         },
         onUpgrade: (migrator, from, to) async {
