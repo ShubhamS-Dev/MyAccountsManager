@@ -39,7 +39,7 @@ jobs:
         run: flutter pub get
 
       - name: Generate Drift code
-        run: dart run build_runner build --delete-conflicting-outputs
+        run: dart run build_runner build
 
       - name: Format Dart source
         run: dart format .
@@ -50,13 +50,13 @@ jobs:
       - name: Run tests
         run: flutter test --reporter expanded --timeout 2m --concurrency=1
 
-      - name: Commit generated and formatted Dart source
+      - name: Commit generated source and dependency lockfile
         if: github.event_name == 'push'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A -- lib test
+          git add -A -- lib test pubspec.lock
           if ! git diff --cached --quiet; then
-            git commit -m "Apply generated Dart source and formatting [skip ci]"
+            git commit -m "Apply validated generated source and dependency lockfile [skip ci]"
             git push
           fi
