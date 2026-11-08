@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../accounts/presentation/accounts_page.dart';
-import '../../accounts/accounts_providers.dart';
 import '../../../core/formatting/money_formatter.dart';
+import '../../accounts/accounts_providers.dart';
+import '../../accounts/presentation/accounts_page.dart';
 import '../../transactions/presentation/history_page.dart';
 
 class AppShell extends StatefulWidget {

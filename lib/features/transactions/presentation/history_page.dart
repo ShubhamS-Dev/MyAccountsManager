@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../accounts/accounts_providers.dart';
-import '../transactions_providers.dart';
 import '../../../core/formatting/date_timestamp.dart';
 import '../../../core/formatting/money_formatter.dart';
+import '../../accounts/accounts_providers.dart';
+import '../transactions_providers.dart';
 
 class HistoryPage extends ConsumerStatefulWidget {
   const HistoryPage({super.key});

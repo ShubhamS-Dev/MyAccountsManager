@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/formatting/date_timestamp.dart';
 import '../../accounts/accounts_providers.dart';
 import '../../categories/categories_providers.dart';
 import '../transactions_providers.dart';
-import '../../../core/formatting/date_timestamp.dart';
 
 enum TransactionKind { expense, income }
 
@@ -239,7 +239,9 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                     child: const Text('Could not load categories. Retry'),
                   ),
                   data: (categoryRows) {
-                    if (categoryRows.isEmpty) return const Text('No active categories for this transaction type.');
+                    if (categoryRows.isEmpty) {
+                      return const Text('No active categories for this transaction type.');
+                    }
                     if (_categoryId != null && !categoryRows.any((c) => c.id == _categoryId)) {
                       _categoryId = null;
                     }

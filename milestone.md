@@ -211,3 +211,11 @@ Current implementation slice (not yet CI-validated):
 
 The source changes are committed, but the new workflow must pass before this slice is considered validated. Remaining tasks include checking the new Drift SQL at runtime, adding provider/widget propagation coverage, compacting date-picker presentation, polishing shared theme and animations, and applying semantic amount colors to every remaining monetary display.
 
+
+
+### CI follow-up — Run #199
+
+- Run #199 reached Drift code generation and Dart formatting successfully.
+- `flutter analyze` failed with five lint/info findings only: import directive ordering in AppShell, Add Transaction, and History, plus missing braces around one conditional in Add Transaction.
+- Tests and Android APK build were skipped because the workflow stops on analyzer failure.
+- Corrected those source findings and queued a new validation run. Do not mark this implementation slice complete until the replacement run passes analysis, tests, and APK build.
