@@ -9,6 +9,7 @@ import 'package:my_accounts_manager/core/database/database_provider.dart';
 import 'package:my_accounts_manager/features/accounts/accounts_providers.dart';
 import 'package:my_accounts_manager/features/accounts/data/accounts_repository.dart';
 import 'package:my_accounts_manager/features/categories/categories_providers.dart';
+import 'package:my_accounts_manager/features/transactions/data/transactions_repository.dart';
 import 'package:my_accounts_manager/features/transactions/transactions_providers.dart';
 
 late AppDatabase testDatabase;
