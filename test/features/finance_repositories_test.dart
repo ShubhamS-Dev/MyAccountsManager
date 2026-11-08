@@ -56,8 +56,8 @@ void main() {
         .getSingle();
     expect(saved.amountPaise, 125050);
 
-    expect(
-      () => transactions.createTransaction(
+    await expectLater(
+      transactions.createTransaction(
         accountId: accountId,
         categoryId: expense.id,
         type: 'income',
@@ -69,8 +69,8 @@ void main() {
   });
 
   test('rejects zero and negative transaction amounts', () async {
-    expect(
-      () => transactions.createTransaction(
+    await expectLater(
+      transactions.createTransaction(
         accountId: 'missing',
         categoryId: 'missing',
         type: 'expense',
@@ -158,8 +158,8 @@ void main() {
 
   test('rejects blank Account names during edit', () async {
     final id = await accounts.createAccount(name: 'Valid');
-    expect(
-      () => accounts.updateAccount(accountId: id, name: '   '),
+    await expectLater(
+      accounts.updateAccount(accountId: id, name: '   '),
       throwsArgumentError,
     );
   });
@@ -266,8 +266,10 @@ void main() {
           .getSingleOrNull(),
       isNull,
     );
-    expect(() async => await transactions.permanentlyDeleteTransaction(id),
-        throwsStateError);
+    await expectLater(
+      transactions.permanentlyDeleteTransaction(id),
+      throwsStateError,
+    );
   });
 
   test(
@@ -339,8 +341,8 @@ void main() {
       transactionDate: DateTime.utc(2026, 11, 8).millisecondsSinceEpoch,
     );
 
-    expect(
-      () => transactions.updateTransaction(
+    await expectLater(
+      transactions.updateTransaction(
         transactionId: id,
         accountId: archivedAccountId,
         categoryId: category.id,
@@ -351,8 +353,8 @@ void main() {
       throwsStateError,
     );
     await transactions.softDeleteTransaction(id);
-    expect(
-      () => transactions.updateTransaction(
+    await expectLater(
+      transactions.updateTransaction(
         transactionId: id,
         accountId: activeAccountId,
         categoryId: category.id,
@@ -406,8 +408,8 @@ void main() {
   test('rejects zero, blank-reason, and archived Account balance adjustments',
       () async {
     final activeAccountId = await accounts.createAccount(name: 'Active');
-    expect(
-      () => accounts.createBalanceAdjustment(
+    await expectLater(
+      accounts.createBalanceAdjustment(
         accountId: activeAccountId,
         amountPaise: 0,
         reason: 'Invalid zero',
@@ -415,8 +417,8 @@ void main() {
       ),
       throwsArgumentError,
     );
-    expect(
-      () => accounts.createBalanceAdjustment(
+    await expectLater(
+      accounts.createBalanceAdjustment(
         accountId: activeAccountId,
         amountPaise: 100,
         reason: '   ',
@@ -426,8 +428,8 @@ void main() {
     );
 
     await accounts.archiveAccount(activeAccountId);
-    expect(
-      () => accounts.createBalanceAdjustment(
+    await expectLater(
+      accounts.createBalanceAdjustment(
         accountId: activeAccountId,
         amountPaise: 100,
         reason: 'Should not be allowed',
