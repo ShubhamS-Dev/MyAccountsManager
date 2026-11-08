@@ -116,6 +116,7 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
             error: (error, stack) => Center(child: TextButton(onPressed: () => ref.invalidate(allAccountsProvider), child: const Text('Could not load Accounts. Retry'))),
             data: (accountRows) {
               if (!accountRows.any((account) => account.id == _accountId)) return const Center(child: Text('The original Account is unavailable.'));
+              final categories = ref.watch(activeCategoriesByTypeProvider(_kind!));
               return Form(
                 key: _formKey,
                 child: ListView(
