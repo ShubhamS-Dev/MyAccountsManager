@@ -18,10 +18,6 @@ void main() {
     appRouter.go('/');
   });
 
-  tearDown(() async {
-    await testDatabase.close();
-  });
-
   Future<void> pumpUntilFound(
     WidgetTester tester,
     Finder finder, {
@@ -42,6 +38,15 @@ void main() {
   }
 
   Future<void> pumpApp(WidgetTester tester) async {
+    addTearDown(() async {
+      // Dispose focused text fields, route transitions, and Riverpod stream
+      // subscriptions before closing the in-memory database. This prevents
+      // periodic cursor/stream timers from surviving the widget test.
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      await testDatabase.close();
+    });
+
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
