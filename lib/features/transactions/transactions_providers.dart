@@ -34,3 +34,7 @@ final transactionHistoryProvider = StreamProvider.family<List<TransactionHistory
     type: filter.type,
   );
 });
+
+final transactionTrashProvider = StreamProvider<List<TransactionHistoryItem>>((ref) {
+  return ref.watch(transactionsRepositoryProvider).watchTrash();
+});
