@@ -26,7 +26,7 @@ This document records the approved technical baseline and separates confirmed de
 | Secure device secrets | flutter_secure_storage backed by Android Keystore |
 | Backup archive | Versioned encrypted `.khata` format |
 
-The current source foundation introduces Flutter, Riverpod, and go_router. Drift, notifications, charts, secure storage, and backup dependencies will be added with their respective implementation milestones after package compatibility and security review.
+The current source foundation introduces Flutter, Riverpod, go_router, Drift, SQLite native support, path_provider, and UUID generation. Notifications, charts, secure storage, and backup dependencies will be added with their respective implementation milestones after package compatibility and security review.
 
 ## 3. Architecture style
 Use feature-first Clean Architecture. Each feature owns its presentation, application/domain rules, and data access boundaries. Cross-feature reuse belongs in shared/core modules only when it represents genuinely shared behavior.
@@ -114,11 +114,12 @@ Implemented on the project-foundation feature branch:
 - Initial Home presentation scaffold.
 - Expense/Income segmented entry-form scaffold.
 - Initial widget tests for launch, navigation shell presence, and transaction-form routing.
+- Drift version-1 tables/database connection, built-in category seed, repository classes/providers, and initial in-memory database/repository tests (execution pending CI validation).
 
 Not implemented yet:
 - Android native platform directory and Gradle wrapper.
-- SQLite/Drift schema and repositories.
-- Real transaction persistence, validation, Account/category selection, and balance calculation.
+- Generated Drift code and runtime validation of the SQLite schema/repositories.
+- Real transaction-form integration, Account/category selection UI, balance calculation, and balance adjustments.
 - Feature workflows beyond the initial navigation and form scaffolds.
 - Backup encryption, notifications, reports, and MyKhata behavior.
 
