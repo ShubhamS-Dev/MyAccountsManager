@@ -145,7 +145,11 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
                       decoration: const InputDecoration(labelText: 'Account', border: OutlineInputBorder()),
                       items: [
                         for (final account in accountRows)
-                          DropdownMenuItem(value: account.id, child: Text('${account.name}${account.archivedAt == null ? '' : ' (Archived — keep only)'}')),
+                          DropdownMenuItem(
+                            value: account.id,
+                            enabled: account.archivedAt == null || account.id == _accountId,
+                            child: Text('${account.name}${account.archivedAt == null ? '' : ' (Archived — keep only)'}'),
+                          ),
                       ],
                       onChanged: (value) => setState(() => _accountId = value),
                       validator: (value) => value == null ? 'Select an Account.' : null,
