@@ -2,7 +2,7 @@
 
 **Status:** Initial schema proposal / implementation baseline  
 **Database:** SQLite through Drift  
-**Schema version:** 1  
+**Initial schema:** version 1; **current implementation:** version 2  
 **Date recorded:** 2026-11-08
 
 This document defines the first persistence boundary. It intentionally covers Accounts, Categories, and regular Income/Expense Transactions only. Later feature milestones will add their own tables through versioned migrations.
@@ -150,10 +150,28 @@ System category identifiers should be deterministic stable IDs derived from a do
 - Queries that calculate totals must exclude soft-deleted records and include only records effective on the selected as-of date.
 - Do not maintain a second independently mutable balance total in the Account row. If summary caching is later needed, it must be rebuildable and verified against source transactions.
 
-## 7. Deliberately deferred tables
+## 7. Version 2 addition — balance_adjustments
+
+Version 2 adds a dedicated `balance_adjustments` table through a non-destructive Drift migration. Existing version-1 Accounts, Categories, and Transactions rows are preserved.
+
+| Column | Type | Required | Meaning |
+|---|---|---:|---|
+| id | TEXT | Yes | UUID primary key |
+| account_id | TEXT | Yes | Foreign key to accounts.id |
+| amount_paise | INTEGER | Yes | Signed non-zero balance delta in paise |
+| reason | TEXT | Yes | Required explanation, maximum 500 characters |
+| adjustment_date | INTEGER | Yes | UTC-midnight date-only timestamp |
+| created_at | INTEGER | Yes | UTC audit instant |
+| updated_at | INTEGER | Yes | UTC audit instant |
+| deleted_at | INTEGER | No | Reserved soft-delete marker |
+
+Indexes: `balance_adjustments_account_date_idx(account_id, adjustment_date)` and `balance_adjustments_deleted_date_idx(deleted_at, adjustment_date)`.
+
+Rules: positive adjustments increase the Account balance; negative adjustments decrease it. Adjustments are independent of Expense/Income categories and do not create regular transactions. Only active Accounts can receive new adjustments. Balance calculations include non-deleted adjustments dated on or before the requested as-of date. Each adjustment keeps its reason and creation/update timestamps as its audit record. The current UI supports creating and viewing adjustments; edit/Trash actions are deferred.
+
+## 8. Deliberately deferred tables
 
 These are not omitted accidentally; they belong to later milestones:
-- balance_adjustments
 - payment_methods
 - attachments and attachment-owner links
 - transaction_audit
@@ -167,7 +185,7 @@ These are not omitted accidentally; they belong to later milestones:
 
 MyKhata must use its own tables and repository boundary. No MyKhata record references a regular Account or regular transaction.
 
-## 8. Open implementation checks before database code is considered complete
+## 9. Open implementation checks before database code is considered complete
 
 - Confirm chosen Drift and sqlite3 package versions against the repository's Dart/Flutter SDK constraints.
 - Generate Drift code with build_runner; commit generated source when required by the repository workflow.
