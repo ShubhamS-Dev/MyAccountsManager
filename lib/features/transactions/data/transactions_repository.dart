@@ -46,6 +46,65 @@ class TransactionsRepository {
     )).toList());
   }
 
+  Future<TransactionRow?> getTransaction(String transactionId) {
+    return (_database.select(_database.transactions)
+          ..where((row) => row.id.equals(transactionId)))
+        .getSingleOrNull();
+  }
+
+  Future<void> updateTransaction({
+    required String transactionId,
+    required String accountId,
+    required String categoryId,
+    required String type,
+    required int amountPaise,
+    required int transactionDate,
+    String? note,
+  }) async {
+    if (type != 'expense' && type != 'income') {
+      throw ArgumentError.value(type, 'type', 'Expected expense or income.');
+    }
+    if (amountPaise <= 0) {
+      throw ArgumentError.value(amountPaise, 'amountPaise', 'Amount must be positive paise.');
+    }
+
+    await _database.transaction(() async {
+      final existing = await (_database.select(_database.transactions)
+            ..where((row) => row.id.equals(transactionId) & row.deletedAt.isNull()))
+          .getSingleOrNull();
+      if (existing == null) throw StateError('Transaction was not found or is in Trash.');
+
+      final account = await (_database.select(_database.accounts)
+            ..where((row) => row.id.equals(accountId)))
+          .getSingleOrNull();
+      final keepingArchivedAccount = account != null &&
+          account.archivedAt != null &&
+          existing.accountId == accountId;
+      if (account == null || (account.archivedAt != null && !keepingArchivedAccount)) {
+        throw StateError('Select an active Account. An existing archived Account can be kept unchanged.');
+      }
+
+      final category = await (_database.select(_database.categories)
+            ..where((row) => row.id.equals(categoryId)))
+          .getSingleOrNull();
+      if (category == null || !category.isActive || category.type != type) {
+        throw StateError('Select an active category matching the transaction type.');
+      }
+
+      await (_database.update(_database.transactions)
+            ..where((row) => row.id.equals(transactionId) & row.deletedAt.isNull()))
+          .write(TransactionsCompanion(
+            accountId: Value(accountId),
+            categoryId: Value(categoryId),
+            type: Value(type),
+            amountPaise: Value(amountPaise),
+            transactionDate: Value(transactionDate),
+            note: Value(note?.trim().isEmpty == true ? null : note?.trim()),
+            updatedAt: Value(DateTime.now().toUtc().millisecondsSinceEpoch),
+          ));
+    });
+  }
+
   Future<void> softDeleteTransaction(String transactionId) async {
     final now = DateTime.now().toUtc().millisecondsSinceEpoch;
     final changed = await (_database.update(_database.transactions)
