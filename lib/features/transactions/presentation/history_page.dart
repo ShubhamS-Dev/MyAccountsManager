@@ -225,9 +225,10 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                                 context.push(
                                     '/transaction/${transaction.id}/edit');
                               }
-                              if (action == 'trash')
+                              if (action == 'trash') {
                                 _moveToTrash(
                                     transaction.id, transaction.accountId);
+                              }
                             },
                             itemBuilder: (_) => const [
                               PopupMenuItem(
