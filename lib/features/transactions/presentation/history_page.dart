@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../accounts/accounts_providers.dart';
 import '../transactions_providers.dart';
@@ -101,6 +102,14 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                   child: Text('${_range!.start.day}/${_range!.start.month}/${_range!.start.year} – ${_range!.end.day}/${_range!.end.month}/${_range!.end.year}', style: Theme.of(context).textTheme.bodySmall),
                 ),
               ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: () => context.push('/transactions/trash'),
+                icon: const Icon(Icons.delete_outline),
+                label: const Text('Trash'),
+              ),
+            ),
           ]),
         ),
         const Divider(height: 1),
