@@ -36,7 +36,38 @@ class AccountsPage extends ConsumerWidget {
                 leading: const CircleAvatar(child: Icon(Icons.account_balance_wallet_outlined)),
                 title: Text(account.name),
                 subtitle: account.description == null ? null : Text(account.description!),
-                trailing: account.isPinned ? const Icon(Icons.push_pin, size: 18) : null,
+                trailing: PopupMenuButton<String>(
+                  onSelected: (action) async {
+                    final repository = ref.read(accountsRepositoryProvider);
+                    if (action == 'edit') {
+                      context.push('/accounts/\${account.id}/edit');
+                    } else if (action == 'pin' || action == 'unpin') {
+                      await repository.setPinned('\${account.id}', pinned: action == 'pin');
+                      ref.invalidate(activeAccountsProvider);
+                    } else if (action == 'archive') {
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (dialogContext) => AlertDialog(
+                          title: const Text('Archive Account?'),
+                          content: const Text('\${account.name} will be hidden from active Accounts. Its transactions and history will be preserved.'),
+                          actions: [
+                            TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancel')),
+                            FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('Archive')),
+                          ],
+                        ),
+                      );
+                      if (confirmed == true) {
+                        await repository.archiveAccount('\${account.id}');
+                        ref.invalidate(activeAccountsProvider);
+                      }
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                    PopupMenuItem(value: account.isPinned ? 'unpin' : 'pin', child: Text(account.isPinned ? 'Unpin' : 'Pin to top')),
+                    const PopupMenuItem(value: 'archive', child: Text('Archive')),
+                  ],
+                ),
               )),
           ]);
         },
