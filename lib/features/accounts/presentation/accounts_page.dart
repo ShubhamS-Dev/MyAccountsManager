@@ -55,7 +55,7 @@ class AccountsPage extends ConsumerWidget {
                         context: context,
                         builder: (dialogContext) => AlertDialog(
                           title: const Text('Archive Account?'),
-                          content: const Text('${account.name} will be hidden from active Accounts. Its transactions and history will be preserved.'),
+                          content: Text('${account.name} will be hidden from active Accounts. Its transactions and history will be preserved.'),
                           actions: [
                             TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancel')),
                             FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('Archive')),
