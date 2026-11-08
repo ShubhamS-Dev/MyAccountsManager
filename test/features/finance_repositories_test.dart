@@ -136,4 +136,25 @@ void main() {
     expect(balance, isNull);
   });
 
+  test('updates Account details and pin state without changing opening balance', () async {
+    final id = await accounts.createAccount(name: 'Old name', openingBalancePaise: 12345);
+    await accounts.updateAccount(accountId: id, name: 'New name', description: 'Updated');
+    await accounts.setPinned(id, pinned: true);
+    final row = await accounts.getAccount(id);
+    expect(row?.name, 'New name');
+    expect(row?.description, 'Updated');
+    expect(row?.openingBalancePaise, 12345);
+    expect(row?.isPinned, isTrue);
+    await accounts.setPinned(id, pinned: false);
+    expect((await accounts.getAccount(id))?.isPinned, isFalse);
+  });
+
+  test('rejects blank Account names during edit', () async {
+    final id = await accounts.createAccount(name: 'Valid');
+    expect(
+      () => accounts.updateAccount(accountId: id, name: '   '),
+      throwsArgumentError,
+    );
+  });
+
 }
