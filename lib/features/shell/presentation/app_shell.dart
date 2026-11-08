@@ -190,7 +190,7 @@ class _GettingStartedCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             const Text(
-              'Account creation will be enabled in the Accounts milestone.',
+              'Open the Accounts tab to create and manage your financial spaces.',
               style: TextStyle(fontSize: 12, color: Colors.grey),
             ),
           ],
