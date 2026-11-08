@@ -7,14 +7,6 @@ import '../transactions_providers.dart';
 class TransactionTrashPage extends ConsumerWidget {
   const TransactionTrashPage({super.key});
 
-  String _money(int paise) {
-    final absolute = paise.abs();
-    final digits = (absolute ~/ 100).toString();
-    final grouped = digits.replaceAllMapped(RegExp(r'(?<=\d)(?=(\d{2})+\d{3}$)'), (_) => ',');
-    final fraction = absolute % 100;
-    return '${paise < 0 ? '-' : ''}₹$grouped${fraction == 0 ? '' : '.${fraction.toString().padLeft(2, '0')}'}';
-  }
-
   String _dateLabel(int timestamp) {
     final date = DateTime.fromMillisecondsSinceEpoch(timestamp, isUtc: true);
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
