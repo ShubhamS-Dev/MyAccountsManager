@@ -17,6 +17,9 @@ permissions:
 
 jobs:
   validate:
+    concurrency:
+      group: flutter-validation-${{ github.ref }}
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source
@@ -48,7 +51,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A -- '*.dart' '*.g.dart'
+          git add -A -- lib test
           if ! git diff --cached --quiet; then
             git commit -m "Apply Dart fixes and formatting [skip ci]"
             git push
