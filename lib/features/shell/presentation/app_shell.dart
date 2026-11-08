@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../accounts/presentation/accounts_page.dart';
+
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
 
@@ -36,11 +38,7 @@ class _AppShellState extends State<AppShell> {
         index: _selectedIndex,
         children: const [
           _HomeFoundationPage(),
-          _PlaceholderPage(
-            title: 'Accounts',
-            description: 'Your independent financial spaces will appear here.',
-            icon: Icons.account_balance_wallet_outlined,
-          ),
+          AccountsPage(),
           _PlaceholderPage(
             title: 'History',
             description: 'Income, expenses and balance adjustments will appear here.',
