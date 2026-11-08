@@ -9,6 +9,8 @@ class AccountsRepository {
   final AppDatabase _database;
   static const _uuid = Uuid();
 
+  Stream<List<AccountRow>> watchAllAccounts() => (_database.select(_database.accounts)..orderBy([(a) => OrderingTerm.asc(a.name)])).watch();
+
   Stream<List<AccountRow>> watchActiveAccounts() {
     return (_database.select(_database.accounts)
           ..where((account) => account.archivedAt.isNull())
