@@ -163,7 +163,9 @@ class TransactionsRepository {
       deletedAt: const Value(null),
       updatedAt: Value(now),
     ));
-    if (changed == 0) throw StateError('Transaction was not found in Trash.');
+    if (changed == 0) {
+      throw StateError('Transaction was not found in Trash.');
+    }
   }
 
   Future<void> permanentlyDeleteTransaction(String transactionId) async {
