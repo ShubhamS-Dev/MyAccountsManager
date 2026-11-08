@@ -79,6 +79,39 @@ class AccountsRepository {
     return balancePaise;
   }
 
+  Future<void> updateAccount({
+    required String accountId,
+    required String name,
+    String? description,
+  }) async {
+    final normalizedName = name.trim();
+    if (normalizedName.isEmpty) {
+      throw ArgumentError.value(name, 'name', 'Account name is required.');
+    }
+    final now = DateTime.now().toUtc().millisecondsSinceEpoch;
+    final changed = await (_database.update(_database.accounts)
+          ..where((row) => row.id.equals(accountId))
+          ..where((row) => row.archivedAt.isNull()))
+        .write(AccountsCompanion(
+      name: Value(normalizedName),
+      description: Value(description?.trim().isEmpty == true ? null : description?.trim()),
+      updatedAt: Value(now),
+    ));
+    if (changed == 0) throw StateError('Account not found or archived.');
+  }
+
+  Future<void> setPinned(String accountId, {required bool pinned}) async {
+    final now = DateTime.now().toUtc().millisecondsSinceEpoch;
+    final changed = await (_database.update(_database.accounts)
+          ..where((row) => row.id.equals(accountId))
+          ..where((row) => row.archivedAt.isNull()))
+        .write(AccountsCompanion(
+      isPinned: Value(pinned),
+      updatedAt: Value(now),
+    ));
+    if (changed == 0) throw StateError('Account not found or archived.');
+  }
+
   Future<void> archiveAccount(String accountId) async {
     final now = DateTime.now().toUtc().millisecondsSinceEpoch;
     await (_database.update(_database.accounts)
