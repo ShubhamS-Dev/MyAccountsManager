@@ -18,10 +18,12 @@ late AccountRow testAccount;
 void main() {
   setUp(() async {
     testDatabase = AppDatabase.forTesting(NativeDatabase.memory());
-    final accountId = await AccountsRepository(testDatabase).createAccount(
-      name: 'Widget test Account',
-    );
-    testAccount = (await AccountsRepository(testDatabase).getAccount(accountId))!;
+    final accountId = await AccountsRepository(
+      testDatabase,
+    ).createAccount(name: 'Widget test Account');
+    testAccount = (await AccountsRepository(
+      testDatabase,
+    ).getAccount(accountId))!;
     appRouter.go('/');
   });
 
@@ -39,7 +41,8 @@ void main() {
     expect(
       finder,
       findsOneWidget,
-      reason: 'The expected widget did not appear within '
+      reason:
+          'The expected widget did not appear within '
           '${interval * maxPumps}.',
     );
   }
@@ -82,8 +85,9 @@ void main() {
     await pumpUntilFound(tester, find.text('Home'));
   }
 
-  testWidgets('launches the home dashboard with primary navigation',
-      (tester) async {
+  testWidgets('launches the home dashboard with primary navigation', (
+    tester,
+  ) async {
     await pumpApp(tester);
 
     expect(find.text('Your money, clearly organised.'), findsOneWidget);
@@ -91,19 +95,22 @@ void main() {
     expect(find.text('MyKhata'), findsOneWidget);
   });
 
-  testWidgets('opens the add transaction form from the floating action button',
-      (tester) async {
-    await pumpApp(tester);
+  testWidgets(
+    'opens the add transaction form from the floating action button',
+    (tester) async {
+      await pumpApp(tester);
 
-    await tester.tap(find.byTooltip('Add transaction'));
-    await pumpUntilFound(tester, find.text('How much did you spend?'));
+      await tester.tap(find.byTooltip('Add transaction'));
+      await pumpUntilFound(tester, find.text('How much did you spend?'));
 
-    expect(find.text('Add transaction'), findsOneWidget);
-    expect(find.text('How much did you spend?'), findsOneWidget);
-  });
+      expect(find.text('Add transaction'), findsOneWidget);
+      expect(find.text('How much did you spend?'), findsOneWidget);
+    },
+  );
 
-  testWidgets('switches the transaction form from expense to income',
-      (tester) async {
+  testWidgets('switches the transaction form from expense to income', (
+    tester,
+  ) async {
     await pumpApp(tester);
 
     await tester.tap(find.byTooltip('Add transaction'));

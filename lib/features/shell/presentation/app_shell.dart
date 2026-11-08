@@ -17,7 +17,9 @@ class _AppShellState extends State<AppShell> {
   static const _destinations = [
     _ShellDestination(label: 'Home', icon: Icons.home_outlined),
     _ShellDestination(
-        label: 'Accounts', icon: Icons.account_balance_wallet_outlined),
+      label: 'Accounts',
+      icon: Icons.account_balance_wallet_outlined,
+    ),
     _ShellDestination(label: 'History', icon: Icons.receipt_long_outlined),
     _ShellDestination(label: 'MyKhata', icon: Icons.people_outline),
     _ShellDestination(label: 'More', icon: Icons.grid_view_outlined),
@@ -95,16 +97,16 @@ class _HomeFoundationPage extends StatelessWidget {
       children: [
         Text(
           'Your money, clearly organised.',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 6),
         Text(
           'A private, offline space for your finances.',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
         const SizedBox(height: 24),
         const _SummaryCard(),
@@ -147,14 +149,16 @@ class _SummaryCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Total balance',
-                style: Theme.of(context).textTheme.titleSmall),
+            Text(
+              'Total balance',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
             const SizedBox(height: 8),
             Text(
               '₹0.00',
-              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 6),
             Text(

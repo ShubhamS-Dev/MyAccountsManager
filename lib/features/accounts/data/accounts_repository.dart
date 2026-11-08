@@ -9,10 +9,9 @@ class AccountsRepository {
   final AppDatabase _database;
   static const _uuid = Uuid();
 
-  Stream<List<AccountRow>> watchAllAccounts() =>
-      (_database.select(_database.accounts)
-            ..orderBy([(a) => OrderingTerm.asc(a.name)]))
-          .watch();
+  Stream<List<AccountRow>> watchAllAccounts() => (_database.select(
+    _database.accounts,
+  )..orderBy([(a) => OrderingTerm.asc(a.name)])).watch();
 
   Stream<List<AccountRow>> watchActiveAccounts() {
     return (_database.select(_database.accounts)
@@ -46,13 +45,15 @@ class AccountsRepository {
 
     final now = DateTime.now().toUtc().millisecondsSinceEpoch;
     final id = _uuid.v4();
-    await _database.into(_database.accounts).insert(
+    await _database
+        .into(_database.accounts)
+        .insert(
           AccountsCompanion.insert(
             id: id,
             name: normalizedName,
-            description: Value(description?.trim().isEmpty == true
-                ? null
-                : description?.trim()),
+            description: Value(
+              description?.trim().isEmpty == true ? null : description?.trim(),
+            ),
             openingBalancePaise: Value(openingBalancePaise),
             iconKey: Value(iconKey),
             colorValue: Value(colorValue),
@@ -82,24 +83,32 @@ class AccountsRepository {
   }) async {
     if (amountPaise == 0) {
       throw ArgumentError.value(
-          amountPaise, 'amountPaise', 'Adjustment must not be zero.');
+        amountPaise,
+        'amountPaise',
+        'Adjustment must not be zero.',
+      );
     }
     final normalizedReason = reason.trim();
     if (normalizedReason.isEmpty || normalizedReason.length > 500) {
       throw ArgumentError.value(
-          reason, 'reason', 'Enter a reason of up to 500 characters.');
+        reason,
+        'reason',
+        'Enter a reason of up to 500 characters.',
+      );
     }
 
     return _database.transaction(() async {
-      final account = await (_database.select(_database.accounts)
-            ..where((row) => row.id.equals(accountId)))
-          .getSingleOrNull();
+      final account = await (_database.select(
+        _database.accounts,
+      )..where((row) => row.id.equals(accountId))).getSingleOrNull();
       if (account == null || account.archivedAt != null) {
         throw StateError('Select an active Account to adjust its balance.');
       }
       final now = DateTime.now().toUtc().millisecondsSinceEpoch;
       final id = _uuid.v4();
-      await _database.into(_database.balanceAdjustments).insert(
+      await _database
+          .into(_database.balanceAdjustments)
+          .insert(
             BalanceAdjustmentsCompanion.insert(
               id: id,
               accountId: accountId,
@@ -122,22 +131,28 @@ class AccountsRepository {
     required String accountId,
     required int asOfDate,
   }) async {
-    final account = await (_database.select(_database.accounts)
-          ..where((row) => row.id.equals(accountId)))
-        .getSingleOrNull();
+    final account = await (_database.select(
+      _database.accounts,
+    )..where((row) => row.id.equals(accountId))).getSingleOrNull();
     if (account == null) return null;
 
-    final entries = await (_database.select(_database.transactions)
-          ..where((row) => row.accountId.equals(accountId))
-          ..where((row) => row.deletedAt.isNull())
-          ..where((row) => row.transactionDate.isSmallerOrEqualValue(asOfDate)))
-        .get();
+    final entries =
+        await (_database.select(_database.transactions)
+              ..where((row) => row.accountId.equals(accountId))
+              ..where((row) => row.deletedAt.isNull())
+              ..where(
+                (row) => row.transactionDate.isSmallerOrEqualValue(asOfDate),
+              ))
+            .get();
 
-    final adjustments = await (_database.select(_database.balanceAdjustments)
-          ..where((row) => row.accountId.equals(accountId))
-          ..where((row) => row.deletedAt.isNull())
-          ..where((row) => row.adjustmentDate.isSmallerOrEqualValue(asOfDate)))
-        .get();
+    final adjustments =
+        await (_database.select(_database.balanceAdjustments)
+              ..where((row) => row.accountId.equals(accountId))
+              ..where((row) => row.deletedAt.isNull())
+              ..where(
+                (row) => row.adjustmentDate.isSmallerOrEqualValue(asOfDate),
+              ))
+            .get();
 
     var balancePaise = account.openingBalancePaise;
     for (final adjustment in adjustments) {
@@ -154,9 +169,9 @@ class AccountsRepository {
   }
 
   Future<AccountRow?> getAccount(String accountId) {
-    return (_database.select(_database.accounts)
-          ..where((row) => row.id.equals(accountId)))
-        .getSingleOrNull();
+    return (_database.select(
+      _database.accounts,
+    )..where((row) => row.id.equals(accountId))).getSingleOrNull();
   }
 
   Future<void> updateAccount({
@@ -169,39 +184,48 @@ class AccountsRepository {
       throw ArgumentError.value(name, 'name', 'Account name is required.');
     }
     final now = DateTime.now().toUtc().millisecondsSinceEpoch;
-    final changed = await (_database.update(_database.accounts)
-          ..where((row) => row.id.equals(accountId))
-          ..where((row) => row.archivedAt.isNull()))
-        .write(AccountsCompanion(
-      name: Value(normalizedName),
-      description: Value(
-          description?.trim().isEmpty == true ? null : description?.trim()),
-      updatedAt: Value(now),
-    ));
+    final changed =
+        await (_database.update(_database.accounts)
+              ..where((row) => row.id.equals(accountId))
+              ..where((row) => row.archivedAt.isNull()))
+            .write(
+              AccountsCompanion(
+                name: Value(normalizedName),
+                description: Value(
+                  description?.trim().isEmpty == true
+                      ? null
+                      : description?.trim(),
+                ),
+                updatedAt: Value(now),
+              ),
+            );
     if (changed == 0) throw StateError('Account not found or archived.');
   }
 
   Future<void> setPinned(String accountId, {required bool pinned}) async {
     final now = DateTime.now().toUtc().millisecondsSinceEpoch;
-    final changed = await (_database.update(_database.accounts)
-          ..where((row) => row.id.equals(accountId))
-          ..where((row) => row.archivedAt.isNull()))
-        .write(AccountsCompanion(
-      isPinned: Value(pinned),
-      updatedAt: Value(now),
-    ));
+    final changed =
+        await (_database.update(_database.accounts)
+              ..where((row) => row.id.equals(accountId))
+              ..where((row) => row.archivedAt.isNull()))
+            .write(
+              AccountsCompanion(isPinned: Value(pinned), updatedAt: Value(now)),
+            );
     if (changed == 0) throw StateError('Account not found or archived.');
   }
 
   Future<void> restoreAccount(String accountId) async {
     final now = DateTime.now().toUtc().millisecondsSinceEpoch;
-    final changed = await (_database.update(_database.accounts)
-          ..where((account) => account.id.equals(accountId))
-          ..where((account) => account.archivedAt.isNotNull()))
-        .write(AccountsCompanion(
-      archivedAt: const Value(null),
-      updatedAt: Value(now),
-    ));
+    final changed =
+        await (_database.update(_database.accounts)
+              ..where((account) => account.id.equals(accountId))
+              ..where((account) => account.archivedAt.isNotNull()))
+            .write(
+              AccountsCompanion(
+                archivedAt: const Value(null),
+                updatedAt: Value(now),
+              ),
+            );
     if (changed == 0) throw StateError('Archived Account not found.');
   }
 
@@ -210,9 +234,8 @@ class AccountsRepository {
     await (_database.update(_database.accounts)
           ..where((account) => account.id.equals(accountId))
           ..where((account) => account.archivedAt.isNull()))
-        .write(AccountsCompanion(
-      archivedAt: Value(now),
-      updatedAt: Value(now),
-    ));
+        .write(
+          AccountsCompanion(archivedAt: Value(now), updatedAt: Value(now)),
+        );
   }
 }

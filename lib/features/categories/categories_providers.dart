@@ -10,5 +10,5 @@ final categoriesRepositoryProvider = Provider<CategoriesRepository>((ref) {
 
 final activeCategoriesByTypeProvider =
     StreamProvider.family<List<CategoryRow>, String>((ref, type) {
-  return ref.watch(categoriesRepositoryProvider).watchActiveByType(type);
-});
+      return ref.watch(categoriesRepositoryProvider).watchActiveByType(type);
+    });

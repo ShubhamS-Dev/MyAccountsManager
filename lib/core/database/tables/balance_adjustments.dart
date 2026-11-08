@@ -18,7 +18,7 @@ class BalanceAdjustments extends Table {
 
   @override
   List<String> get customConstraints => [
-        'CHECK (amount_paise != 0)',
-        'CHECK (length(trim(reason)) > 0)',
-      ];
+    'CHECK (amount_paise != 0)',
+    'CHECK (length(trim(reason)) > 0)',
+  ];
 }

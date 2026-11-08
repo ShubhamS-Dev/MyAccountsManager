@@ -12,10 +12,7 @@ import '../features/transactions/presentation/transaction_trash_page.dart';
 final appRouter = GoRouter(
   initialLocation: '/',
   routes: [
-    GoRoute(
-      path: '/',
-      builder: (context, state) => const AppShell(),
-    ),
+    GoRoute(path: '/', builder: (context, state) => const AppShell()),
     GoRoute(
       path: '/accounts/archived',
       builder: (context, state) => const ArchivedAccountsPage(),
@@ -28,7 +25,8 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/accounts/:accountId/adjustments',
       builder: (context, state) => AccountBalanceAdjustmentsPage(
-          accountId: state.pathParameters['accountId']!),
+        accountId: state.pathParameters['accountId']!,
+      ),
     ),
     GoRoute(
       path: '/accounts/new',
@@ -37,7 +35,8 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/transaction/:transactionId/edit',
       builder: (context, state) => EditTransactionPage(
-          transactionId: state.pathParameters['transactionId']!),
+        transactionId: state.pathParameters['transactionId']!,
+      ),
     ),
     GoRoute(
       path: '/transactions/trash',

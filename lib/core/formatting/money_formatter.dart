@@ -32,7 +32,8 @@ class MoneyFormatter {
       throw const FormatException('Amount is too large or invalid.');
     }
     final paise = int.parse(
-        fraction.padRight(2, '0').isEmpty ? '0' : fraction.padRight(2, '0'));
+      fraction.padRight(2, '0').isEmpty ? '0' : fraction.padRight(2, '0'),
+    );
     final result = rupees * 100 + paise;
     return negative ? -result : result;
   }

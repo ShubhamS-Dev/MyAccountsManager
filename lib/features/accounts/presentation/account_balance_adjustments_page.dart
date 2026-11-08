@@ -45,9 +45,15 @@ class _AccountBalanceAdjustmentsPageState
     final absolute = paise.abs();
     final digits = (absolute ~/ 100).toString();
     final grouped = digits.replaceAllMapped(
-        RegExp(r'(?<=\d)(?=(\d{2})+\d{3}$)'), (_) => ',');
+      RegExp(r'(?<=\d)(?=(\d{2})+\d{3}$)'),
+      (_) => ',',
+    );
     final fraction = absolute % 100;
-    return '${paise < 0 ? '-' : paise > 0 ? '+' : ''}₹$grouped${fraction == 0 ? '' : '.${fraction.toString().padLeft(2, '0')}'}';
+    return '${paise < 0
+        ? '-'
+        : paise > 0
+        ? '+'
+        : ''}₹$grouped${fraction == 0 ? '' : '.${fraction.toString().padLeft(2, '0')}'}';
   }
 
   String _dateLabel(int timestamp) {
@@ -74,12 +80,17 @@ class _AccountBalanceAdjustmentsPageState
       _error = null;
     });
     try {
-      await ref.read(accountsRepositoryProvider).createBalanceAdjustment(
+      await ref
+          .read(accountsRepositoryProvider)
+          .createBalanceAdjustment(
             accountId: widget.accountId,
             amountPaise: amount,
             reason: _reasonController.text,
-            adjustmentDate: DateTime.utc(_date.year, _date.month, _date.day)
-                .millisecondsSinceEpoch,
+            adjustmentDate: DateTime.utc(
+              _date.year,
+              _date.month,
+              _date.day,
+            ).millisecondsSinceEpoch,
           );
       if (!mounted) return;
       ref.invalidate(accountBalancePaiseProvider(widget.accountId));
@@ -121,14 +132,18 @@ class _AccountBalanceAdjustmentsPageState
               Text(row.name, style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 4),
               const Text(
-                  'Add a signed correction without changing the original opening balance.'),
+                'Add a signed correction without changing the original opening balance.',
+              ),
               const SizedBox(height: 16),
               if (isArchived)
                 const Card(
-                    child: Padding(
-                        padding: EdgeInsets.all(12),
-                        child: Text(
-                            'This Account is archived. Restore it before adding a balance adjustment.')))
+                  child: Padding(
+                    padding: EdgeInsets.all(12),
+                    child: Text(
+                      'This Account is archived. Restore it before adding a balance adjustment.',
+                    ),
+                  ),
+                )
               else
                 Card(
                   child: Padding(
@@ -141,12 +156,15 @@ class _AccountBalanceAdjustmentsPageState
                           TextFormField(
                             controller: _amountController,
                             keyboardType: const TextInputType.numberWithOptions(
-                                decimal: true, signed: true),
+                              decimal: true,
+                              signed: true,
+                            ),
                             decoration: const InputDecoration(
-                                labelText: 'Adjustment amount',
-                                prefixText: '₹ ',
-                                hintText: '+500 or -250.50',
-                                border: OutlineInputBorder()),
+                              labelText: 'Adjustment amount',
+                              prefixText: '₹ ',
+                              hintText: '+500 or -250.50',
+                              border: OutlineInputBorder(),
+                            ),
                             validator: (value) {
                               final amount = _parseSignedPaise(value ?? '');
                               return amount == null || amount == 0
@@ -161,29 +179,32 @@ class _AccountBalanceAdjustmentsPageState
                             maxLines: 2,
                             textCapitalization: TextCapitalization.sentences,
                             decoration: const InputDecoration(
-                                labelText: 'Reason *',
-                                hintText:
-                                    'Why is this balance being corrected?',
-                                border: OutlineInputBorder()),
+                              labelText: 'Reason *',
+                              hintText: 'Why is this balance being corrected?',
+                              border: OutlineInputBorder(),
+                            ),
                             validator: (value) =>
                                 value == null || value.trim().isEmpty
-                                    ? 'Enter a reason for the adjustment.'
-                                    : null,
+                                ? 'Enter a reason for the adjustment.'
+                                : null,
                           ),
                           ListTile(
                             contentPadding: EdgeInsets.zero,
                             leading: const Icon(Icons.calendar_today_outlined),
                             title: const Text('Adjustment date'),
                             subtitle: Text(
-                                '${_date.day.toString().padLeft(2, '0')}/${_date.month.toString().padLeft(2, '0')}/${_date.year}'),
+                              '${_date.day.toString().padLeft(2, '0')}/${_date.month.toString().padLeft(2, '0')}/${_date.year}',
+                            ),
                             trailing: const Icon(Icons.chevron_right_rounded),
                             onTap: _pickDate,
                           ),
                           if (_error != null)
-                            Text(_error!,
-                                style: TextStyle(
-                                    color:
-                                        Theme.of(context).colorScheme.error)),
+                            Text(
+                              _error!,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.error,
+                              ),
+                            ),
                           const SizedBox(height: 8),
                           FilledButton(
                             onPressed: _saving ? null : _save,
@@ -192,7 +213,9 @@ class _AccountBalanceAdjustmentsPageState
                                     height: 18,
                                     width: 18,
                                     child: CircularProgressIndicator(
-                                        strokeWidth: 2))
+                                      strokeWidth: 2,
+                                    ),
+                                  )
                                 : const Text('Save adjustment'),
                           ),
                         ],
@@ -201,36 +224,41 @@ class _AccountBalanceAdjustmentsPageState
                   ),
                 ),
               const SizedBox(height: 20),
-              Text('Adjustment history',
-                  style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                'Adjustment history',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
               const SizedBox(height: 8),
               adjustments.when(
                 loading: () => const LinearProgressIndicator(),
                 error: (error, stack) => TextButton(
-                    onPressed: () => ref.invalidate(
-                        balanceAdjustmentsProvider(widget.accountId)),
-                    child: const Text('Could not load adjustments. Retry')),
+                  onPressed: () => ref.invalidate(
+                    balanceAdjustmentsProvider(widget.accountId),
+                  ),
+                  child: const Text('Could not load adjustments. Retry'),
+                ),
                 data: (items) {
                   if (items.isEmpty) {
                     return const Padding(
-                        padding: EdgeInsets.all(16),
-                        child: Text('No balance adjustments yet.'));
+                      padding: EdgeInsets.all(16),
+                      child: Text('No balance adjustments yet.'),
+                    );
                   }
                   return Column(
                     children: [
                       for (final item in items)
                         Card(
                           child: ListTile(
-                            leading: Icon(item.amountPaise > 0
-                                ? Icons.add_circle_outline
-                                : Icons.remove_circle_outline),
+                            leading: Icon(
+                              item.amountPaise > 0
+                                  ? Icons.add_circle_outline
+                                  : Icons.remove_circle_outline,
+                            ),
                             title: Text(item.reason),
                             subtitle: Text(_dateLabel(item.adjustmentDate)),
                             trailing: Text(
                               _money(item.amountPaise),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleSmall
+                              style: Theme.of(context).textTheme.titleSmall
                                   ?.copyWith(fontWeight: FontWeight.w700),
                             ),
                           ),

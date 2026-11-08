@@ -53,8 +53,10 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
     _accountId = transaction.accountId;
     _categoryId = transaction.categoryId;
     _kind = transaction.type;
-    _date = DateTime.fromMillisecondsSinceEpoch(transaction.transactionDate,
-        isUtc: true);
+    _date = DateTime.fromMillisecondsSinceEpoch(
+      transaction.transactionDate,
+      isUtc: true,
+    );
     final amount = transaction.amountPaise;
     _amountController.text =
         '${amount ~/ 100}.${(amount % 100).toString().padLeft(2, '0')}';
@@ -89,9 +91,14 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
       _error = null;
     });
     try {
-      final dateOnlyUtc = DateTime.utc(_date!.year, _date!.month, _date!.day)
-          .millisecondsSinceEpoch;
-      await ref.read(transactionsRepositoryProvider).updateTransaction(
+      final dateOnlyUtc = DateTime.utc(
+        _date!.year,
+        _date!.month,
+        _date!.day,
+      ).millisecondsSinceEpoch;
+      await ref
+          .read(transactionsRepositoryProvider)
+          .updateTransaction(
             transactionId: widget.transactionId,
             accountId: _accountId!,
             categoryId: _categoryId!,
@@ -117,8 +124,9 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
 
   @override
   Widget build(BuildContext context) {
-    final transaction =
-        ref.watch(transactionByIdProvider(widget.transactionId));
+    final transaction = ref.watch(
+      transactionByIdProvider(widget.transactionId),
+    );
     final accounts = ref.watch(allAccountsProvider);
 
     return Scaffold(
@@ -135,8 +143,10 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
         data: (row) {
           if (row == null || row.deletedAt != null) {
             return const Center(
-                child: Text(
-                    'This transaction is unavailable or has been moved to Trash.'));
+              child: Text(
+                'This transaction is unavailable or has been moved to Trash.',
+              ),
+            );
           }
           _initialize(row);
           return accounts.when(
@@ -150,10 +160,12 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
             data: (accountRows) {
               if (!accountRows.any((account) => account.id == _accountId)) {
                 return const Center(
-                    child: Text('The original Account is unavailable.'));
+                  child: Text('The original Account is unavailable.'),
+                );
               }
-              final categories =
-                  ref.watch(activeCategoriesByTypeProvider(_kind!));
+              final categories = ref.watch(
+                activeCategoriesByTypeProvider(_kind!),
+              );
               return Form(
                 key: _formKey,
                 child: ListView(
@@ -162,13 +174,15 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
                     SegmentedButton<String>(
                       segments: const [
                         ButtonSegment(
-                            value: 'expense',
-                            label: Text('Expense'),
-                            icon: Icon(Icons.arrow_upward_rounded)),
+                          value: 'expense',
+                          label: Text('Expense'),
+                          icon: Icon(Icons.arrow_upward_rounded),
+                        ),
                         ButtonSegment(
-                            value: 'income',
-                            label: Text('Income'),
-                            icon: Icon(Icons.arrow_downward_rounded)),
+                          value: 'income',
+                          label: Text('Income'),
+                          icon: Icon(Icons.arrow_downward_rounded),
+                        ),
                       ],
                       selected: {_kind!},
                       onSelectionChanged: (selection) => setState(() {
@@ -179,12 +193,14 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
                     const SizedBox(height: 20),
                     TextFormField(
                       controller: _amountController,
-                      keyboardType:
-                          const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       decoration: const InputDecoration(
-                          prefixText: '₹ ',
-                          labelText: 'Amount',
-                          border: OutlineInputBorder()),
+                        prefixText: '₹ ',
+                        labelText: 'Amount',
+                        border: OutlineInputBorder(),
+                      ),
                       validator: (value) {
                         final paise = _parsePaise(value ?? '');
                         return paise == null || paise <= 0
@@ -196,15 +212,19 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
                     DropdownButtonFormField<String>(
                       initialValue: _accountId,
                       decoration: const InputDecoration(
-                          labelText: 'Account', border: OutlineInputBorder()),
+                        labelText: 'Account',
+                        border: OutlineInputBorder(),
+                      ),
                       items: [
                         for (final account in accountRows)
                           DropdownMenuItem(
                             value: account.id,
-                            enabled: account.archivedAt == null ||
+                            enabled:
+                                account.archivedAt == null ||
                                 account.id == _accountId,
                             child: Text(
-                                '${account.name}${account.archivedAt == null ? '' : ' (Archived — keep only)'}'),
+                              '${account.name}${account.archivedAt == null ? '' : ' (Archived — keep only)'}',
+                            ),
                           ),
                       ],
                       onChanged: (value) => setState(() => _accountId = value),
@@ -215,30 +235,35 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
                     categories.when(
                       loading: () => const LinearProgressIndicator(),
                       error: (error, stack) => TextButton(
-                        onPressed: () => ref
-                            .invalidate(activeCategoriesByTypeProvider(_kind!)),
+                        onPressed: () => ref.invalidate(
+                          activeCategoriesByTypeProvider(_kind!),
+                        ),
                         child: const Text('Could not load categories. Retry'),
                       ),
                       data: (categoryRows) {
                         if (_categoryId != null &&
                             !categoryRows.any(
-                                (category) => category.id == _categoryId)) {
+                              (category) => category.id == _categoryId,
+                            )) {
                           _categoryId = null;
                         }
                         if (categoryRows.isEmpty) {
                           return const Text(
-                              'No active categories for this transaction type.');
+                            'No active categories for this transaction type.',
+                          );
                         }
                         return DropdownButtonFormField<String>(
                           initialValue: _categoryId,
                           decoration: const InputDecoration(
-                              labelText: 'Category',
-                              border: OutlineInputBorder()),
+                            labelText: 'Category',
+                            border: OutlineInputBorder(),
+                          ),
                           items: [
                             for (final category in categoryRows)
                               DropdownMenuItem(
-                                  value: category.id,
-                                  child: Text(category.name)),
+                                value: category.id,
+                                child: Text(category.name),
+                              ),
                           ],
                           onChanged: (value) =>
                               setState(() => _categoryId = value),
@@ -253,7 +278,8 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
                       leading: const Icon(Icons.calendar_today_outlined),
                       title: const Text('Transaction date'),
                       subtitle: Text(
-                          '${_date!.day.toString().padLeft(2, '0')}/${_date!.month.toString().padLeft(2, '0')}/${_date!.year}'),
+                        '${_date!.day.toString().padLeft(2, '0')}/${_date!.month.toString().padLeft(2, '0')}/${_date!.year}',
+                      ),
                       trailing: const Icon(Icons.chevron_right_rounded),
                       onTap: _pickDate,
                     ),
@@ -263,14 +289,18 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
                       maxLines: 2,
                       textCapitalization: TextCapitalization.sentences,
                       decoration: const InputDecoration(
-                          labelText: 'Note (optional)',
-                          border: OutlineInputBorder()),
+                        labelText: 'Note (optional)',
+                        border: OutlineInputBorder(),
+                      ),
                     ),
                     if (_error != null) ...[
                       const SizedBox(height: 8),
-                      Text(_error!,
-                          style: TextStyle(
-                              color: Theme.of(context).colorScheme.error)),
+                      Text(
+                        _error!,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
                     ],
                     const SizedBox(height: 20),
                     FilledButton(
@@ -279,7 +309,8 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
                           ? const SizedBox(
                               height: 18,
                               width: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2))
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
                           : const Text('Update transaction'),
                     ),
                   ],

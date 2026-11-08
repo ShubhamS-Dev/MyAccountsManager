@@ -21,7 +21,7 @@ class Transactions extends Table {
 
   @override
   List<String> get customConstraints => [
-        "CHECK (type IN ('expense', 'income'))",
-        'CHECK (amount_paise > 0)',
-      ];
+    "CHECK (type IN ('expense', 'income'))",
+    'CHECK (amount_paise > 0)',
+  ];
 }

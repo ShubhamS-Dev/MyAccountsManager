@@ -18,7 +18,7 @@ class Categories extends Table {
 
   @override
   List<String> get customConstraints => [
-        "CHECK (type IN ('expense', 'income'))",
-        'CHECK (length(trim(name)) > 0)',
-      ];
+    "CHECK (type IN ('expense', 'income'))",
+    'CHECK (length(trim(name)) > 0)',
+  ];
 }

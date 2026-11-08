@@ -34,7 +34,9 @@ class _EditAccountPageState extends ConsumerState<EditAccountPage> {
       _error = null;
     });
     try {
-      await ref.read(accountsRepositoryProvider).updateAccount(
+      await ref
+          .read(accountsRepositoryProvider)
+          .updateAccount(
             accountId: widget.accountId,
             name: _nameController.text,
             description: _descriptionController.text,
@@ -72,47 +74,58 @@ class _EditAccountPageState extends ConsumerState<EditAccountPage> {
           }
           return Form(
             key: _formKey,
-            child: ListView(padding: const EdgeInsets.all(20), children: [
-              TextFormField(
-                controller: _nameController,
-                autofocus: true,
-                textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(
-                    labelText: 'Account name *', border: OutlineInputBorder()),
-                validator: (value) => value == null || value.trim().isEmpty
-                    ? 'Enter an Account name.'
-                    : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _descriptionController,
-                textCapitalization: TextCapitalization.sentences,
-                maxLines: 2,
-                decoration: const InputDecoration(
+            child: ListView(
+              padding: const EdgeInsets.all(20),
+              children: [
+                TextFormField(
+                  controller: _nameController,
+                  autofocus: true,
+                  textCapitalization: TextCapitalization.words,
+                  decoration: const InputDecoration(
+                    labelText: 'Account name *',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) => value == null || value.trim().isEmpty
+                      ? 'Enter an Account name.'
+                      : null,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _descriptionController,
+                  textCapitalization: TextCapitalization.sentences,
+                  maxLines: 2,
+                  decoration: const InputDecoration(
                     labelText: 'Description (optional)',
-                    border: OutlineInputBorder()),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                  'Opening balance is managed separately and cannot be changed from this screen.',
-                  style: Theme.of(context).textTheme.bodySmall),
-              if (_error != null) ...[
+                    border: OutlineInputBorder(),
+                  ),
+                ),
                 const SizedBox(height: 12),
-                Text(_error!,
-                    style:
-                        TextStyle(color: Theme.of(context).colorScheme.error)),
+                Text(
+                  'Opening balance is managed separately and cannot be changed from this screen.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                if (_error != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    _error!,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 24),
+                FilledButton(
+                  onPressed: _saving ? null : _save,
+                  child: _saving
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Save Changes'),
+                ),
               ],
-              const SizedBox(height: 24),
-              FilledButton(
-                onPressed: _saving ? null : _save,
-                child: _saving
-                    ? const SizedBox(
-                        height: 18,
-                        width: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Text('Save Changes'),
-              ),
-            ]),
+            ),
           );
         },
       ),

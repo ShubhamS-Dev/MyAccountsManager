@@ -6,8 +6,10 @@ void main() {
     test('stores selected calendar components at UTC midnight', () {
       final selected = DateTime(2026, 11, 8, 18, 45);
       final timestamp = DateOnly.toUtcEpochMilliseconds(selected);
-      final stored =
-          DateTime.fromMillisecondsSinceEpoch(timestamp, isUtc: true);
+      final stored = DateTime.fromMillisecondsSinceEpoch(
+        timestamp,
+        isUtc: true,
+      );
       expect(stored, DateTime.utc(2026, 11, 8));
     });
 
@@ -18,10 +20,13 @@ void main() {
     });
 
     test('ignores time components of selected date', () {
-      final timestamp =
-          DateOnly.toUtcEpochMilliseconds(DateTime(2026, 2, 8, 23, 59));
-      expect(DateOnly.fromUtcEpochMilliseconds(timestamp),
-          DateTime.utc(2026, 2, 8));
+      final timestamp = DateOnly.toUtcEpochMilliseconds(
+        DateTime(2026, 2, 8, 23, 59),
+      );
+      expect(
+        DateOnly.fromUtcEpochMilliseconds(timestamp),
+        DateTime.utc(2026, 2, 8),
+      );
     });
   });
 

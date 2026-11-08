@@ -19,7 +19,5 @@ class Accounts extends Table {
   Set<Column> get primaryKey => {id};
 
   @override
-  List<String> get customConstraints => [
-        'CHECK (length(trim(name)) > 0)',
-      ];
+  List<String> get customConstraints => ['CHECK (length(trim(name)) > 0)'];
 }
