@@ -33,6 +33,48 @@ class TransactionsRepository {
     )).toList());
   }
 
+  Stream<List<TransactionHistoryItem>> watchTrash() {
+    final query = _database.select(_database.transactions).join([
+      innerJoin(_database.accounts, _database.accounts.id.equalsExp(_database.transactions.accountId)),
+      innerJoin(_database.categories, _database.categories.id.equalsExp(_database.transactions.categoryId)),
+    ])..where(_database.transactions.deletedAt.isNotNull());
+    query.orderBy([OrderingTerm.desc(_database.transactions.deletedAt)]);
+    return query.watch().map((rows) => rows.map((row) => TransactionHistoryItem(
+      transaction: row.readTable(_database.transactions),
+      accountName: row.readTable(_database.accounts).name,
+      categoryName: row.readTable(_database.categories).name,
+    )).toList());
+  }
+
+  Future<void> softDeleteTransaction(String transactionId) async {
+    final now = DateTime.now().toUtc().millisecondsSinceEpoch;
+    final changed = await (_database.update(_database.transactions)
+          ..where((row) => row.id.equals(transactionId) & row.deletedAt.isNull()))
+        .write(TransactionsCompanion(
+          deletedAt: Value(now),
+          updatedAt: Value(now),
+        ));
+    if (changed == 0) throw StateError('Transaction was not found or is already in Trash.');
+  }
+
+  Future<void> restoreTransaction(String transactionId) async {
+    final now = DateTime.now().toUtc().millisecondsSinceEpoch;
+    final changed = await (_database.update(_database.transactions)
+          ..where((row) => row.id.equals(transactionId) & row.deletedAt.isNotNull()))
+        .write(TransactionsCompanion(
+          deletedAt: const Value(null),
+          updatedAt: Value(now),
+        ));
+    if (changed == 0) throw StateError('Transaction was not found in Trash.');
+  }
+
+  Future<void> permanentlyDeleteTransaction(String transactionId) async {
+    final changed = await (_database.delete(_database.transactions)
+          ..where((row) => row.id.equals(transactionId) & row.deletedAt.isNotNull()))
+        .go();
+    if (changed == 0) throw StateError('Only transactions in Trash can be permanently deleted.');
+  }
+
   Future<String> createTransaction({
     required String accountId,
     required String categoryId,
