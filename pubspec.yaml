@@ -15,7 +15,6 @@ dependencies:
   cupertino_icons: ^1.0.8
   drift: ^2.28.1
   sqlite3: 3.8.0
-  sqlite3_flutter_libs: ^0.5.39
   path_provider: ^2.1.5
   path: ^1.9.1
   uuid: ^4.5.1
@@ -29,3 +28,11 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+# Use the runner's installed SQLite for Linux CI tests. Android and other
+# targets continue using sqlite3's bundled, checksum-verified native assets.
+hooks:
+  user_defines:
+    sqlite3:
+      source:
+        linux: system
