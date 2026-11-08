@@ -228,4 +228,86 @@ void main() {
     expect(() async => await transactions.permanentlyDeleteTransaction(id), throwsStateError);
   });
 
+
+  test('updates transaction fields and allows moving it to another active Account', () async {
+    final sourceAccountId = await accounts.createAccount(name: 'Personal');
+    final targetAccountId = await accounts.createAccount(name: 'Office');
+    final expense = await (database.select(database.categories)
+          ..where((row) => row.type.equals('expense'))
+          ..where((row) => row.name.equals('Food & Dining'))).getSingle();
+    final income = await (database.select(database.categories)
+          ..where((row) => row.type.equals('income'))
+          ..where((row) => row.name.equals('Salary'))).getSingle();
+    final originalDate = DateTime.utc(2026, 11, 7).millisecondsSinceEpoch;
+    final updatedDate = DateTime.utc(2026, 11, 8).millisecondsSinceEpoch;
+    final id = await transactions.createTransaction(
+      accountId: sourceAccountId,
+      categoryId: expense.id,
+      type: 'expense',
+      amountPaise: 2500,
+      transactionDate: originalDate,
+      note: 'Old note',
+    );
+
+    await transactions.updateTransaction(
+      transactionId: id,
+      accountId: targetAccountId,
+      categoryId: income.id,
+      type: 'income',
+      amountPaise: 990050,
+      transactionDate: updatedDate,
+      note: '  Updated note  ',
+    );
+
+    final updated = await transactions.getTransaction(id);
+    expect(updated?.accountId, targetAccountId);
+    expect(updated?.categoryId, income.id);
+    expect(updated?.type, 'income');
+    expect(updated?.amountPaise, 990050);
+    expect(updated?.transactionDate, updatedDate);
+    expect(updated?.note, 'Updated note');
+    expect((await transactions.watchHistory(accountId: sourceAccountId).first), isEmpty);
+    expect((await transactions.watchHistory(accountId: targetAccountId).first).single.transaction.id, id);
+  });
+
+  test('does not allow editing a trashed transaction or moving a transaction into an archived Account', () async {
+    final activeAccountId = await accounts.createAccount(name: 'Active');
+    final archivedAccountId = await accounts.createAccount(name: 'Archived');
+    await accounts.archiveAccount(archivedAccountId);
+    final category = await (database.select(database.categories)
+          ..where((row) => row.type.equals('expense'))
+          ..where((row) => row.name.equals('Food & Dining'))).getSingle();
+    final id = await transactions.createTransaction(
+      accountId: activeAccountId,
+      categoryId: category.id,
+      type: 'expense',
+      amountPaise: 100,
+      transactionDate: DateTime.utc(2026, 11, 8).millisecondsSinceEpoch,
+    );
+
+    expect(
+      () => transactions.updateTransaction(
+        transactionId: id,
+        accountId: archivedAccountId,
+        categoryId: category.id,
+        type: 'expense',
+        amountPaise: 200,
+        transactionDate: DateTime.utc(2026, 11, 8).millisecondsSinceEpoch,
+      ),
+      throwsStateError,
+    );
+    await transactions.softDeleteTransaction(id);
+    expect(
+      () => transactions.updateTransaction(
+        transactionId: id,
+        accountId: activeAccountId,
+        categoryId: category.id,
+        type: 'expense',
+        amountPaise: 200,
+        transactionDate: DateTime.utc(2026, 11, 8).millisecondsSinceEpoch,
+      ),
+      throwsStateError,
+    );
+  });
+
 }
