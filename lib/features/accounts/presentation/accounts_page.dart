@@ -30,7 +30,10 @@ class AccountsPage extends ConsumerWidget {
             ]),
           ));
           return ListView(padding: const EdgeInsets.fromLTRB(16, 12, 16, 100), children: [
-            Text('${items.length} active ${items.length == 1 ? 'Account' : 'Accounts'}', style: Theme.of(context).textTheme.titleSmall),
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              Text('${items.length} active ${items.length == 1 ? 'Account' : 'Accounts'}', style: Theme.of(context).textTheme.titleSmall),
+              TextButton.icon(onPressed: () => context.push('/accounts/archived'), icon: const Icon(Icons.archive_outlined), label: const Text('Archived')),
+            ]),
             const SizedBox(height: 12),
             for (final account in items)
               Card(child: ListTile(
