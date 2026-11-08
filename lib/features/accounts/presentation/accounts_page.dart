@@ -44,16 +44,16 @@ class AccountsPage extends ConsumerWidget {
                   onSelected: (action) async {
                     final repository = ref.read(accountsRepositoryProvider);
                     if (action == 'edit') {
-                      context.push('/accounts/\${account.id}/edit');
+                      context.push('/accounts/${account.id}/edit');
                     } else if (action == 'pin' || action == 'unpin') {
-                      await repository.setPinned('\${account.id}', pinned: action == 'pin');
+                      await repository.setPinned('${account.id}', pinned: action == 'pin');
                       ref.invalidate(activeAccountsProvider);
                     } else if (action == 'archive') {
                       final confirmed = await showDialog<bool>(
                         context: context,
                         builder: (dialogContext) => AlertDialog(
                           title: const Text('Archive Account?'),
-                          content: const Text('\${account.name} will be hidden from active Accounts. Its transactions and history will be preserved.'),
+                          content: const Text('${account.name} will be hidden from active Accounts. Its transactions and history will be preserved.'),
                           actions: [
                             TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancel')),
                             FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('Archive')),
@@ -61,7 +61,7 @@ class AccountsPage extends ConsumerWidget {
                         ),
                       );
                       if (confirmed == true) {
-                        await repository.archiveAccount('\${account.id}');
+                        await repository.archiveAccount('${account.id}');
                         ref.invalidate(activeAccountsProvider);
                       }
                     }
