@@ -64,6 +64,7 @@ class TransactionTrashPage extends ConsumerWidget {
                   title: Text(transaction.note?.isNotEmpty == true ? transaction.note! : item.categoryName, maxLines: 1, overflow: TextOverflow.ellipsis),
                   subtitle: Text('${item.categoryName} · ${item.accountName}\n${_dateLabel(transaction.transactionDate)} · Deleted ${_dateLabel(transaction.deletedAt!)}'),
                   isThreeLine: true,
+                  leading: CircleAvatar(child: Icon(income ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded)),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -72,26 +73,24 @@ class TransactionTrashPage extends ConsumerWidget {
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
                       ),
                       PopupMenuButton<String>(
-                    tooltip: 'Trash actions',
-                    onSelected: (action) async {
-                      if (action == 'restore') {
-                        try {
-                          await ref.read(transactionsRepositoryProvider).restoreTransaction(transaction.id);
-                          ref.invalidate(accountBalancePaiseProvider(transaction.accountId));
-                          ref.invalidate(transactionTrashProvider);
-                        } catch (_) {
-                          if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not restore this transaction. Refresh and try again.')));
-                        }
-                      } else if (action == 'delete') {
-                        await _permanentlyDelete(context, ref, transaction.id);
-                      }
-                    },
-                    itemBuilder: (_) => const [
-                      PopupMenuItem(value: 'restore', child: ListTile(leading: Icon(Icons.restore), title: Text('Restore'))),
-                      PopupMenuItem(value: 'delete', child: ListTile(leading: Icon(Icons.delete_forever_outlined), title: Text('Delete permanently'))),
-                    ],
-                  ),
-                  leading: CircleAvatar(child: Icon(income ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded)),
+                        tooltip: 'Trash actions',
+                        onSelected: (action) async {
+                          if (action == 'restore') {
+                            try {
+                              await ref.read(transactionsRepositoryProvider).restoreTransaction(transaction.id);
+                              ref.invalidate(accountBalancePaiseProvider(transaction.accountId));
+                              ref.invalidate(transactionTrashProvider);
+                            } catch (_) {
+                              if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not restore this transaction. Refresh and try again.')));
+                            }
+                          } else if (action == 'delete') {
+                            await _permanentlyDelete(context, ref, transaction.id);
+                          }
+                        },
+                        itemBuilder: (_) => const [
+                          PopupMenuItem(value: 'restore', child: ListTile(leading: Icon(Icons.restore), title: Text('Restore'))),
+                          PopupMenuItem(value: 'delete', child: ListTile(leading: Icon(Icons.delete_forever_outlined), title: Text('Delete permanently'))),
+                        ],
                       ),
                     ],
                   ),
