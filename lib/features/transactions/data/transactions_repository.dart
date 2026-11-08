@@ -29,13 +29,13 @@ class TransactionsRepository {
     ])
       ..where(_database.transactions.deletedAt.isNull());
     if (accountId != null)
-      query.where(_database.transactions.accountId.equals(accountId));
+      query.where(_database.transactions.accountId.equals(accountId)) { ; }
     if (fromDate != null)
       query.where(_database.transactions.transactionDate
-          .isBiggerOrEqualValue(fromDate));
+          .isBiggerOrEqualValue(fromDate)) { ; }
     if (throughDate != null)
       query.where(_database.transactions.transactionDate
-          .isSmallerOrEqualValue(throughDate));
+          .isSmallerOrEqualValue(throughDate)) { ; }
     if (type != null) query.where(_database.transactions.type.equals(type));
     query.orderBy([
       OrderingTerm.desc(_database.transactions.transactionDate),
@@ -97,7 +97,7 @@ class TransactionsRepository {
                 (row) => row.id.equals(transactionId) & row.deletedAt.isNull()))
           .getSingleOrNull();
       if (existing == null)
-        throw StateError('Transaction was not found or is in Trash.');
+        throw StateError('Transaction was not found or is in Trash.') { ; }
 
       final account = await (_database.select(_database.accounts)
             ..where((row) => row.id.equals(accountId)))
@@ -144,7 +144,7 @@ class TransactionsRepository {
       updatedAt: Value(now),
     ));
     if (changed == 0)
-      throw StateError('Transaction was not found or is already in Trash.');
+      throw StateError('Transaction was not found or is already in Trash.') { ; }
   }
 
   Future<void> restoreTransaction(String transactionId) async {
@@ -166,7 +166,7 @@ class TransactionsRepository {
         .go();
     if (changed == 0)
       throw StateError(
-          'Only transactions in Trash can be permanently deleted.');
+          'Only transactions in Trash can be permanently deleted.') { ; }
   }
 
   Future<String> createTransaction({
