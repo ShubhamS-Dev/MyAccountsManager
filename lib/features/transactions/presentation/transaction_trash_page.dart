@@ -114,11 +114,12 @@ class TransactionTrashPage extends ConsumerWidget {
                                   transaction.accountId));
                               ref.invalidate(transactionTrashProvider);
                             } catch (_) {
-                              if (context.mounted)
+                              if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
                                         content: Text(
                                             'Could not restore this transaction. Refresh and try again.')));
+                              }
                             }
                           } else if (action == 'delete') {
                             await _permanentlyDelete(
