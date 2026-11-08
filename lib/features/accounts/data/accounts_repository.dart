@@ -49,6 +49,36 @@ class AccountsRepository {
     return id;
   }
 
+  /// Returns the Account balance in paise as of [asOfDate].
+  ///
+  /// Only non-deleted transactions dated on or before [asOfDate] are included.
+  /// The caller supplies a UTC-midnight calendar date.
+  Future<int?> calculateBalancePaise({
+    required String accountId,
+    required int asOfDate,
+  }) async {
+    final account = await (_database.select(_database.accounts)
+          ..where((row) => row.id.equals(accountId)))
+        .getSingleOrNull();
+    if (account == null) return null;
+
+    final entries = await (_database.select(_database.transactions)
+          ..where((row) => row.accountId.equals(accountId))
+          ..where((row) => row.deletedAt.isNull())
+          ..where((row) => row.transactionDate.isSmallerOrEqualValue(asOfDate)))
+        .get();
+
+    var balancePaise = account.openingBalancePaise;
+    for (final entry in entries) {
+      if (entry.type == 'income') {
+        balancePaise += entry.amountPaise;
+      } else if (entry.type == 'expense') {
+        balancePaise -= entry.amountPaise;
+      }
+    }
+    return balancePaise;
+  }
+
   Future<void> archiveAccount(String accountId) async {
     final now = DateTime.now().toUtc().millisecondsSinceEpoch;
     await (_database.update(_database.accounts)
