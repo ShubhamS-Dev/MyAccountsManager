@@ -20,6 +20,13 @@ class AccountsRepository {
         .watch();
   }
 
+  Stream<List<AccountRow>> watchArchivedAccounts() {
+    return (_database.select(_database.accounts)
+          ..where((account) => account.archivedAt.isNotNull())
+          ..orderBy([(account) => OrderingTerm.desc(account.archivedAt)]))
+        .watch();
+  }
+
   Future<String> createAccount({
     required String name,
     String? description,
@@ -116,6 +123,18 @@ class AccountsRepository {
       updatedAt: Value(now),
     ));
     if (changed == 0) throw StateError('Account not found or archived.');
+  }
+
+  Future<void> restoreAccount(String accountId) async {
+    final now = DateTime.now().toUtc().millisecondsSinceEpoch;
+    final changed = await (_database.update(_database.accounts)
+          ..where((account) => account.id.equals(accountId))
+          ..where((account) => account.archivedAt.isNotNull()))
+        .write(AccountsCompanion(
+      archivedAt: const Value(null),
+      updatedAt: Value(now),
+    ));
+    if (changed == 0) throw StateError('Archived Account not found.');
   }
 
   Future<void> archiveAccount(String accountId) async {
