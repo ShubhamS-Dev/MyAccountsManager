@@ -3,11 +3,35 @@ import 'package:uuid/uuid.dart';
 
 import '../../../core/database/app_database.dart';
 
+class TransactionHistoryItem {
+  const TransactionHistoryItem({required this.transaction, required this.accountName, required this.categoryName});
+  final TransactionRow transaction;
+  final String accountName;
+  final String categoryName;
+}
+
 class TransactionsRepository {
   TransactionsRepository(this._database);
 
   final AppDatabase _database;
   static const _uuid = Uuid();
+
+  Stream<List<TransactionHistoryItem>> watchHistory({String? accountId, int? fromDate, int? throughDate, String? type}) {
+    final query = _database.select(_database.transactions).join([
+      innerJoin(_database.accounts, _database.accounts.id.equalsExp(_database.transactions.accountId)),
+      innerJoin(_database.categories, _database.categories.id.equalsExp(_database.transactions.categoryId)),
+    ])..where(_database.transactions.deletedAt.isNull());
+    if (accountId != null) query.where(_database.transactions.accountId.equals(accountId));
+    if (fromDate != null) query.where(_database.transactions.transactionDate.isBiggerOrEqualValue(fromDate));
+    if (throughDate != null) query.where(_database.transactions.transactionDate.isSmallerOrEqualValue(throughDate));
+    if (type != null) query.where(_database.transactions.type.equals(type));
+    query.orderBy([OrderingTerm.desc(_database.transactions.transactionDate), OrderingTerm.desc(_database.transactions.createdAt)]);
+    return query.watch().map((rows) => rows.map((row) => TransactionHistoryItem(
+      transaction: row.readTable(_database.transactions),
+      accountName: row.readTable(_database.accounts).name,
+      categoryName: row.readTable(_database.categories).name,
+    )).toList());
+  }
 
   Future<String> createTransaction({
     required String accountId,
