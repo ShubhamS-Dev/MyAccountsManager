@@ -192,4 +192,40 @@ void main() {
     expect(expenses.single.transaction.note, 'Lunch');
   });
 
+
+  test('moves transactions to Trash, restores them, and permanently deletes only trashed rows', () async {
+    final accountId = await accounts.createAccount(name: 'Personal');
+    final category = await (database.select(database.categories)
+          ..where((row) => row.type.equals('expense'))
+          ..where((row) => row.name.equals('Food & Dining'))).getSingle();
+    final id = await transactions.createTransaction(
+      accountId: accountId,
+      categoryId: category.id,
+      type: 'expense',
+      amountPaise: 1200,
+      transactionDate: DateTime.utc(2026, 11, 8).millisecondsSinceEpoch,
+      note: 'Coffee',
+    );
+
+    await transactions.softDeleteTransaction(id);
+    expect(await transactions.watchHistory().first, isEmpty);
+    final trashed = await transactions.watchTrash().first;
+    expect(trashed, hasLength(1));
+    expect(trashed.single.transaction.id, id);
+    expect(trashed.single.transaction.deletedAt, isNotNull);
+
+    await transactions.restoreTransaction(id);
+    expect(await transactions.watchTrash().first, isEmpty);
+    expect((await transactions.watchHistory().first).single.transaction.id, id);
+
+    await transactions.softDeleteTransaction(id);
+    await transactions.permanentlyDeleteTransaction(id);
+    expect(await transactions.watchTrash().first, isEmpty);
+    expect(
+      await (database.select(database.transactions)..where((row) => row.id.equals(id))).getSingleOrNull(),
+      isNull,
+    );
+    expect(() => transactions.permanentlyDeleteTransaction(id), throwsStateError);
+  });
+
 }
