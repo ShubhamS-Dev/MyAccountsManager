@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../accounts/accounts_providers.dart';
 import '../transactions_providers.dart';
+import '../../../core/formatting/date_timestamp.dart';
+import '../../../core/formatting/money_formatter.dart';
 
 class HistoryPage extends ConsumerStatefulWidget {
   const HistoryPage({super.key});
@@ -20,21 +22,7 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
   int _utcDate(DateTime date) =>
       DateTime.utc(date.year, date.month, date.day).millisecondsSinceEpoch;
 
-  String _money(int paise) {
-    final absolute = paise.abs();
-    final digits = (absolute ~/ 100).toString();
-    final grouped = digits.replaceAllMapped(
-      RegExp(r'(?<=\d)(?=(\d{2})+\d{3}$)'),
-      (_) => ',',
-    );
-    final fraction = absolute % 100;
-    return '${paise < 0 ? '-' : ''}₹$grouped${fraction == 0 ? '' : '.${fraction.toString().padLeft(2, '0')}'}';
-  }
-
-  String _dateLabel(int timestamp) {
-    final date = DateTime.fromMillisecondsSinceEpoch(timestamp, isUtc: true);
-    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
-  }
+  String _dateLabel(int timestamp) => DateOnly.format(timestamp);
 
   Future<void> _moveToTrash(String transactionId, String accountId) async {
     final confirmed = await showDialog<bool>(
@@ -250,7 +238,7 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            '${isIncome ? '+' : '-'}${_money(transaction.amountPaise)}',
+                            '${isIncome ? '+' : '-'}${MoneyFormatter.formatPaise(transaction.amountPaise)}',
                             style: Theme.of(context).textTheme.titleSmall
                                 ?.copyWith(fontWeight: FontWeight.w700),
                           ),

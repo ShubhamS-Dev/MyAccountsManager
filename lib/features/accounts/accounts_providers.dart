@@ -22,19 +22,25 @@ final archivedAccountsProvider = StreamProvider<List<AccountRow>>((ref) {
   return ref.watch(accountsRepositoryProvider).watchArchivedAccounts();
 });
 
-final accountBalancePaiseProvider = FutureProvider.family<int?, String>((
+int _todayUtcDate() {
+  final now = DateTime.now();
+  return DateTime.utc(now.year, now.month, now.day).millisecondsSinceEpoch;
+}
+
+final accountBalancePaiseProvider = StreamProvider.family<int?, String>((
   ref,
   id,
 ) {
-  final now = DateTime.now().toUtc();
-  final todayUtc = DateTime.utc(
-    now.year,
-    now.month,
-    now.day,
-  ).millisecondsSinceEpoch;
-  return ref
-      .watch(accountsRepositoryProvider)
-      .calculateBalancePaise(accountId: id, asOfDate: todayUtc);
+  return ref.watch(accountsRepositoryProvider).watchBalancePaise(
+    accountId: id,
+    asOfDate: _todayUtcDate(),
+  );
+});
+
+final totalActiveBalancePaiseProvider = StreamProvider<int>((ref) {
+  return ref.watch(accountsRepositoryProvider).watchTotalActiveBalancePaise(
+    asOfDate: _todayUtcDate(),
+  );
 });
 
 final balanceAdjustmentsProvider =

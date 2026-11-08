@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../accounts/presentation/accounts_page.dart';
+import '../../accounts/accounts_providers.dart';
+import '../../../core/formatting/money_formatter.dart';
 import '../../transactions/presentation/history_page.dart';
 
 class AppShell extends StatefulWidget {
@@ -87,29 +89,27 @@ class _ShellDestination {
   final IconData icon;
 }
 
-class _HomeFoundationPage extends StatelessWidget {
+class _HomeFoundationPage extends ConsumerWidget {
   const _HomeFoundationPage();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final totalBalance = ref.watch(totalActiveBalancePaiseProvider);
+    final accounts = ref.watch(activeAccountsProvider);
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 100),
       children: [
         Text(
           'Your money, clearly organised.',
-          style: Theme.of(
-            context,
-          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 6),
         Text(
           'A private, offline space for your finances.',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
         ),
         const SizedBox(height: 24),
-        const _SummaryCard(),
+        _SummaryCard(totalBalance: totalBalance),
         const SizedBox(height: 18),
         Card(
           child: Padding(
@@ -131,40 +131,45 @@ class _HomeFoundationPage extends StatelessWidget {
         const SizedBox(height: 18),
         Text('Getting started', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
-        const _GettingStartedCard(),
+        accounts.when(
+          data: (items) => items.isEmpty ? const _GettingStartedCard() : const SizedBox.shrink(),
+          loading: () => const SizedBox.shrink(),
+          error: (error, stack) => const SizedBox.shrink(),
+        ),
       ],
     );
   }
 }
 
 class _SummaryCard extends StatelessWidget {
-  const _SummaryCard();
+  const _SummaryCard({required this.totalBalance});
+  final AsyncValue<int> totalBalance;
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Card(
-      color: Theme.of(context).colorScheme.primaryContainer,
+      color: colors.primaryContainer,
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Total balance',
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
+            Text('Total balance', style: Theme.of(context).textTheme.titleSmall),
             const SizedBox(height: 8),
-            Text(
-              '₹0.00',
-              style: Theme.of(
-                context,
-              ).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w700),
+            totalBalance.when(
+              loading: () => const LinearProgressIndicator(),
+              error: (error, stack) => Text('Balance unavailable', style: Theme.of(context).textTheme.titleLarge),
+              data: (value) => Text(
+                MoneyFormatter.formatPaise(value),
+                style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: value < 0 ? colors.error : colors.tertiary,
+                ),
+              ),
             ),
             const SizedBox(height: 6),
-            Text(
-              'Balances will appear after you create an Account.',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
+            Text('Combined balance across active Accounts.', style: Theme.of(context).textTheme.bodySmall),
           ],
         ),
       ),
