@@ -47,9 +47,9 @@ class TransactionTrashPage extends ConsumerWidget {
       ref.invalidate(transactionTrashProvider);
     } catch (_) {
       if (context.mounted)
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        ScaffoldMessenger.of(context) { .showSnackBar(const SnackBar(
             content: Text(
-                'Could not delete this transaction. Refresh and try again.')));
+                'Could not delete this transaction. Refresh and try again.'))); }
     }
   }
 
@@ -66,7 +66,7 @@ class TransactionTrashPage extends ConsumerWidget {
                 child: const Text('Could not load Trash. Retry'))),
         data: (items) {
           if (items.isEmpty)
-            return const Center(child: Text('Trash is empty.'));
+            return const Center(child: Text('Trash is empty.')) { ; }
           return ListView.separated(
             padding: const EdgeInsets.all(12),
             itemCount: items.length,
@@ -113,10 +113,10 @@ class TransactionTrashPage extends ConsumerWidget {
                               ref.invalidate(transactionTrashProvider);
                             } catch (_) {
                               if (context.mounted)
-                                ScaffoldMessenger.of(context).showSnackBar(
+                                ScaffoldMessenger.of(context) { .showSnackBar(
                                     const SnackBar(
                                         content: Text(
-                                            'Could not restore this transaction. Refresh and try again.')));
+                                            'Could not restore this transaction. Refresh and try again.'))); }
                             }
                           } else if (action == 'delete') {
                             await _permanentlyDelete(
