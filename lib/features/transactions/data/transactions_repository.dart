@@ -31,9 +31,10 @@ class TransactionsRepository {
     if (accountId != null) {
       query.where(_database.transactions.accountId.equals(accountId));
     }
-    if (fromDate != null)
+    if (fromDate != null) {
       query.where(_database.transactions.transactionDate
           .isBiggerOrEqualValue(fromDate));
+    }
     if (throughDate != null)
       query.where(_database.transactions.transactionDate
           .isSmallerOrEqualValue(throughDate));
