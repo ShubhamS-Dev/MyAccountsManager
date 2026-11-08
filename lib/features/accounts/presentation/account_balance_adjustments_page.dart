@@ -74,6 +74,7 @@ class _AccountBalanceAdjustmentsPageState extends ConsumerState<AccountBalanceAd
         reason: _reasonController.text,
         adjustmentDate: DateTime.utc(_date.year, _date.month, _date.day).millisecondsSinceEpoch,
       );
+      if (!mounted) return;
       ref.invalidate(accountBalancePaiseProvider(widget.accountId));
       _amountController.clear();
       _reasonController.clear();
