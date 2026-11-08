@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../accounts/presentation/accounts_page.dart';
+import '../../transactions/presentation/history_page.dart';
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
@@ -39,11 +40,7 @@ class _AppShellState extends State<AppShell> {
         children: const [
           _HomeFoundationPage(),
           AccountsPage(),
-          _PlaceholderPage(
-            title: 'History',
-            description: 'Income, expenses and balance adjustments will appear here.',
-            icon: Icons.receipt_long_outlined,
-          ),
+          HistoryPage(),
           _PlaceholderPage(
             title: 'MyKhata',
             description: 'Track money lent and borrowed independently from your Accounts.',
