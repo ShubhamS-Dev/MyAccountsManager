@@ -94,7 +94,7 @@ Payment method definitions and local attachment storage may be shared as infrast
 - Do not drop/recreate user tables as a migration shortcut.
 - Derived balances and summaries must have one authoritative calculation path and tests.
 
-Exact entity definitions, indexes, date/time representation, and migration policy will be specified in the detailed data model before those features are implemented.
+Initial version 1 entity definitions, indexes, date/time representation, and migration policy are specified in docs/DATABASE_SCHEMA_V1.md. This first schema covers Accounts, Categories, and regular Transactions; future modules add tables through explicit versioned migrations.
 ## 7. Security and backup architecture
 - Keep local data within application-private storage unless the user explicitly exports/shares a file.
 - Store device-held secrets using Android Keystore-backed secure storage.
