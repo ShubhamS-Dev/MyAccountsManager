@@ -127,3 +127,4 @@ Keep this tracker concise and evidence-based.
 | 2026-11-08 | M5: added transaction editing from History, typed transaction lookup, validated repository updates, Account reassignment, archived-Account safeguards, and tests for edits and invalid states. Flutter formatting, analysis, tests, and Android build remain unverified. |
 
 | 2026-11-08 | M5/M4: introduced schema version 2 with a non-destructive balance-adjustment migration; added signed adjustment storage, reason and date validation, date-aware balance calculations, Account-level adjustment entry/history UI, and repository/database tests. Drift code generation, formatting, analysis, tests, and Android build are not yet verified. |
+| 2026-11-08 | M5: removed an accidentally duplicated trailing fragment from the Add Transaction screen that caused Dart parser errors. CI formatting, analysis, and tests must still pass before validation is considered complete. |
