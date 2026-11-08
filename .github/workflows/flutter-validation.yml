@@ -17,7 +17,7 @@ permissions:
 
 jobs:
   validate:
-    timeout-minutes: 15
+    timeout-minutes: 30
     concurrency:
       group: flutter-validation-${{ github.ref }}
       cancel-in-progress: true
@@ -34,6 +34,16 @@ jobs:
         with:
           channel: stable
           cache: true
+
+      - name: Generate Android platform scaffold when missing
+        run: |
+          if [ ! -d android ]; then
+            flutter create --platforms=android --org com.shubhams --project-name myaccountsmanager .
+          fi
+          if ! grep -Rqs "com.shubhams.myaccountsmanager" android/app; then
+            echo "Expected Android application ID com.shubhams.myaccountsmanager was not generated."
+            exit 1
+          fi
 
       - name: Install Linux SQLite development library
         run: sudo apt-get update && sudo apt-get install -y libsqlite3-dev
@@ -53,13 +63,24 @@ jobs:
       - name: Run tests
         run: flutter test --reporter expanded --timeout 2m --concurrency=1
 
-      - name: Commit generated source and dependency lockfile
+      - name: Build Android debug APK
+        run: flutter build apk --debug
+
+      - name: Upload Android debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: myaccountsmanager-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Commit validated generated source, Android scaffold, and dependency lockfile
         if: github.event_name == 'push'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A -- lib test pubspec.lock
+          git add -A -- android lib test pubspec.lock
           if ! git diff --cached --quiet; then
-            git commit -m "Apply validated generated source and dependency lockfile [skip ci]"
+            git commit -m "Add validated Android platform and generated source [skip ci]"
             git push
           fi
