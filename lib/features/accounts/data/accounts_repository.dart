@@ -79,6 +79,12 @@ class AccountsRepository {
     return balancePaise;
   }
 
+  Future<AccountRow?> getAccount(String accountId) {
+    return (_database.select(_database.accounts)
+          ..where((row) => row.id.equals(accountId)))
+        .getSingleOrNull();
+  }
+
   Future<void> updateAccount({
     required String accountId,
     required String name,
