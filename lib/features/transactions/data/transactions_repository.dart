@@ -101,8 +101,9 @@ class TransactionsRepository {
             ..where(
                 (row) => row.id.equals(transactionId) & row.deletedAt.isNull()))
           .getSingleOrNull();
-      if (existing == null)
+      if (existing == null) {
         throw StateError('Transaction was not found or is in Trash.');
+      }
 
       final account = await (_database.select(_database.accounts)
             ..where((row) => row.id.equals(accountId)))
