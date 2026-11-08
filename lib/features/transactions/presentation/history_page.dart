@@ -32,6 +32,27 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
 
+  Future<void> _moveToTrash(String transactionId, String accountId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Move to Trash?'),
+        content: const Text('You can restore this transaction later from Trash.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('Move to Trash')),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await ref.read(transactionsRepositoryProvider).softDeleteTransaction(transactionId);
+      ref.invalidate(accountBalancePaiseProvider(accountId));
+    } catch (_) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not move transaction to Trash. Refresh and try again.')));
+    }
+  }
+
   Future<void> _chooseRange() async {
     final now = DateTime.now();
     final selected = await showDateRangePicker(
@@ -137,9 +158,23 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                       title: Text(transaction.note?.isNotEmpty == true ? transaction.note! : item.categoryName, maxLines: 1, overflow: TextOverflow.ellipsis),
                       subtitle: Text('${item.categoryName} · ${item.accountName}\n${_dateLabel(transaction.transactionDate)}', maxLines: 2),
                       isThreeLine: true,
-                      trailing: Text(
-                        '${isIncome ? '+' : '-'}${_money(transaction.amountPaise)}',
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '${isIncome ? '+' : '-'}${_money(transaction.amountPaise)}',
+                            style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                          PopupMenuButton<String>(
+                            tooltip: 'Transaction actions',
+                            onSelected: (action) {
+                              if (action == 'trash') _moveToTrash(transaction.id, transaction.accountId);
+                            },
+                            itemBuilder: (_) => const [
+                              PopupMenuItem(value: 'trash', child: ListTile(leading: Icon(Icons.delete_outline), title: Text('Move to Trash'))),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
                   );
