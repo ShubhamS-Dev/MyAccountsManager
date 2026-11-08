@@ -22,18 +22,6 @@ void main() {
     await testDatabase.close();
   });
 
-  Future<void> pumpApp(WidgetTester tester) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          appDatabaseProvider.overrideWithValue(testDatabase),
-        ],
-        child: const MyAccountsManagerApp(),
-      ),
-    );
-    await pumpUntilFound(tester, find.text('Home'));
-  }
-
   Future<void> pumpUntilFound(
     WidgetTester tester,
     Finder finder, {
@@ -51,6 +39,18 @@ void main() {
       reason: 'The expected widget did not appear within '
           '${interval * maxPumps}.',
     );
+  }
+
+  Future<void> pumpApp(WidgetTester tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(testDatabase),
+        ],
+        child: const MyAccountsManagerApp(),
+      ),
+    );
+    await pumpUntilFound(tester, find.text('Home'));
   }
 
   testWidgets('launches the home dashboard with primary navigation',
