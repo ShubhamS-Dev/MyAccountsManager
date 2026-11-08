@@ -28,8 +28,9 @@ class MoneyFormatter {
 
     final whole = _ungroup(parts[0]);
     final rupees = int.tryParse(whole);
-    if (rupees == null)
+    if (rupees == null) {
       throw const FormatException('Amount is too large or invalid.');
+    }
     final paise = int.parse(
         fraction.padRight(2, '0').isEmpty ? '0' : fraction.padRight(2, '0'));
     final result = rupees * 100 + paise;
