@@ -95,7 +95,7 @@ class _AccountBalanceAdjustmentsPageState
           _saving = false;
           _error =
               'Could not save adjustment. Check the amount and Account status.';
-        })
+        });
     }
   }
 
@@ -111,7 +111,7 @@ class _AccountBalanceAdjustmentsPageState
             const Center(child: Text('Account could not be loaded.')),
         data: (row) {
           if (row == null)
-            return const Center(child: Text('Account not found.'))
+            return const Center(child: Text('Account not found.'));
           final isArchived = row.archivedAt != null;
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
@@ -212,7 +212,7 @@ class _AccountBalanceAdjustmentsPageState
                   if (items.isEmpty)
                     return const Padding(
                         padding: EdgeInsets.all(16),
-                        child: Text('No balance adjustments yet.'))
+                        child: Text('No balance adjustments yet.'));
                   return Column(
                     children: [
                       for (final item in items)
