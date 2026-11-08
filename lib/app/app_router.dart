@@ -5,6 +5,7 @@ import '../features/accounts/presentation/create_account_page.dart';
 import '../features/accounts/presentation/edit_account_page.dart';
 import '../features/accounts/presentation/archived_accounts_page.dart';
 import '../features/transactions/presentation/add_transaction_page.dart';
+import '../features/transactions/presentation/transaction_trash_page.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/',
@@ -24,6 +25,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/accounts/new',
       builder: (context, state) => const CreateAccountPage(),
+    ),
+    GoRoute(
+      path: '/transactions/trash',
+      builder: (context, state) => const TransactionTrashPage(),
     ),
     GoRoute(
       path: '/transaction/new',
