@@ -111,8 +111,9 @@ class _AccountBalanceAdjustmentsPageState
         error: (error, stack) =>
             const Center(child: Text('Account could not be loaded.')),
         data: (row) {
-          if (row == null)
+          if (row == null) {
             return const Center(child: Text('Account not found.'));
+          }
           final isArchived = row.archivedAt != null;
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
