@@ -58,7 +58,7 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
         setState(() {
           _saving = false;
           _error = 'Account could not be saved. Please try again.';
-        })
+        });
     }
   }
 
