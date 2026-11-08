@@ -141,3 +141,16 @@ Run when the toolchain is available:
     flutter build apk --debug
 
 Report checks as not run when Flutter tooling is unavailable. Never infer a successful build from source files or a successful workflow configuration alone.
+
+## 11. UI/UX and presentation architecture
+
+The approved cross-app UI/UX requirements are maintained in docs/UI_UX_REQUIREMENTS.md.
+
+- Use shared design tokens and reusable components for typography, spacing, colors, field dimensions, dropdowns, date pickers, cards, and motion.
+- Keep dropdowns and date-picker surfaces compact while preserving accessible touch targets.
+- Use restrained, non-blocking animations for transitions and interaction feedback.
+- The Add Transaction field order is Account → Transaction date → Note → Amount → Category and other applicable details. The Expense/Income selector may sit above this sequence as a compact type control.
+- Display the transaction date as **Today** when it matches the device's current local calendar date; otherwise display **DD MMM YYYY**, for example **08 Nov 2026**. This is presentation-only and must not alter UTC-normalized date-only storage.
+- Shared money formatting must use Indian digit grouping and the established precision rule. Positive/income values use the semantic positive color; negative/expense values use the semantic negative color. Signs remain explicit and colors must meet contrast requirements in both themes.
+- Database-backed views must be reactive. Drift streams and Riverpod dependencies should propagate mutations to all dependent lists, balances, and summaries without app restart or ad-hoc manual refresh calls.
+- Loading, empty, error, retry, and success states are part of the designed experience.
