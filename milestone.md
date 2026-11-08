@@ -187,3 +187,27 @@ Status: requirements documented; implementation remains pending. M12 remains Not
 | Date | Update |
 |---|---|
 | 2026-11-08 | Documented approved premium UI/UX, compact control, transaction-form ordering, Today/date display, Indian amount grouping, semantic amount color, and reactive data-refresh requirements in docs/UI_UX_REQUIREMENTS.md; linked the requirements from agent instructions and architecture. Documentation only; no app source behavior changed in this commit. |
+
+
+## Premium UI/UX implementation sequence — 2026-11-08
+
+Implementation has started on the existing project-foundation feature branch. Work is intentionally sequenced to stabilize financial correctness before visual polish:
+
+1. **Reactive data synchronization:** replace one-shot balance reads with Drift queries watching Accounts, Transactions, and BalanceAdjustments; make Home's combined active-Account balance database-backed; add stream propagation tests.
+2. **Financial presentation:** centralize all amount display through MoneyFormatter and apply semantic positive/negative colors consistently across Home, Accounts, History, and future modules.
+3. **Transaction entry:** reorder fields to Account → Date → Note → Amount → Category/other details; display Today for the current local calendar date and DD MMM YYYY otherwise; compact dropdown/date-picker controls.
+4. **Premium design system:** refine shared theme, typography, spacing, cards, navigation, compact controls, loading/empty/error states, and restrained animations.
+5. **Regression and APK validation:** format, analyze, test, build debug APK, and review the installed screens.
+
+Current implementation slice (not yet CI-validated):
+- Added reactive Drift SQL streams for individual Account balance and combined active-Account balance, with dependencies declared for all source tables.
+- Changed Account balance provider to a StreamProvider and added a reactive Home total-balance provider.
+- Replaced Home's hardcoded ₹0.00 with the live combined balance.
+- Updated Account balance labels to use shared MoneyFormatter and semantic positive/negative colors.
+- Reordered Add Transaction inputs and made Account/Category dropdowns denser with bounded menu height.
+- Added Today / DD MMM YYYY transaction-date label behavior.
+- Updated History to use the shared currency/date formatters and semantic amount colors.
+- Added a repository stream test for a transaction mutation changing the watched Account balance.
+
+The source changes are committed, but the new workflow must pass before this slice is considered validated. Remaining tasks include checking the new Drift SQL at runtime, adding provider/widget propagation coverage, compacting date-picker presentation, polishing shared theme and animations, and applying semantic amount colors to every remaining monetary display.
+

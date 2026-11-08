@@ -71,3 +71,15 @@ The Expense/Income type selector remains a transaction-type control and may be p
 - [ ] Positive and negative amounts use consistent semantic colors and retain explicit signs.
 - [ ] Database mutations reactively update every affected screen and summary.
 - [ ] Light and dark themes preserve contrast and semantic color meaning.
+
+
+## Implementation sequencing
+
+The requirements are being implemented in this order:
+1. Reactive Drift/Riverpod synchronization and live Home/Account balances.
+2. Shared Indian currency formatting and semantic positive/negative colors.
+3. Add Transaction form ordering, Today/date labels, and compact controls.
+4. Shared premium visual system, restrained animations, and polished loading/empty/error states.
+5. Regression tests, Android debug build, and visual review.
+
+A manual refresh affordance is not an acceptable substitute for reactive synchronization. Each implementation slice must include tests and pass CI before it is reported as validated.

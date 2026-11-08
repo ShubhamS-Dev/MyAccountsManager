@@ -44,7 +44,12 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
     return rupees * 100 + paise;
   }
 
-  bool _isToday(DateTime date) {\n    final now = DateTime.now();\n    return date.year == now.year && date.month == now.month && date.day == now.day;\n  }\n\n  Future<void> _pickDate() async {
+  bool _isToday(DateTime date) {
+    final now = DateTime.now();
+    return date.year == now.year && date.month == now.month && date.day == now.day;
+  }
+
+  Future<void> _pickDate() async {
     final picked = await showDatePicker(
       context: context,
       initialDate: _date,

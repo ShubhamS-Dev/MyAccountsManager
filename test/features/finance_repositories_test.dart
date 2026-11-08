@@ -146,6 +146,35 @@ void main() {
   );
 
   test(
+    'reactively emits Account balance after a transaction is created',
+    () async {
+      final accountId = await accounts.createAccount(
+        name: 'Reactive balance',
+        openingBalancePaise: 10000,
+      );
+      final today = DateTime.utc(2026, 11, 8).millisecondsSinceEpoch;
+      final expense = await (database.select(database.categories)
+            ..where((row) => row.type.equals('expense'))
+            ..where((row) => row.name.equals('Food & Dining')))
+          .getSingle();
+
+      final expectation = expectLater(
+        accounts.watchBalancePaise(accountId: accountId, asOfDate: today),
+        emitsInOrder([10000, 7500]),
+      );
+      await Future<void>.delayed(Duration.zero);
+      await transactions.createTransaction(
+        accountId: accountId,
+        categoryId: expense.id,
+        type: 'expense',
+        amountPaise: 2500,
+        transactionDate: today,
+      );
+      await expectation;
+    },
+  );
+
+  test(
     'returns null when calculating balance for an unknown Account',
     () async {
       final balance = await accounts.calculateBalancePaise(
