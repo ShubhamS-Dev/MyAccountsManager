@@ -39,7 +39,9 @@ class TransactionsRepository {
       query.where(_database.transactions.transactionDate
           .isSmallerOrEqualValue(throughDate));
     }
-    if (type != null) query.where(_database.transactions.type.equals(type));
+    if (type != null) {
+      query.where(_database.transactions.type.equals(type));
+    }
     query.orderBy([
       OrderingTerm.desc(_database.transactions.transactionDate),
       OrderingTerm.desc(_database.transactions.createdAt)
