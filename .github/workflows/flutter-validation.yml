@@ -17,6 +17,7 @@ permissions:
 
 jobs:
   validate:
+    timeout-minutes: 15
     concurrency:
       group: flutter-validation-${{ github.ref }}
       cancel-in-progress: true
@@ -58,4 +59,4 @@ jobs:
         run: flutter analyze
 
       - name: Run tests
-        run: flutter test
+        run: flutter test --reporter expanded --timeout 2m
