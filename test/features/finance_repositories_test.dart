@@ -77,4 +77,62 @@ void main() {
       throwsArgumentError,
     );
   });
+  test('calculates Account balance using effective, non-deleted transactions', () async {
+    final accountId = await accounts.createAccount(
+      name: 'Home',
+      openingBalancePaise: 100000,
+    );
+    final expense = await (database.select(database.categories)
+          ..where((category) => category.type.equals('expense'))
+          ..where((category) => category.name.equals('Food & Dining')))
+        .getSingle();
+    final income = await (database.select(database.categories)
+          ..where((category) => category.type.equals('income'))
+          ..where((category) => category.name.equals('Salary')))
+        .getSingle();
+
+    final today = DateTime.utc(2026, 11, 8).millisecondsSinceEpoch;
+    final tomorrow = DateTime.utc(2026, 11, 9).millisecondsSinceEpoch;
+    final deletedExpenseId = await transactions.createTransaction(
+      accountId: accountId,
+      categoryId: expense.id,
+      type: 'expense',
+      amountPaise: 25000,
+      transactionDate: today,
+    );
+    await transactions.createTransaction(
+      accountId: accountId,
+      categoryId: income.id,
+      type: 'income',
+      amountPaise: 50000,
+      transactionDate: today,
+    );
+    await transactions.createTransaction(
+      accountId: accountId,
+      categoryId: expense.id,
+      type: 'expense',
+      amountPaise: 10000,
+      transactionDate: tomorrow,
+    );
+    await (database.update(database.transactions)
+          ..where((row) => row.id.equals(deletedExpenseId)))
+        .write(TransactionsCompanion(
+      deletedAt: Value(DateTime.utc(2026, 11, 8, 12).millisecondsSinceEpoch),
+    ));
+
+    final balance = await accounts.calculateBalancePaise(
+      accountId: accountId,
+      asOfDate: today,
+    );
+    expect(balance, 150000);
+  });
+
+  test('returns null when calculating balance for an unknown Account', () async {
+    final balance = await accounts.calculateBalancePaise(
+      accountId: 'missing',
+      asOfDate: DateTime.utc(2026, 11, 8).millisecondsSinceEpoch,
+    );
+    expect(balance, isNull);
+  });
+
 }
