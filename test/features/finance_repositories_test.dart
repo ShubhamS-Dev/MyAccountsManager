@@ -169,4 +169,27 @@ void main() {
     expect((await accounts.watchActiveAccounts().first).any((row) => row.id == id), isTrue);
   });
 
+  test('watches transaction history joined with Account and category and applies filters', () async {
+    final accountId = await accounts.createAccount(name: 'Office');
+    final expense = await (database.select(database.categories)
+          ..where((row) => row.type.equals('expense'))
+          ..where((row) => row.name.equals('Food & Dining'))).getSingle();
+    final income = await (database.select(database.categories)
+          ..where((row) => row.type.equals('income'))
+          ..where((row) => row.name.equals('Salary'))).getSingle();
+    final date = DateTime.utc(2026, 11, 8).millisecondsSinceEpoch;
+    await transactions.createTransaction(accountId: accountId, categoryId: expense.id, type: 'expense', amountPaise: 2500, transactionDate: date, note: 'Lunch');
+    await transactions.createTransaction(accountId: accountId, categoryId: income.id, type: 'income', amountPaise: 500000, transactionDate: date);
+
+    final all = await transactions.watchHistory().first;
+    expect(all, hasLength(2));
+    expect(all.first.accountName, 'Office');
+    expect(all.first.categoryName, 'Salary');
+    expect(all.first.transaction.type, 'income');
+
+    final expenses = await transactions.watchHistory(accountId: accountId, type: 'expense', fromDate: date, throughDate: date).first;
+    expect(expenses, hasLength(1));
+    expect(expenses.single.transaction.note, 'Lunch');
+  });
+
 }
