@@ -46,10 +46,11 @@ class TransactionTrashPage extends ConsumerWidget {
           .permanentlyDeleteTransaction(id);
       ref.invalidate(transactionTrashProvider);
     } catch (_) {
-      if (context.mounted)
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text(
                 'Could not delete this transaction. Refresh and try again.')));
+      }
     }
   }
 
