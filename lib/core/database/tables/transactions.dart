@@ -17,14 +17,11 @@ class Transactions extends Table {
   IntColumn get deletedAt => integer().nullable()();
 
   @override
-  Set<Column<Object>> get primaryKey => {id};
+  Set<Column> get primaryKey => {id};
 
   @override
   List<String> get customConstraints => [
         "CHECK (type IN ('expense', 'income'))",
         'CHECK (amount_paise > 0)',
       ];
-
-  @override
-  List<Set<Column>> get uniqueKeys => [];
 }
