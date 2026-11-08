@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../accounts_providers.dart';
+import 'account_balance_label.dart';
 
 class AccountsPage extends ConsumerWidget {
   const AccountsPage({super.key});
@@ -35,7 +36,7 @@ class AccountsPage extends ConsumerWidget {
               Card(child: ListTile(
                 leading: const CircleAvatar(child: Icon(Icons.account_balance_wallet_outlined)),
                 title: Text(account.name),
-                subtitle: account.description == null ? null : Text(account.description!),
+                subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [if (account.description != null) Text(account.description!), AccountBalanceLabel(accountId: account.id)]),
                 trailing: PopupMenuButton<String>(
                   onSelected: (action) async {
                     final repository = ref.read(accountsRepositoryProvider);
