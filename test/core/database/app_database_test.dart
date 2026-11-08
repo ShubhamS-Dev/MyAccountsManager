@@ -13,7 +13,7 @@ void main() {
     await database.close();
   });
 
-  test('creates the version one schema and seeds built-in categories', () async {
+  test('creates the version two schema and seeds built-in categories', () async {
     final expenseCategories = await (database.select(database.categories)
           ..where((category) => category.type.equals('expense')))
         .get();
@@ -34,4 +34,10 @@ void main() {
     expect(after.length, before.length);
     expect(after.map((row) => row.id).toSet(), before.map((row) => row.id).toSet());
   });
+
+  test('creates the balance adjustment table in schema version two', () async {
+    expect(database.schemaVersion, 2);
+    expect(await database.select(database.balanceAdjustments).get(), isEmpty);
+  });
+
 }
