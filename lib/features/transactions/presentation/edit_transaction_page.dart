@@ -80,7 +80,9 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
         _accountId == null ||
         _categoryId == null ||
         _kind == null ||
-        _date == null) return;
+        _date == null) {
+      return;
+    }
 
     setState(() {
       _saving = true;
