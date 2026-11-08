@@ -149,8 +149,9 @@ class TransactionsRepository {
       deletedAt: Value(now),
       updatedAt: Value(now),
     ));
-    if (changed == 0)
+    if (changed == 0) {
       throw StateError('Transaction was not found or is already in Trash.');
+    }
   }
 
   Future<void> restoreTransaction(String transactionId) async {
