@@ -6,19 +6,20 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import 'tables/accounts.dart';
+import 'tables/balance_adjustments.dart';
 import 'tables/categories.dart';
 import 'tables/transactions.dart';
 
 part 'app_database.g.dart';
 
-@DriftDatabase(tables: [Accounts, Categories, Transactions])
+@DriftDatabase(tables: [Accounts, Categories, Transactions, BalanceAdjustments])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   AppDatabase.forTesting(QueryExecutor executor) : super(executor);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -29,12 +30,18 @@ class AppDatabase extends _$AppDatabase {
           await customStatement('CREATE INDEX transactions_category_date_idx ON transactions (category_id, transaction_date)');
           await customStatement('CREATE INDEX transactions_date_idx ON transactions (transaction_date)');
           await customStatement('CREATE INDEX transactions_deleted_date_idx ON transactions (deleted_at, transaction_date)');
+          await customStatement('CREATE INDEX balance_adjustments_account_date_idx ON balance_adjustments (account_id, adjustment_date)');
+          await customStatement('CREATE INDEX balance_adjustments_deleted_date_idx ON balance_adjustments (deleted_at, adjustment_date)');
           await customStatement('CREATE INDEX accounts_archived_sort_idx ON accounts (archived_at, sort_order)');
           await customStatement('CREATE INDEX accounts_pinned_sort_idx ON accounts (is_pinned, sort_order)');
           await customStatement('CREATE INDEX categories_type_active_sort_idx ON categories (type, is_active, sort_order)');
         },
         onUpgrade: (migrator, from, to) async {
-          // Add explicit, transactional migration steps for every future version.
+          if (from < 2) {
+            await migrator.createTable(balanceAdjustments);
+            await customStatement('CREATE INDEX balance_adjustments_account_date_idx ON balance_adjustments (account_id, adjustment_date)');
+            await customStatement('CREATE INDEX balance_adjustments_deleted_date_idx ON balance_adjustments (deleted_at, adjustment_date)');
+          }
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
