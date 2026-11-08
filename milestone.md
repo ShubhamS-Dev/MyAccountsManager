@@ -169,3 +169,21 @@ Corrective approach: explicitly wrap each complete intended statement body, pres
 - The previous retry-only mitigation was insufficient because the failing endpoint remained unchanged across all attempts.
 - Updated the workflow to rewrite the generated Gradle wrapper distribution URL to the Gradle downloads host (downloads.gradle.org) while preserving the generated Gradle version and archive type. Added a 120-second wrapper network timeout. Existing wrapper/dependency caching and bounded retry behavior remain in place.
 - This endpoint change is not yet validated. The next successful run must pass Gradle distribution download, Android compilation, APK upload, and generated scaffold commit before Android build completion is claimed.
+
+## UI/UX requirements update — 2026-11-08
+
+The user reviewed the current Android screens and approved cross-app UI/UX requirements. The detailed source of truth is docs/UI_UX_REQUIREMENTS.md; agent.md and docs/ARCHITECTURE.md require future implementation to follow it.
+
+Confirmed requirements recorded (not yet implemented or validated as a complete UI refresh):
+- Premium, cohesive visual design with purposeful, smooth, non-blocking animations.
+- Compact dropdowns, popup menus, and date-picker dialogs/calendars, while retaining accessible touch targets.
+- Add Transaction input order: **Account → Transaction date → Note → Amount → Category/other details**. Expense/Income type selection may remain as a compact selector above the fields.
+- Show **Today** when the selected transaction date matches the device's current local calendar date; otherwise show **DD MMM YYYY**, e.g. **08 Nov 2026**. This is display-only; UTC-normalized date-only storage remains unchanged.
+- Use Indian digit grouping for displayed amounts (e.g. ₹1,00,000), preserve the existing whole-rupee/two-decimal precision rule, and use consistent semantic colors for positive/income and negative/expense values while retaining explicit signs.
+- Ensure Drift/Riverpod reactive updates keep Home, Accounts, History, and other dependent screens synchronized after all relevant mutations. Add propagation tests; manual refresh is not a substitute.
+
+Status: requirements documented; implementation remains pending. M12 remains Not Started until the design system, interaction polish, accessibility, and resilience acceptance criteria are implemented and verified. Reactive refresh and transaction-form/date behavior must also be validated in their respective feature milestones.
+
+| Date | Update |
+|---|---|
+| 2026-11-08 | Documented approved premium UI/UX, compact control, transaction-form ordering, Today/date display, Indian amount grouping, semantic amount color, and reactive data-refresh requirements in docs/UI_UX_REQUIREMENTS.md; linked the requirements from agent instructions and architecture. Documentation only; no app source behavior changed in this commit. |
