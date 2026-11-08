@@ -14,7 +14,8 @@ class EditTransactionPage extends ConsumerStatefulWidget {
   final String transactionId;
 
   @override
-  ConsumerState<EditTransactionPage> createState() => _EditTransactionPageState();
+  ConsumerState<EditTransactionPage> createState() =>
+      _EditTransactionPageState();
 }
 
 class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
@@ -52,9 +53,11 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
     _accountId = transaction.accountId;
     _categoryId = transaction.categoryId;
     _kind = transaction.type;
-    _date = DateTime.fromMillisecondsSinceEpoch(transaction.transactionDate, isUtc: true);
+    _date = DateTime.fromMillisecondsSinceEpoch(transaction.transactionDate,
+        isUtc: true);
     final amount = transaction.amountPaise;
-    _amountController.text = '${amount ~/ 100}.${(amount % 100).toString().padLeft(2, '0')}';
+    _amountController.text =
+        '${amount ~/ 100}.${(amount % 100).toString().padLeft(2, '0')}';
     _noteController.text = transaction.note ?? '';
   }
 
@@ -72,23 +75,29 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
   Future<void> _save(String originalAccountId) async {
     if (!_formKey.currentState!.validate()) return;
     final amount = _parsePaise(_amountController.text);
-    if (amount == null || amount <= 0 || _accountId == null || _categoryId == null || _kind == null || _date == null) return;
+    if (amount == null ||
+        amount <= 0 ||
+        _accountId == null ||
+        _categoryId == null ||
+        _kind == null ||
+        _date == null) return;
 
     setState(() {
       _saving = true;
       _error = null;
     });
     try {
-      final dateOnlyUtc = DateTime.utc(_date!.year, _date!.month, _date!.day).millisecondsSinceEpoch;
+      final dateOnlyUtc = DateTime.utc(_date!.year, _date!.month, _date!.day)
+          .millisecondsSinceEpoch;
       await ref.read(transactionsRepositoryProvider).updateTransaction(
-        transactionId: widget.transactionId,
-        accountId: _accountId!,
-        categoryId: _categoryId!,
-        type: _kind!,
-        amountPaise: amount,
-        transactionDate: dateOnlyUtc,
-        note: _noteController.text,
-      );
+            transactionId: widget.transactionId,
+            accountId: _accountId!,
+            categoryId: _categoryId!,
+            type: _kind!,
+            amountPaise: amount,
+            transactionDate: dateOnlyUtc,
+            note: _noteController.text,
+          );
       ref.invalidate(accountBalancePaiseProvider(originalAccountId));
       ref.invalidate(accountBalancePaiseProvider(_accountId!));
       ref.invalidate(transactionByIdProvider(widget.transactionId));
@@ -97,7 +106,8 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
       if (mounted) {
         setState(() {
           _saving = false;
-          _error = 'Could not update transaction. Check the Account and Category selections.';
+          _error =
+              'Could not update transaction. Check the Account and Category selections.';
         });
       }
     }
@@ -105,7 +115,8 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
 
   @override
   Widget build(BuildContext context) {
-    final transaction = ref.watch(transactionByIdProvider(widget.transactionId));
+    final transaction =
+        ref.watch(transactionByIdProvider(widget.transactionId));
     final accounts = ref.watch(allAccountsProvider);
 
     return Scaffold(
@@ -114,13 +125,16 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(
           child: TextButton(
-            onPressed: () => ref.invalidate(transactionByIdProvider(widget.transactionId)),
+            onPressed: () =>
+                ref.invalidate(transactionByIdProvider(widget.transactionId)),
             child: const Text('Could not load transaction. Retry'),
           ),
         ),
         data: (row) {
           if (row == null || row.deletedAt != null) {
-            return const Center(child: Text('This transaction is unavailable or has been moved to Trash.'));
+            return const Center(
+                child: Text(
+                    'This transaction is unavailable or has been moved to Trash.'));
           }
           _initialize(row);
           return accounts.when(
@@ -133,9 +147,11 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
             ),
             data: (accountRows) {
               if (!accountRows.any((account) => account.id == _accountId)) {
-                return const Center(child: Text('The original Account is unavailable.'));
+                return const Center(
+                    child: Text('The original Account is unavailable.'));
               }
-              final categories = ref.watch(activeCategoriesByTypeProvider(_kind!));
+              final categories =
+                  ref.watch(activeCategoriesByTypeProvider(_kind!));
               return Form(
                 key: _formKey,
                 child: ListView(
@@ -143,8 +159,14 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
                   children: [
                     SegmentedButton<String>(
                       segments: const [
-                        ButtonSegment(value: 'expense', label: Text('Expense'), icon: Icon(Icons.arrow_upward_rounded)),
-                        ButtonSegment(value: 'income', label: Text('Income'), icon: Icon(Icons.arrow_downward_rounded)),
+                        ButtonSegment(
+                            value: 'expense',
+                            label: Text('Expense'),
+                            icon: Icon(Icons.arrow_upward_rounded)),
+                        ButtonSegment(
+                            value: 'income',
+                            label: Text('Income'),
+                            icon: Icon(Icons.arrow_downward_rounded)),
                       ],
                       selected: {_kind!},
                       onSelectionChanged: (selection) => setState(() {
@@ -155,51 +177,71 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
                     const SizedBox(height: 20),
                     TextFormField(
                       controller: _amountController,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(prefixText: '₹ ', labelText: 'Amount', border: OutlineInputBorder()),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      decoration: const InputDecoration(
+                          prefixText: '₹ ',
+                          labelText: 'Amount',
+                          border: OutlineInputBorder()),
                       validator: (value) {
                         final paise = _parsePaise(value ?? '');
-                        return paise == null || paise <= 0 ? 'Enter an amount greater than ₹0 (up to 2 decimal places).' : null;
+                        return paise == null || paise <= 0
+                            ? 'Enter an amount greater than ₹0 (up to 2 decimal places).'
+                            : null;
                       },
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
                       initialValue: _accountId,
-                      decoration: const InputDecoration(labelText: 'Account', border: OutlineInputBorder()),
+                      decoration: const InputDecoration(
+                          labelText: 'Account', border: OutlineInputBorder()),
                       items: [
                         for (final account in accountRows)
                           DropdownMenuItem(
                             value: account.id,
-                            enabled: account.archivedAt == null || account.id == _accountId,
-                            child: Text('${account.name}${account.archivedAt == null ? '' : ' (Archived — keep only)'}'),
+                            enabled: account.archivedAt == null ||
+                                account.id == _accountId,
+                            child: Text(
+                                '${account.name}${account.archivedAt == null ? '' : ' (Archived — keep only)'}'),
                           ),
                       ],
                       onChanged: (value) => setState(() => _accountId = value),
-                      validator: (value) => value == null ? 'Select an Account.' : null,
+                      validator: (value) =>
+                          value == null ? 'Select an Account.' : null,
                     ),
                     const SizedBox(height: 16),
                     categories.when(
                       loading: () => const LinearProgressIndicator(),
                       error: (error, stack) => TextButton(
-                        onPressed: () => ref.invalidate(activeCategoriesByTypeProvider(_kind!)),
+                        onPressed: () => ref
+                            .invalidate(activeCategoriesByTypeProvider(_kind!)),
                         child: const Text('Could not load categories. Retry'),
                       ),
                       data: (categoryRows) {
-                        if (_categoryId != null && !categoryRows.any((category) => category.id == _categoryId)) {
+                        if (_categoryId != null &&
+                            !categoryRows.any(
+                                (category) => category.id == _categoryId)) {
                           _categoryId = null;
                         }
                         if (categoryRows.isEmpty) {
-                          return const Text('No active categories for this transaction type.');
+                          return const Text(
+                              'No active categories for this transaction type.');
                         }
                         return DropdownButtonFormField<String>(
                           initialValue: _categoryId,
-                          decoration: const InputDecoration(labelText: 'Category', border: OutlineInputBorder()),
+                          decoration: const InputDecoration(
+                              labelText: 'Category',
+                              border: OutlineInputBorder()),
                           items: [
                             for (final category in categoryRows)
-                              DropdownMenuItem(value: category.id, child: Text(category.name)),
+                              DropdownMenuItem(
+                                  value: category.id,
+                                  child: Text(category.name)),
                           ],
-                          onChanged: (value) => setState(() => _categoryId = value),
-                          validator: (value) => value == null ? 'Select a category.' : null,
+                          onChanged: (value) =>
+                              setState(() => _categoryId = value),
+                          validator: (value) =>
+                              value == null ? 'Select a category.' : null,
                         );
                       },
                     ),
@@ -208,7 +250,8 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
                       contentPadding: EdgeInsets.zero,
                       leading: const Icon(Icons.calendar_today_outlined),
                       title: const Text('Transaction date'),
-                      subtitle: Text('${_date!.day.toString().padLeft(2, '0')}/${_date!.month.toString().padLeft(2, '0')}/${_date!.year}'),
+                      subtitle: Text(
+                          '${_date!.day.toString().padLeft(2, '0')}/${_date!.month.toString().padLeft(2, '0')}/${_date!.year}'),
                       trailing: const Icon(Icons.chevron_right_rounded),
                       onTap: _pickDate,
                     ),
@@ -217,16 +260,25 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
                       maxLength: 500,
                       maxLines: 2,
                       textCapitalization: TextCapitalization.sentences,
-                      decoration: const InputDecoration(labelText: 'Note (optional)', border: OutlineInputBorder()),
+                      decoration: const InputDecoration(
+                          labelText: 'Note (optional)',
+                          border: OutlineInputBorder()),
                     ),
                     if (_error != null) ...[
                       const SizedBox(height: 8),
-                      Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                      Text(_error!,
+                          style: TextStyle(
+                              color: Theme.of(context).colorScheme.error)),
                     ],
                     const SizedBox(height: 20),
                     FilledButton(
                       onPressed: _saving ? null : () => _save(row.accountId),
-                      child: _saving ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Update transaction'),
+                      child: _saving
+                          ? const SizedBox(
+                              height: 18,
+                              width: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Text('Update transaction'),
                     ),
                   ],
                 ),
