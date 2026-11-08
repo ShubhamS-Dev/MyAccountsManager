@@ -8,6 +8,7 @@ class CreateAccountPage extends ConsumerStatefulWidget {
   @override
   ConsumerState<CreateAccountPage> createState() => _CreateAccountPageState();
 }
+
 class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
@@ -41,33 +42,79 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
     if (!_formKey.currentState!.validate()) return;
     final paise = _parsePaise(_openingBalanceController.text);
     if (paise == null) return;
-    setState(() { _saving = true; _error = null; });
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
     try {
-      await ref.read(accountsRepositoryProvider).createAccount(name: _nameController.text, description: _descriptionController.text, openingBalancePaise: paise);
+      await ref.read(accountsRepositoryProvider).createAccount(
+          name: _nameController.text,
+          description: _descriptionController.text,
+          openingBalancePaise: paise);
       ref.invalidate(activeAccountsProvider);
       if (mounted) context.pop();
     } catch (_) {
-      if (mounted) setState(() { _saving = false; _error = 'Account could not be saved. Please try again.'; });
+      if (mounted)
+        setState(() {
+          _saving = false;
+          _error = 'Account could not be saved. Please try again.';
+        });
     }
   }
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Create Account')),
-    body: Form(key: _formKey, child: ListView(padding: const EdgeInsets.all(20), children: [
-      TextFormField(controller: _nameController, autofocus: true, textCapitalization: TextCapitalization.words,
-        decoration: const InputDecoration(labelText: 'Account name *', hintText: 'e.g. Monthly Expenses', border: OutlineInputBorder()),
-        validator: (value) => value == null || value.trim().isEmpty ? 'Enter an Account name.' : null),
-      const SizedBox(height: 16),
-      TextFormField(controller: _descriptionController, textCapitalization: TextCapitalization.sentences, maxLines: 2,
-        decoration: const InputDecoration(labelText: 'Description (optional)', border: OutlineInputBorder())),
-      const SizedBox(height: 16),
-      TextFormField(controller: _openingBalanceController, keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
-        decoration: const InputDecoration(labelText: 'Opening balance (₹)', helperText: 'Use a negative amount if the Account starts in deficit.', border: OutlineInputBorder()),
-        validator: (value) => _parsePaise(value ?? '') == null ? 'Enter a valid amount with up to 2 decimal places.' : null),
-      if (_error != null) ...[const SizedBox(height: 12), Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error))],
-      const SizedBox(height: 24),
-      FilledButton(onPressed: _saving ? null : _save, child: _saving ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Save Account')),
-    ])),
-  );
+        appBar: AppBar(title: const Text('Create Account')),
+        body: Form(
+            key: _formKey,
+            child: ListView(padding: const EdgeInsets.all(20), children: [
+              TextFormField(
+                  controller: _nameController,
+                  autofocus: true,
+                  textCapitalization: TextCapitalization.words,
+                  decoration: const InputDecoration(
+                      labelText: 'Account name *',
+                      hintText: 'e.g. Monthly Expenses',
+                      border: OutlineInputBorder()),
+                  validator: (value) => value == null || value.trim().isEmpty
+                      ? 'Enter an Account name.'
+                      : null),
+              const SizedBox(height: 16),
+              TextFormField(
+                  controller: _descriptionController,
+                  textCapitalization: TextCapitalization.sentences,
+                  maxLines: 2,
+                  decoration: const InputDecoration(
+                      labelText: 'Description (optional)',
+                      border: OutlineInputBorder())),
+              const SizedBox(height: 16),
+              TextFormField(
+                  controller: _openingBalanceController,
+                  keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true, signed: true),
+                  decoration: const InputDecoration(
+                      labelText: 'Opening balance (₹)',
+                      helperText:
+                          'Use a negative amount if the Account starts in deficit.',
+                      border: OutlineInputBorder()),
+                  validator: (value) => _parsePaise(value ?? '') == null
+                      ? 'Enter a valid amount with up to 2 decimal places.'
+                      : null),
+              if (_error != null) ...[
+                const SizedBox(height: 12),
+                Text(_error!,
+                    style:
+                        TextStyle(color: Theme.of(context).colorScheme.error))
+              ],
+              const SizedBox(height: 24),
+              FilledButton(
+                  onPressed: _saving ? null : _save,
+                  child: _saving
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Text('Save Account')),
+            ])),
+      );
 }

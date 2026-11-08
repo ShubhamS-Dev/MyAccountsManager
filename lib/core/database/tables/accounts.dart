@@ -7,7 +7,8 @@ class Accounts extends Table {
   TextColumn get description => text().nullable()();
   TextColumn get iconKey => text().nullable()();
   IntColumn get colorValue => integer().nullable()();
-  IntColumn get openingBalancePaise => integer().withDefault(const Constant(0))();
+  IntColumn get openingBalancePaise =>
+      integer().withDefault(const Constant(0))();
   BoolColumn get isPinned => boolean().withDefault(const Constant(false))();
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
   IntColumn get archivedAt => integer().nullable()();

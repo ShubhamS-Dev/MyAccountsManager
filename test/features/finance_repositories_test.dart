@@ -21,7 +21,8 @@ void main() {
   });
 
   test('creates and archives an Account without deleting its record', () async {
-    final id = await accounts.createAccount(name: '  Home  ', openingBalancePaise: 250000);
+    final id = await accounts.createAccount(
+        name: '  Home  ', openingBalancePaise: 250000);
     final row = await (database.select(database.accounts)
           ..where((account) => account.id.equals(id)))
         .getSingle();
@@ -35,7 +36,8 @@ void main() {
     expect(archived.archivedAt, isNotNull);
   });
 
-  test('creates a transaction with integer paise and validates category type', () async {
+  test('creates a transaction with integer paise and validates category type',
+      () async {
     final accountId = await accounts.createAccount(name: 'Monthly Expenses');
     final expense = await (database.select(database.categories)
           ..where((category) => category.type.equals('expense'))
@@ -78,7 +80,8 @@ void main() {
       throwsArgumentError,
     );
   });
-  test('calculates Account balance using effective, non-deleted transactions', () async {
+  test('calculates Account balance using effective, non-deleted transactions',
+      () async {
     final accountId = await accounts.createAccount(
       name: 'Home',
       openingBalancePaise: 100000,
@@ -128,7 +131,8 @@ void main() {
     expect(balance, 150000);
   });
 
-  test('returns null when calculating balance for an unknown Account', () async {
+  test('returns null when calculating balance for an unknown Account',
+      () async {
     final balance = await accounts.calculateBalancePaise(
       accountId: 'missing',
       asOfDate: DateTime.utc(2026, 11, 8).millisecondsSinceEpoch,
@@ -136,9 +140,12 @@ void main() {
     expect(balance, isNull);
   });
 
-  test('updates Account details and pin state without changing opening balance', () async {
-    final id = await accounts.createAccount(name: 'Old name', openingBalancePaise: 12345);
-    await accounts.updateAccount(accountId: id, name: 'New name', description: 'Updated');
+  test('updates Account details and pin state without changing opening balance',
+      () async {
+    final id = await accounts.createAccount(
+        name: 'Old name', openingBalancePaise: 12345);
+    await accounts.updateAccount(
+        accountId: id, name: 'New name', description: 'Updated');
     await accounts.setPinned(id, pinned: true);
     final row = await accounts.getAccount(id);
     expect(row?.name, 'New name');
@@ -157,29 +164,53 @@ void main() {
     );
   });
 
-  test('restores archived Account without changing its financial data', () async {
-    final id = await accounts.createAccount(name: 'Trip', openingBalancePaise: 7654);
+  test('restores archived Account without changing its financial data',
+      () async {
+    final id =
+        await accounts.createAccount(name: 'Trip', openingBalancePaise: 7654);
     await accounts.archiveAccount(id);
-    expect((await accounts.watchActiveAccounts().first).any((row) => row.id == id), isFalse);
-    expect((await accounts.watchArchivedAccounts().first).any((row) => row.id == id), isTrue);
+    expect(
+        (await accounts.watchActiveAccounts().first).any((row) => row.id == id),
+        isFalse);
+    expect(
+        (await accounts.watchArchivedAccounts().first)
+            .any((row) => row.id == id),
+        isTrue);
     await accounts.restoreAccount(id);
     final restored = await accounts.getAccount(id);
     expect(restored?.archivedAt, isNull);
     expect(restored?.openingBalancePaise, 7654);
-    expect((await accounts.watchActiveAccounts().first).any((row) => row.id == id), isTrue);
+    expect(
+        (await accounts.watchActiveAccounts().first).any((row) => row.id == id),
+        isTrue);
   });
 
-  test('watches transaction history joined with Account and category and applies filters', () async {
+  test(
+      'watches transaction history joined with Account and category and applies filters',
+      () async {
     final accountId = await accounts.createAccount(name: 'Office');
     final expense = await (database.select(database.categories)
           ..where((row) => row.type.equals('expense'))
-          ..where((row) => row.name.equals('Food & Dining'))).getSingle();
+          ..where((row) => row.name.equals('Food & Dining')))
+        .getSingle();
     final income = await (database.select(database.categories)
           ..where((row) => row.type.equals('income'))
-          ..where((row) => row.name.equals('Salary'))).getSingle();
+          ..where((row) => row.name.equals('Salary')))
+        .getSingle();
     final date = DateTime.utc(2026, 11, 8).millisecondsSinceEpoch;
-    await transactions.createTransaction(accountId: accountId, categoryId: expense.id, type: 'expense', amountPaise: 2500, transactionDate: date, note: 'Lunch');
-    await transactions.createTransaction(accountId: accountId, categoryId: income.id, type: 'income', amountPaise: 500000, transactionDate: date);
+    await transactions.createTransaction(
+        accountId: accountId,
+        categoryId: expense.id,
+        type: 'expense',
+        amountPaise: 2500,
+        transactionDate: date,
+        note: 'Lunch');
+    await transactions.createTransaction(
+        accountId: accountId,
+        categoryId: income.id,
+        type: 'income',
+        amountPaise: 500000,
+        transactionDate: date);
 
     final all = await transactions.watchHistory().first;
     expect(all, hasLength(2));
@@ -187,17 +218,25 @@ void main() {
     expect(all.first.categoryName, 'Salary');
     expect(all.first.transaction.type, 'income');
 
-    final expenses = await transactions.watchHistory(accountId: accountId, type: 'expense', fromDate: date, throughDate: date).first;
+    final expenses = await transactions
+        .watchHistory(
+            accountId: accountId,
+            type: 'expense',
+            fromDate: date,
+            throughDate: date)
+        .first;
     expect(expenses, hasLength(1));
     expect(expenses.single.transaction.note, 'Lunch');
   });
 
-
-  test('moves transactions to Trash, restores them, and permanently deletes only trashed rows', () async {
+  test(
+      'moves transactions to Trash, restores them, and permanently deletes only trashed rows',
+      () async {
     final accountId = await accounts.createAccount(name: 'Personal');
     final category = await (database.select(database.categories)
           ..where((row) => row.type.equals('expense'))
-          ..where((row) => row.name.equals('Food & Dining'))).getSingle();
+          ..where((row) => row.name.equals('Food & Dining')))
+        .getSingle();
     final id = await transactions.createTransaction(
       accountId: accountId,
       categoryId: category.id,
@@ -222,22 +261,28 @@ void main() {
     await transactions.permanentlyDeleteTransaction(id);
     expect(await transactions.watchTrash().first, isEmpty);
     expect(
-      await (database.select(database.transactions)..where((row) => row.id.equals(id))).getSingleOrNull(),
+      await (database.select(database.transactions)
+            ..where((row) => row.id.equals(id)))
+          .getSingleOrNull(),
       isNull,
     );
-    expect(() async => await transactions.permanentlyDeleteTransaction(id), throwsStateError);
+    expect(() async => await transactions.permanentlyDeleteTransaction(id),
+        throwsStateError);
   });
 
-
-  test('updates transaction fields and allows moving it to another active Account', () async {
+  test(
+      'updates transaction fields and allows moving it to another active Account',
+      () async {
     final sourceAccountId = await accounts.createAccount(name: 'Personal');
     final targetAccountId = await accounts.createAccount(name: 'Office');
     final expense = await (database.select(database.categories)
           ..where((row) => row.type.equals('expense'))
-          ..where((row) => row.name.equals('Food & Dining'))).getSingle();
+          ..where((row) => row.name.equals('Food & Dining')))
+        .getSingle();
     final income = await (database.select(database.categories)
           ..where((row) => row.type.equals('income'))
-          ..where((row) => row.name.equals('Salary'))).getSingle();
+          ..where((row) => row.name.equals('Salary')))
+        .getSingle();
     final originalDate = DateTime.utc(2026, 11, 7).millisecondsSinceEpoch;
     final updatedDate = DateTime.utc(2026, 11, 8).millisecondsSinceEpoch;
     final id = await transactions.createTransaction(
@@ -266,17 +311,26 @@ void main() {
     expect(updated?.amountPaise, 990050);
     expect(updated?.transactionDate, updatedDate);
     expect(updated?.note, 'Updated note');
-    expect((await transactions.watchHistory(accountId: sourceAccountId).first), isEmpty);
-    expect((await transactions.watchHistory(accountId: targetAccountId).first).single.transaction.id, id);
+    expect((await transactions.watchHistory(accountId: sourceAccountId).first),
+        isEmpty);
+    expect(
+        (await transactions.watchHistory(accountId: targetAccountId).first)
+            .single
+            .transaction
+            .id,
+        id);
   });
 
-  test('does not allow editing a trashed transaction or moving a transaction into an archived Account', () async {
+  test(
+      'does not allow editing a trashed transaction or moving a transaction into an archived Account',
+      () async {
     final activeAccountId = await accounts.createAccount(name: 'Active');
     final archivedAccountId = await accounts.createAccount(name: 'Archived');
     await accounts.archiveAccount(archivedAccountId);
     final category = await (database.select(database.categories)
           ..where((row) => row.type.equals('expense'))
-          ..where((row) => row.name.equals('Food & Dining'))).getSingle();
+          ..where((row) => row.name.equals('Food & Dining')))
+        .getSingle();
     final id = await transactions.createTransaction(
       accountId: activeAccountId,
       categoryId: category.id,
@@ -310,8 +364,9 @@ void main() {
     );
   });
 
-
-  test('balance adjustments affect Account balance by date and preserve reason history', () async {
+  test(
+      'balance adjustments affect Account balance by date and preserve reason history',
+      () async {
     final accountId = await accounts.createAccount(
       name: 'Home',
       openingBalancePaise: 100000,
@@ -333,11 +388,13 @@ void main() {
     );
 
     expect(
-      await accounts.calculateBalancePaise(accountId: accountId, asOfDate: today),
+      await accounts.calculateBalancePaise(
+          accountId: accountId, asOfDate: today),
       125000,
     );
     expect(
-      await accounts.calculateBalancePaise(accountId: accountId, asOfDate: tomorrow),
+      await accounts.calculateBalancePaise(
+          accountId: accountId, asOfDate: tomorrow),
       115000,
     );
     final history = await accounts.watchBalanceAdjustments(accountId).first;
@@ -346,7 +403,8 @@ void main() {
     expect(history.first.amountPaise, -10000);
   });
 
-  test('rejects zero, blank-reason, and archived Account balance adjustments', () async {
+  test('rejects zero, blank-reason, and archived Account balance adjustments',
+      () async {
     final activeAccountId = await accounts.createAccount(name: 'Active');
     expect(
       () => accounts.createBalanceAdjustment(
@@ -378,5 +436,4 @@ void main() {
       throwsStateError,
     );
   });
-
 }

@@ -1,13 +1,13 @@
 import 'package:go_router/go_router.dart';
 
-import '../features/shell/presentation/app_shell.dart';
-import '../features/accounts/presentation/create_account_page.dart';
-import '../features/accounts/presentation/edit_account_page.dart';
 import '../features/accounts/presentation/account_balance_adjustments_page.dart';
 import '../features/accounts/presentation/archived_accounts_page.dart';
+import '../features/accounts/presentation/create_account_page.dart';
+import '../features/accounts/presentation/edit_account_page.dart';
+import '../features/shell/presentation/app_shell.dart';
 import '../features/transactions/presentation/add_transaction_page.dart';
-import '../features/transactions/presentation/transaction_trash_page.dart';
 import '../features/transactions/presentation/edit_transaction_page.dart';
+import '../features/transactions/presentation/transaction_trash_page.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/',
@@ -22,11 +22,13 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/accounts/:accountId/edit',
-      builder: (context, state) => EditAccountPage(accountId: state.pathParameters['accountId']!),
+      builder: (context, state) =>
+          EditAccountPage(accountId: state.pathParameters['accountId']!),
     ),
     GoRoute(
       path: '/accounts/:accountId/adjustments',
-      builder: (context, state) => AccountBalanceAdjustmentsPage(accountId: state.pathParameters['accountId']!),
+      builder: (context, state) => AccountBalanceAdjustmentsPage(
+          accountId: state.pathParameters['accountId']!),
     ),
     GoRoute(
       path: '/accounts/new',
@@ -34,7 +36,8 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/transaction/:transactionId/edit',
-      builder: (context, state) => EditTransactionPage(transactionId: state.pathParameters['transactionId']!),
+      builder: (context, state) => EditTransactionPage(
+          transactionId: state.pathParameters['transactionId']!),
     ),
     GoRoute(
       path: '/transactions/trash',

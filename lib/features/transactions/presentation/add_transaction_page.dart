@@ -56,26 +56,36 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     final amount = _parsePaise(_amountController.text);
-    if (amount == null || amount <= 0 || _accountId == null || _categoryId == null) return;
+    if (amount == null ||
+        amount <= 0 ||
+        _accountId == null ||
+        _categoryId == null) return;
 
-    setState(() { _saving = true; _error = null; });
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
     try {
-      final dateOnlyUtc = DateTime.utc(_date.year, _date.month, _date.day).millisecondsSinceEpoch;
+      final dateOnlyUtc = DateTime.utc(_date.year, _date.month, _date.day)
+          .millisecondsSinceEpoch;
       await ref.read(transactionsRepositoryProvider).createTransaction(
-        accountId: _accountId!,
-        categoryId: _categoryId!,
-        type: _kind.name,
-        amountPaise: amount,
-        transactionDate: dateOnlyUtc,
-        note: _noteController.text,
-      );
+            accountId: _accountId!,
+            categoryId: _categoryId!,
+            type: _kind.name,
+            amountPaise: amount,
+            transactionDate: dateOnlyUtc,
+            note: _noteController.text,
+          );
       ref.invalidate(accountBalancePaiseProvider(_accountId!));
       if (mounted) context.pop();
     } catch (error) {
-      if (mounted) setState(() {
-        _saving = false;
-        _error = 'Could not save transaction. Check your selections and try again.';
-      });
+      if (mounted) {
+        setState(() {
+          _saving = false;
+          _error =
+              'Could not save transaction. Check your selections and try again.';
+        });
+      }
     }
   }
 
@@ -87,23 +97,29 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
       appBar: AppBar(title: const Text('Add transaction')),
       body: accounts.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(child: TextButton(
+        error: (error, stack) => Center(
+            child: TextButton(
           onPressed: () => ref.invalidate(activeAccountsProvider),
           child: const Text('Could not load Accounts. Retry'),
         )),
         data: (accountRows) {
           if (accountRows.isEmpty) {
-            return Center(child: Padding(
+            return Center(
+                child: Padding(
               padding: const EdgeInsets.all(24),
               child: Column(mainAxisSize: MainAxisSize.min, children: [
-                const Text('Create an Account before adding a transaction.', textAlign: TextAlign.center),
+                const Text('Create an Account before adding a transaction.',
+                    textAlign: TextAlign.center),
                 const SizedBox(height: 12),
-                FilledButton(onPressed: () => context.push('/accounts/new'), child: const Text('Create Account')),
+                FilledButton(
+                    onPressed: () => context.push('/accounts/new'),
+                    child: const Text('Create Account')),
               ]),
             ));
           }
           _accountId ??= accountRows.length == 1 ? accountRows.first.id : null;
-          if (_accountId != null && !accountRows.any((a) => a.id == _accountId)) _accountId = null;
+          if (_accountId != null && !accountRows.any((a) => a.id == _accountId))
+            _accountId = null;
           return Form(
             key: _formKey,
             child: ListView(
@@ -111,46 +127,85 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
               children: [
                 SegmentedButton<TransactionKind>(
                   segments: const [
-                    ButtonSegment(value: TransactionKind.expense, label: Text('Expense'), icon: Icon(Icons.arrow_upward_rounded)),
-                    ButtonSegment(value: TransactionKind.income, label: Text('Income'), icon: Icon(Icons.arrow_downward_rounded)),
+                    ButtonSegment(
+                        value: TransactionKind.expense,
+                        label: Text('Expense'),
+                        icon: Icon(Icons.arrow_upward_rounded)),
+                    ButtonSegment(
+                        value: TransactionKind.income,
+                        label: Text('Income'),
+                        icon: Icon(Icons.arrow_downward_rounded)),
                   ],
                   selected: {_kind},
-                  onSelectionChanged: (selection) => setState(() { _kind = selection.first; _categoryId = null; }),
+                  onSelectionChanged: (selection) => setState(() {
+                    _kind = selection.first;
+                    _categoryId = null;
+                  }),
                 ),
                 const SizedBox(height: 22),
-                Text(_kind == TransactionKind.expense ? 'How much did you spend?' : 'How much did you receive?', style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                    _kind == TransactionKind.expense
+                        ? 'How much did you spend?'
+                        : 'How much did you receive?',
+                    style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 10),
                 TextFormField(
                   controller: _amountController,
                   autofocus: true,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(prefixText: '₹ ', hintText: '0.00', labelText: 'Amount', border: OutlineInputBorder()),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                      prefixText: '₹ ',
+                      hintText: '0.00',
+                      labelText: 'Amount',
+                      border: OutlineInputBorder()),
                   validator: (value) {
                     final paise = _parsePaise(value ?? '');
-                    return paise == null || paise <= 0 ? 'Enter an amount greater than ₹0 (up to 2 decimal places).' : null;
+                    return paise == null || paise <= 0
+                        ? 'Enter an amount greater than ₹0 (up to 2 decimal places).'
+                        : null;
                   },
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
-                  value: _accountId,
-                  decoration: const InputDecoration(labelText: 'Account', border: OutlineInputBorder()),
-                  items: [for (final account in accountRows) DropdownMenuItem(value: account.id, child: Text(account.name))],
+                  initialValue: _accountId,
+                  decoration: const InputDecoration(
+                      labelText: 'Account', border: OutlineInputBorder()),
+                  items: [
+                    for (final account in accountRows)
+                      DropdownMenuItem(
+                          value: account.id, child: Text(account.name))
+                  ],
                   onChanged: (value) => setState(() => _accountId = value),
-                  validator: (value) => value == null ? 'Select an Account.' : null,
+                  validator: (value) =>
+                      value == null ? 'Select an Account.' : null,
                 ),
                 const SizedBox(height: 16),
                 categories.when(
                   loading: () => const LinearProgressIndicator(),
-                  error: (error, stack) => TextButton(onPressed: () => ref.invalidate(activeCategoriesByTypeProvider(_kind.name)), child: const Text('Could not load categories. Retry')),
+                  error: (error, stack) => TextButton(
+                      onPressed: () => ref.invalidate(
+                          activeCategoriesByTypeProvider(_kind.name)),
+                      child: const Text('Could not load categories. Retry')),
                   data: (categoryRows) {
-                    if (categoryRows.isEmpty) return const Text('No active categories for this transaction type.');
-                    if (_categoryId != null && !categoryRows.any((c) => c.id == _categoryId)) _categoryId = null;
+                    if (categoryRows.isEmpty)
+                      return const Text(
+                          'No active categories for this transaction type.');
+                    if (_categoryId != null &&
+                        !categoryRows.any((c) => c.id == _categoryId))
+                      _categoryId = null;
                     return DropdownButtonFormField<String>(
-                      value: _categoryId,
-                      decoration: const InputDecoration(labelText: 'Category', border: OutlineInputBorder()),
-                      items: [for (final category in categoryRows) DropdownMenuItem(value: category.id, child: Text(category.name))],
+                      initialValue: _categoryId,
+                      decoration: const InputDecoration(
+                          labelText: 'Category', border: OutlineInputBorder()),
+                      items: [
+                        for (final category in categoryRows)
+                          DropdownMenuItem(
+                              value: category.id, child: Text(category.name))
+                      ],
                       onChanged: (value) => setState(() => _categoryId = value),
-                      validator: (value) => value == null ? 'Select a category.' : null,
+                      validator: (value) =>
+                          value == null ? 'Select a category.' : null,
                     );
                   },
                 ),
@@ -159,7 +214,8 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.calendar_today_outlined),
                   title: const Text('Transaction date'),
-                  subtitle: Text('${_date.day.toString().padLeft(2, '0')}/${_date.month.toString().padLeft(2, '0')}/${_date.year}'),
+                  subtitle: Text(
+                      '${_date.day.toString().padLeft(2, '0')}/${_date.month.toString().padLeft(2, '0')}/${_date.year}'),
                   trailing: const Icon(Icons.chevron_right_rounded),
                   onTap: _pickDate,
                 ),
@@ -169,16 +225,26 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                   maxLength: 500,
                   maxLines: 2,
                   textCapitalization: TextCapitalization.sentences,
-                  decoration: const InputDecoration(labelText: 'Note (optional)', hintText: 'What was this transaction for?', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(
+                      labelText: 'Note (optional)',
+                      hintText: 'What was this transaction for?',
+                      border: OutlineInputBorder()),
                 ),
                 if (_error != null) ...[
                   const SizedBox(height: 8),
-                  Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                  Text(_error!,
+                      style: TextStyle(
+                          color: Theme.of(context).colorScheme.error)),
                 ],
                 const SizedBox(height: 20),
                 FilledButton(
                   onPressed: _saving ? null : _save,
-                  child: _saving ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Save transaction'),
+                  child: _saving
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Text('Save transaction'),
                 ),
               ],
             ),

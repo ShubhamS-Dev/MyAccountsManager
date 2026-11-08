@@ -13,7 +13,8 @@ void main() {
     await database.close();
   });
 
-  test('creates the version two schema and seeds built-in categories', () async {
+  test('creates the version two schema and seeds built-in categories',
+      () async {
     final expenseCategories = await (database.select(database.categories)
           ..where((category) => category.type.equals('expense')))
         .get();
@@ -27,17 +28,18 @@ void main() {
     expect(incomeCategories.every((category) => category.isSystem), isTrue);
   });
 
-  test('keeps default category seed stable after database initialization', () async {
+  test('keeps default category seed stable after database initialization',
+      () async {
     final before = await database.select(database.categories).get();
     await database.customStatement('SELECT 1');
     final after = await database.select(database.categories).get();
     expect(after.length, before.length);
-    expect(after.map((row) => row.id).toSet(), before.map((row) => row.id).toSet());
+    expect(after.map((row) => row.id).toSet(),
+        before.map((row) => row.id).toSet());
   });
 
   test('creates the balance adjustment table in schema version two', () async {
     expect(database.schemaVersion, 2);
     expect(await database.select(database.balanceAdjustments).get(), isEmpty);
   });
-
 }

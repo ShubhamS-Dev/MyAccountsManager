@@ -28,8 +28,10 @@ class MoneyFormatter {
 
     final whole = _ungroup(parts[0]);
     final rupees = int.tryParse(whole);
-    if (rupees == null) throw const FormatException('Amount is too large or invalid.');
-    final paise = int.parse(fraction.padRight(2, '0').isEmpty ? '0' : fraction.padRight(2, '0'));
+    if (rupees == null)
+      throw const FormatException('Amount is too large or invalid.');
+    final paise = int.parse(
+        fraction.padRight(2, '0').isEmpty ? '0' : fraction.padRight(2, '0'));
     final result = rupees * 100 + paise;
     return negative ? -result : result;
   }
@@ -41,7 +43,9 @@ class MoneyFormatter {
     final absolute = paise.abs();
     final rupees = _groupIndian((absolute ~/ 100).toString());
     final fraction = absolute % 100;
-    final amount = fraction == 0 ? rupees : rupees + '.' + fraction.toString().padLeft(2, '0');
+    final amount = fraction == 0
+        ? rupees
+        : '$rupees.${fraction.toString().padLeft(2, '0')}';
     return (negative ? '-' : '') + (includeSymbol ? '₹' : '') + amount;
   }
 
@@ -56,7 +60,10 @@ class MoneyFormatter {
     if (groups.length < 2 ||
         !RegExp(r'^\d{1,2}$').hasMatch(groups.first) ||
         !RegExp(r'^\d{3}$').hasMatch(groups.last) ||
-        groups.skip(1).take(groups.length - 2).any((g) => !RegExp(r'^\d{2}$').hasMatch(g))) {
+        groups
+            .skip(1)
+            .take(groups.length - 2)
+            .any((g) => !RegExp(r'^\d{2}$').hasMatch(g))) {
       throw const FormatException('Invalid Indian number grouping.');
     }
     return groups.join();
@@ -71,6 +78,6 @@ class MoneyFormatter {
       leading = leading.substring(0, leading.length - 2);
     }
     groups.insert(0, leading);
-    return groups.join(',') + ',' + digits.substring(digits.length - 3);
+    return '${groups.join(',')},${digits.substring(digits.length - 3)}';
   }
 }

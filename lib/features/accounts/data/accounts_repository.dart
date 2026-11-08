@@ -9,7 +9,10 @@ class AccountsRepository {
   final AppDatabase _database;
   static const _uuid = Uuid();
 
-  Stream<List<AccountRow>> watchAllAccounts() => (_database.select(_database.accounts)..orderBy([(a) => OrderingTerm.asc(a.name)])).watch();
+  Stream<List<AccountRow>> watchAllAccounts() =>
+      (_database.select(_database.accounts)
+            ..orderBy([(a) => OrderingTerm.asc(a.name)]))
+          .watch();
 
   Stream<List<AccountRow>> watchActiveAccounts() {
     return (_database.select(_database.accounts)
@@ -47,7 +50,9 @@ class AccountsRepository {
           AccountsCompanion.insert(
             id: id,
             name: normalizedName,
-            description: Value(description?.trim().isEmpty == true ? null : description?.trim()),
+            description: Value(description?.trim().isEmpty == true
+                ? null
+                : description?.trim()),
             openingBalancePaise: Value(openingBalancePaise),
             iconKey: Value(iconKey),
             colorValue: Value(colorValue),
@@ -76,11 +81,13 @@ class AccountsRepository {
     required int adjustmentDate,
   }) async {
     if (amountPaise == 0) {
-      throw ArgumentError.value(amountPaise, 'amountPaise', 'Adjustment must not be zero.');
+      throw ArgumentError.value(
+          amountPaise, 'amountPaise', 'Adjustment must not be zero.');
     }
     final normalizedReason = reason.trim();
     if (normalizedReason.isEmpty || normalizedReason.length > 500) {
-      throw ArgumentError.value(reason, 'reason', 'Enter a reason of up to 500 characters.');
+      throw ArgumentError.value(
+          reason, 'reason', 'Enter a reason of up to 500 characters.');
     }
 
     return _database.transaction(() async {
@@ -167,7 +174,8 @@ class AccountsRepository {
           ..where((row) => row.archivedAt.isNull()))
         .write(AccountsCompanion(
       name: Value(normalizedName),
-      description: Value(description?.trim().isEmpty == true ? null : description?.trim()),
+      description: Value(
+          description?.trim().isEmpty == true ? null : description?.trim()),
       updatedAt: Value(now),
     ));
     if (changed == 0) throw StateError('Account not found or archived.');

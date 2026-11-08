@@ -21,8 +21,10 @@ void main() {
     });
 
     test('rejects excess decimals and malformed grouping', () {
-      expect(() => MoneyFormatter.parseRupeesToPaise('1.234'), throwsFormatException);
-      expect(() => MoneyFormatter.parseRupeesToPaise('1,234,56'), throwsFormatException);
+      expect(() => MoneyFormatter.parseRupeesToPaise('1.234'),
+          throwsFormatException);
+      expect(() => MoneyFormatter.parseRupeesToPaise('1,234,56'),
+          throwsFormatException);
     });
   });
 }

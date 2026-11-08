@@ -26,17 +26,23 @@ class ArchivedAccountsPage extends ConsumerWidget {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              const Text('Archived Accounts are hidden from active views. Restore one to use it again.'),
+              const Text(
+                  'Archived Accounts are hidden from active views. Restore one to use it again.'),
               const SizedBox(height: 12),
               for (final account in items)
                 Card(
                   child: ListTile(
-                    leading: const CircleAvatar(child: Icon(Icons.archive_outlined)),
+                    leading:
+                        const CircleAvatar(child: Icon(Icons.archive_outlined)),
                     title: Text(account.name),
-                    subtitle: account.description == null ? null : Text(account.description!),
+                    subtitle: account.description == null
+                        ? null
+                        : Text(account.description!),
                     trailing: TextButton(
                       onPressed: () async {
-                        await ref.read(accountsRepositoryProvider).restoreAccount(account.id);
+                        await ref
+                            .read(accountsRepositoryProvider)
+                            .restoreAccount(account.id);
                         ref.invalidate(activeAccountsProvider);
                         ref.invalidate(archivedAccountsProvider);
                       },

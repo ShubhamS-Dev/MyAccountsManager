@@ -16,7 +16,8 @@ class _AppShellState extends State<AppShell> {
 
   static const _destinations = [
     _ShellDestination(label: 'Home', icon: Icons.home_outlined),
-    _ShellDestination(label: 'Accounts', icon: Icons.account_balance_wallet_outlined),
+    _ShellDestination(
+        label: 'Accounts', icon: Icons.account_balance_wallet_outlined),
     _ShellDestination(label: 'History', icon: Icons.receipt_long_outlined),
     _ShellDestination(label: 'MyKhata', icon: Icons.people_outline),
     _ShellDestination(label: 'More', icon: Icons.grid_view_outlined),
@@ -43,12 +44,14 @@ class _AppShellState extends State<AppShell> {
           HistoryPage(),
           _PlaceholderPage(
             title: 'MyKhata',
-            description: 'Track money lent and borrowed independently from your Accounts.',
+            description:
+                'Track money lent and borrowed independently from your Accounts.',
             icon: Icons.people_outline,
           ),
           _PlaceholderPage(
             title: 'More',
-            description: 'Budgets, savings goals, reports, backup and settings.',
+            description:
+                'Budgets, savings goals, reports, backup and settings.',
             icon: Icons.grid_view_outlined,
           ),
         ],
@@ -60,7 +63,8 @@ class _AppShellState extends State<AppShell> {
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
-        onDestinationSelected: (index) => setState(() => _selectedIndex = index),
+        onDestinationSelected: (index) =>
+            setState(() => _selectedIndex = index),
         destinations: _destinations
             .map(
               (destination) => NavigationDestination(
@@ -143,7 +147,8 @@ class _SummaryCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Total balance', style: Theme.of(context).textTheme.titleSmall),
+            Text('Total balance',
+                style: Theme.of(context).textTheme.titleSmall),
             const SizedBox(height: 8),
             Text(
               '₹0.00',

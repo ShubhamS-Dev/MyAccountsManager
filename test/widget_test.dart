@@ -1,10 +1,10 @@
-import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+import 'package:flutter_test/flutter_test.dart';
 import 'package:my_accounts_manager/app/my_accounts_manager_app.dart';
 
 void main() {
-  testWidgets('launches the home dashboard with primary navigation', (tester) async {
+  testWidgets('launches the home dashboard with primary navigation',
+      (tester) async {
     await tester.pumpWidget(const ProviderScope(child: MyAccountsManagerApp()));
     await tester.pumpAndSettle();
 

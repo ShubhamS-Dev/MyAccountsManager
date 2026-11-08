@@ -17,12 +17,22 @@ class DateOnly {
     final day = date.day.toString().padLeft(2, '0');
     final month = date.month.toString().padLeft(2, '0');
     final year = date.year.toString().padLeft(4, '0');
-    if (!includeMonthName) return day + '/' + month + '/' + year;
+    if (!includeMonthName) return '$day/$month/$year';
     const months = <String>[
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
-    return day + ' ' + months[date.month - 1] + ' ' + year;
+    return '$day ${months[date.month - 1]} $year';
   }
 }
 
