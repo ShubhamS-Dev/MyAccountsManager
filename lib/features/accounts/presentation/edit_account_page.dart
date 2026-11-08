@@ -47,7 +47,7 @@ class _EditAccountPageState extends ConsumerState<EditAccountPage> {
         setState(() {
           _saving = false;
           _error = 'Account could not be updated. Please try again.';
-        }) { ; }
+        })
     }
   }
 
@@ -62,7 +62,7 @@ class _EditAccountPageState extends ConsumerState<EditAccountPage> {
             const Center(child: Text('Account could not be loaded.')),
         data: (row) {
           if (row == null)
-            return const Center(child: Text('Account not found.')) { ; }
+            return const Center(child: Text('Account not found.'))
           if (!_initialized) {
             _nameController.text = row.name;
             _descriptionController.text = row.description ?? '';
