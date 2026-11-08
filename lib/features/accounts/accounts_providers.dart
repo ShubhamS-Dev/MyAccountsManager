@@ -13,3 +13,16 @@ final activeAccountsProvider = StreamProvider<List<AccountRow>>((ref) {
 final accountByIdProvider = FutureProvider.family<AccountRow?, String>((ref, id) {
   return ref.watch(accountsRepositoryProvider).getAccount(id);
 });
+
+final archivedAccountsProvider = StreamProvider<List<AccountRow>>((ref) {
+  return ref.watch(accountsRepositoryProvider).watchArchivedAccounts();
+});
+
+final accountBalancePaiseProvider = FutureProvider.family<int?, String>((ref, id) {
+  final now = DateTime.now().toUtc();
+  final todayUtc = DateTime.utc(now.year, now.month, now.day).millisecondsSinceEpoch;
+  return ref.watch(accountsRepositoryProvider).calculateBalancePaise(
+    accountId: id,
+    asOfDate: todayUtc,
+  );
+});
