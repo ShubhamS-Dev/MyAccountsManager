@@ -58,6 +58,55 @@ class AccountsRepository {
     return id;
   }
 
+  Stream<List<BalanceAdjustmentRow>> watchBalanceAdjustments(String accountId) {
+    return (_database.select(_database.balanceAdjustments)
+          ..where((row) => row.accountId.equals(accountId))
+          ..where((row) => row.deletedAt.isNull())
+          ..orderBy([
+            (row) => OrderingTerm.desc(row.adjustmentDate),
+            (row) => OrderingTerm.desc(row.createdAt),
+          ]))
+        .watch();
+  }
+
+  Future<String> createBalanceAdjustment({
+    required String accountId,
+    required int amountPaise,
+    required String reason,
+    required int adjustmentDate,
+  }) async {
+    if (amountPaise == 0) {
+      throw ArgumentError.value(amountPaise, 'amountPaise', 'Adjustment must not be zero.');
+    }
+    final normalizedReason = reason.trim();
+    if (normalizedReason.isEmpty || normalizedReason.length > 500) {
+      throw ArgumentError.value(reason, 'reason', 'Enter a reason of up to 500 characters.');
+    }
+
+    return _database.transaction(() async {
+      final account = await (_database.select(_database.accounts)
+            ..where((row) => row.id.equals(accountId)))
+          .getSingleOrNull();
+      if (account == null || account.archivedAt != null) {
+        throw StateError('Select an active Account to adjust its balance.');
+      }
+      final now = DateTime.now().toUtc().millisecondsSinceEpoch;
+      final id = _uuid.v4();
+      await _database.into(_database.balanceAdjustments).insert(
+            BalanceAdjustmentsCompanion.insert(
+              id: id,
+              accountId: accountId,
+              amountPaise: amountPaise,
+              reason: normalizedReason,
+              adjustmentDate: adjustmentDate,
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+      return id;
+    });
+  }
+
   /// Returns the Account balance in paise as of [asOfDate].
   ///
   /// Only non-deleted transactions dated on or before [asOfDate] are included.
@@ -77,7 +126,16 @@ class AccountsRepository {
           ..where((row) => row.transactionDate.isSmallerOrEqualValue(asOfDate)))
         .get();
 
+    final adjustments = await (_database.select(_database.balanceAdjustments)
+          ..where((row) => row.accountId.equals(accountId))
+          ..where((row) => row.deletedAt.isNull())
+          ..where((row) => row.adjustmentDate.isSmallerOrEqualValue(asOfDate)))
+        .get();
+
     var balancePaise = account.openingBalancePaise;
+    for (final adjustment in adjustments) {
+      balancePaise += adjustment.amountPaise;
+    }
     for (final entry in entries) {
       if (entry.type == 'income') {
         balancePaise += entry.amountPaise;
