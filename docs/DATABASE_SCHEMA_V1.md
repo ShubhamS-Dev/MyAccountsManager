@@ -134,7 +134,7 @@ System category identifiers should be deterministic stable IDs derived from a do
 ## 5. Migration policy
 
 - schemaVersion starts at 1.
-- Fresh install: create the version 1 schema and seed built-in categories inside the initial creation transaction.
+- Fresh install: create the current schema (version 2) and seed built-in categories inside the initial creation transaction.
 - Every future schema change increments schemaVersion and adds an explicit onUpgrade migration step.
 - Migrations must be transactional and preserve existing rows and UUIDs.
 - Before a destructive/high-risk migration, create and validate a recovery snapshot as required by the backup/recovery design.
@@ -146,7 +146,7 @@ System category identifiers should be deterministic stable IDs derived from a do
 
 - Repositories own persistence operations and expose domain-friendly records.
 - Domain services own validation and balance calculations.
-- Account current balance is calculated from opening balance plus active income, minus active expenses, plus active balance adjustments. Balance adjustments are introduced in a later migration.
+- Account current balance is calculated from opening balance plus active income, minus active expenses, plus non-deleted balance adjustments effective on or before the selected as-of date.
 - Queries that calculate totals must exclude soft-deleted records and include only records effective on the selected as-of date.
 - Do not maintain a second independently mutable balance total in the Account row. If summary caching is later needed, it must be rebuildable and verified against source transactions.
 
