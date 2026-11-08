@@ -45,6 +45,8 @@ class AccountsPage extends ConsumerWidget {
                     final repository = ref.read(accountsRepositoryProvider);
                     if (action == 'edit') {
                       context.push('/accounts/${account.id}/edit');
+                    } else if (action == 'adjust') {
+                      context.push('/accounts/${account.id}/adjustments');
                     } else if (action == 'pin' || action == 'unpin') {
                       await repository.setPinned('${account.id}', pinned: action == 'pin');
                       ref.invalidate(activeAccountsProvider);
@@ -68,6 +70,7 @@ class AccountsPage extends ConsumerWidget {
                   },
                   itemBuilder: (context) => [
                     const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                    const PopupMenuItem(value: 'adjust', child: Text('Adjust balance')),
                     PopupMenuItem(value: account.isPinned ? 'unpin' : 'pin', child: Text(account.isPinned ? 'Unpin' : 'Pin to top')),
                     const PopupMenuItem(value: 'archive', child: Text('Archive')),
                   ],
