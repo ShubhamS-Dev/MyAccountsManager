@@ -64,7 +64,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
     setState(() {
       _saving = true;
       _error = null;
-    })
+    });
     try {
       final dateOnlyUtc = DateTime.utc(_date.year, _date.month, _date.day)
           .millisecondsSinceEpoch;
@@ -190,7 +190,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                   data: (categoryRows) {
                     if (categoryRows.isEmpty)
                       return const Text(
-                          'No active categories for this transaction type.')
+                          'No active categories for this transaction type.');
                     if (_categoryId != null &&
                         !categoryRows.any((c) => c.id == _categoryId))
                       _categoryId = null;
@@ -206,7 +206,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                       onChanged: (value) => setState(() => _categoryId = value),
                       validator: (value) =>
                           value == null ? 'Select a category.' : null,
-                    )
+                    );
                   },
                 ),
                 const SizedBox(height: 8),
@@ -248,7 +248,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                 ),
               ],
             ),
-          )
+          );
         },
       ),
     );
