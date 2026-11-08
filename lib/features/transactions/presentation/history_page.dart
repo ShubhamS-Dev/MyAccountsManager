@@ -239,12 +239,13 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                         children: [
                           Text(
                             '${isIncome ? '+' : '-'}${MoneyFormatter.formatPaise(transaction.amountPaise)}',
-                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: isIncome
-                                  ? Theme.of(context).colorScheme.tertiary
-                                  : Theme.of(context).colorScheme.error,
-                            ),
+                            style: Theme.of(context).textTheme.titleSmall
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: isIncome
+                                      ? Theme.of(context).colorScheme.tertiary
+                                      : Theme.of(context).colorScheme.error,
+                                ),
                           ),
                           PopupMenuButton<String>(
                             tooltip: 'Transaction actions',

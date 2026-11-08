@@ -13,11 +13,18 @@ class AccountBalanceLabel extends ConsumerWidget {
     final balance = ref.watch(accountBalancePaiseProvider(accountId));
     final colors = Theme.of(context).colorScheme;
     return balance.when(
-      loading: () => Text('Balance: …', style: Theme.of(context).textTheme.bodySmall),
-      error: (error, stack) => Text('Balance unavailable', style: Theme.of(context).textTheme.bodySmall),
+      loading: () =>
+          Text('Balance: …', style: Theme.of(context).textTheme.bodySmall),
+      error: (error, stack) => Text(
+        'Balance unavailable',
+        style: Theme.of(context).textTheme.bodySmall,
+      ),
       data: (value) {
         if (value == null) {
-          return Text('Balance unavailable', style: Theme.of(context).textTheme.bodySmall);
+          return Text(
+            'Balance unavailable',
+            style: Theme.of(context).textTheme.bodySmall,
+          );
         }
         return Text(
           'Balance: ${MoneyFormatter.formatPaise(value)}',

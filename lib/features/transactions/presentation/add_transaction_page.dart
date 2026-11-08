@@ -46,7 +46,9 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
 
   bool _isToday(DateTime date) {
     final now = DateTime.now();
-    return date.year == now.year && date.month == now.month && date.day == now.day;
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
   }
 
   Future<void> _pickDate() async {
@@ -175,15 +177,25 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                     labelText: 'Account',
                     border: OutlineInputBorder(),
                     isDense: true,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 14,
+                    ),
                   ),
                   menuMaxHeight: 320,
                   items: [
                     for (final account in accountRows)
-                      DropdownMenuItem(value: account.id, child: Text(account.name, overflow: TextOverflow.ellipsis)),
+                      DropdownMenuItem(
+                        value: account.id,
+                        child: Text(
+                          account.name,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                   ],
                   onChanged: (value) => setState(() => _accountId = value),
-                  validator: (value) => value == null ? 'Select an Account.' : null,
+                  validator: (value) =>
+                      value == null ? 'Select an Account.' : null,
                 ),
                 const SizedBox(height: 12),
                 ListTile(
@@ -191,7 +203,13 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.calendar_today_outlined),
                   title: const Text('Transaction date'),
-                  subtitle: Text(_isToday(_date) ? 'Today' : DateOnly.format(DateOnly.toUtcEpochMilliseconds(_date))),
+                  subtitle: Text(
+                    _isToday(_date)
+                        ? 'Today'
+                        : DateOnly.format(
+                            DateOnly.toUtcEpochMilliseconds(_date),
+                          ),
+                  ),
                   trailing: const Icon(Icons.chevron_right_rounded),
                   onTap: _pickDate,
                 ),
@@ -210,13 +228,17 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  _kind == TransactionKind.expense ? 'How much did you spend?' : 'How much did you receive?',
+                  _kind == TransactionKind.expense
+                      ? 'How much did you spend?'
+                      : 'How much did you receive?',
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _amountController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   decoration: const InputDecoration(
                     prefixText: '₹ ',
                     hintText: '0.00',
@@ -235,14 +257,19 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                 categories.when(
                   loading: () => const LinearProgressIndicator(),
                   error: (error, stack) => TextButton(
-                    onPressed: () => ref.invalidate(activeCategoriesByTypeProvider(_kind.name)),
+                    onPressed: () => ref.invalidate(
+                      activeCategoriesByTypeProvider(_kind.name),
+                    ),
                     child: const Text('Could not load categories. Retry'),
                   ),
                   data: (categoryRows) {
                     if (categoryRows.isEmpty) {
-                      return const Text('No active categories for this transaction type.');
+                      return const Text(
+                        'No active categories for this transaction type.',
+                      );
                     }
-                    if (_categoryId != null && !categoryRows.any((c) => c.id == _categoryId)) {
+                    if (_categoryId != null &&
+                        !categoryRows.any((c) => c.id == _categoryId)) {
                       _categoryId = null;
                     }
                     return DropdownButtonFormField<String>(
@@ -252,15 +279,25 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                         labelText: 'Category',
                         border: OutlineInputBorder(),
                         isDense: true,
-                        contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 14,
+                        ),
                       ),
                       menuMaxHeight: 320,
                       items: [
                         for (final category in categoryRows)
-                          DropdownMenuItem(value: category.id, child: Text(category.name, overflow: TextOverflow.ellipsis)),
+                          DropdownMenuItem(
+                            value: category.id,
+                            child: Text(
+                              category.name,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
                       ],
                       onChanged: (value) => setState(() => _categoryId = value),
-                      validator: (value) => value == null ? 'Select a category.' : null,
+                      validator: (value) =>
+                          value == null ? 'Select a category.' : null,
                     );
                   },
                 ),

@@ -123,14 +123,14 @@ class AccountsRepository {
     });
   }
 
-
   /// Reactively watches the effective Account balance from all source tables.
   Stream<int?> watchBalancePaise({
     required String accountId,
     required int asOfDate,
   }) {
-    return _database.customSelect(
-      '''
+    return _database
+        .customSelect(
+          '''
       SELECT a.opening_balance_paise
         + COALESCE((
           SELECT SUM(CASE WHEN t.type = 'income'
@@ -147,25 +147,29 @@ class AccountsRepository {
         ), 0) AS balance_paise
       FROM accounts a WHERE a.id = ?
       ''',
-      variables: [
-        Variable.withInt(asOfDate),
-        Variable.withInt(asOfDate),
-        Variable.withString(accountId),
-      ],
-      readsFrom: {
-        _database.accounts,
-        _database.transactions,
-        _database.balanceAdjustments,
-      },
-    ).watch().map(
-      (rows) => rows.isEmpty ? null : rows.single.read<int>('balance_paise'),
-    );
+          variables: [
+            Variable.withInt(asOfDate),
+            Variable.withInt(asOfDate),
+            Variable.withString(accountId),
+          ],
+          readsFrom: {
+            _database.accounts,
+            _database.transactions,
+            _database.balanceAdjustments,
+          },
+        )
+        .watch()
+        .map(
+          (rows) =>
+              rows.isEmpty ? null : rows.single.read<int>('balance_paise'),
+        );
   }
 
   /// Reactively watches combined balances across all active Accounts.
   Stream<int> watchTotalActiveBalancePaise({required int asOfDate}) {
-    return _database.customSelect(
-      '''
+    return _database
+        .customSelect(
+          '''
       SELECT COALESCE(SUM(
         a.opening_balance_paise
         + COALESCE((
@@ -184,18 +188,15 @@ class AccountsRepository {
       ), 0) AS total_balance_paise
       FROM accounts a WHERE a.archived_at IS NULL
       ''',
-      variables: [
-        Variable.withInt(asOfDate),
-        Variable.withInt(asOfDate),
-      ],
-      readsFrom: {
-        _database.accounts,
-        _database.transactions,
-        _database.balanceAdjustments,
-      },
-    ).watch().map(
-      (rows) => rows.single.read<int>('total_balance_paise'),
-    );
+          variables: [Variable.withInt(asOfDate), Variable.withInt(asOfDate)],
+          readsFrom: {
+            _database.accounts,
+            _database.transactions,
+            _database.balanceAdjustments,
+          },
+        )
+        .watch()
+        .map((rows) => rows.single.read<int>('total_balance_paise'));
   }
 
   /// Returns the Account balance in paise as of [asOfDate].

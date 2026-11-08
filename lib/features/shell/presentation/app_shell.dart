@@ -102,12 +102,16 @@ class _HomeFoundationPage extends ConsumerWidget {
       children: [
         Text(
           'Your money, clearly organised.',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 6),
         Text(
           'A private, offline space for your finances.',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
         const SizedBox(height: 24),
         _SummaryCard(totalBalance: totalBalance),
@@ -133,7 +137,9 @@ class _HomeFoundationPage extends ConsumerWidget {
         Text('Getting started', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
         accounts.when(
-          data: (items) => items.isEmpty ? const _GettingStartedCard() : const SizedBox.shrink(),
+          data: (items) => items.isEmpty
+              ? const _GettingStartedCard()
+              : const SizedBox.shrink(),
           loading: () => const SizedBox.shrink(),
           error: (error, stack) => const SizedBox.shrink(),
         ),
@@ -156,11 +162,17 @@ class _SummaryCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Total balance', style: Theme.of(context).textTheme.titleSmall),
+            Text(
+              'Total balance',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
             const SizedBox(height: 8),
             totalBalance.when(
               loading: () => const LinearProgressIndicator(),
-              error: (error, stack) => Text('Balance unavailable', style: Theme.of(context).textTheme.titleLarge),
+              error: (error, stack) => Text(
+                'Balance unavailable',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
               data: (value) => Text(
                 MoneyFormatter.formatPaise(value),
                 style: Theme.of(context).textTheme.headlineLarge?.copyWith(
@@ -170,7 +182,10 @@ class _SummaryCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 6),
-            Text('Combined balance across active Accounts.', style: Theme.of(context).textTheme.bodySmall),
+            Text(
+              'Combined balance across active Accounts.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
           ],
         ),
       ),

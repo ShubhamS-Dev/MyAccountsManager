@@ -153,10 +153,11 @@ void main() {
         openingBalancePaise: 10000,
       );
       final today = DateTime.utc(2026, 11, 8).millisecondsSinceEpoch;
-      final expense = await (database.select(database.categories)
-            ..where((row) => row.type.equals('expense'))
-            ..where((row) => row.name.equals('Food & Dining')))
-          .getSingle();
+      final expense =
+          await (database.select(database.categories)
+                ..where((row) => row.type.equals('expense'))
+                ..where((row) => row.name.equals('Food & Dining')))
+              .getSingle();
 
       final expectation = expectLater(
         accounts.watchBalancePaise(accountId: accountId, asOfDate: today),

@@ -31,16 +31,15 @@ final accountBalancePaiseProvider = StreamProvider.family<int?, String>((
   ref,
   id,
 ) {
-  return ref.watch(accountsRepositoryProvider).watchBalancePaise(
-    accountId: id,
-    asOfDate: _todayUtcDate(),
-  );
+  return ref
+      .watch(accountsRepositoryProvider)
+      .watchBalancePaise(accountId: id, asOfDate: _todayUtcDate());
 });
 
 final totalActiveBalancePaiseProvider = StreamProvider<int>((ref) {
-  return ref.watch(accountsRepositoryProvider).watchTotalActiveBalancePaise(
-    asOfDate: _todayUtcDate(),
-  );
+  return ref
+      .watch(accountsRepositoryProvider)
+      .watchTotalActiveBalancePaise(asOfDate: _todayUtcDate());
 });
 
 final balanceAdjustmentsProvider =
