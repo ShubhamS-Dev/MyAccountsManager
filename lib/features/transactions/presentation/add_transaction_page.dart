@@ -191,9 +191,10 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                           activeCategoriesByTypeProvider(_kind.name)),
                       child: const Text('Could not load categories. Retry')),
                   data: (categoryRows) {
-                    if (categoryRows.isEmpty)
+                    if (categoryRows.isEmpty) {
                       return const Text(
                           'No active categories for this transaction type.');
+                    }
                     if (_categoryId != null &&
                         !categoryRows.any((c) => c.id == _categoryId))
                       _categoryId = null;
