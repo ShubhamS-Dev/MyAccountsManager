@@ -9,6 +9,17 @@ class TransactionHistoryFilter {
   final int? fromDate;
   final int? throughDate;
   final String? type;
+
+  @override
+  bool operator ==(Object other) =>
+      other is TransactionHistoryFilter &&
+      other.accountId == accountId &&
+      other.fromDate == fromDate &&
+      other.throughDate == throughDate &&
+      other.type == type;
+
+  @override
+  int get hashCode => Object.hash(accountId, fromDate, throughDate, type);
 }
 
 final transactionsRepositoryProvider = Provider<TransactionsRepository>((ref) {
