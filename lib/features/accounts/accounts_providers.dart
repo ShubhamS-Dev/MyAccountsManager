@@ -27,6 +27,10 @@ final accountBalancePaiseProvider = FutureProvider.family<int?, String>((ref, id
   );
 });
 
+final balanceAdjustmentsProvider = StreamProvider.family<List<BalanceAdjustmentRow>, String>((ref, accountId) {
+  return ref.watch(accountsRepositoryProvider).watchBalanceAdjustments(accountId);
+});
+
 final allAccountsProvider = StreamProvider<List<AccountRow>>((ref) {
   return ref.watch(accountsRepositoryProvider).watchAllAccounts();
 });
