@@ -43,11 +43,12 @@ class _EditAccountPageState extends ConsumerState<EditAccountPage> {
       ref.invalidate(accountByIdProvider(widget.accountId));
       if (mounted) context.pop();
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _saving = false;
           _error = 'Account could not be updated. Please try again.';
         });
+      }
     }
   }
 
