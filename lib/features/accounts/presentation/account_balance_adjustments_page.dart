@@ -211,10 +211,11 @@ class _AccountBalanceAdjustmentsPageState
                         balanceAdjustmentsProvider(widget.accountId)),
                     child: const Text('Could not load adjustments. Retry')),
                 data: (items) {
-                  if (items.isEmpty)
+                  if (items.isEmpty) {
                     return const Padding(
                         padding: EdgeInsets.all(16),
                         child: Text('No balance adjustments yet.'));
+                  }
                   return Column(
                     children: [
                       for (final item in items)
