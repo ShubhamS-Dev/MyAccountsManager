@@ -173,9 +173,10 @@ class TransactionsRepository {
           ..where((row) =>
               row.id.equals(transactionId) & row.deletedAt.isNotNull()))
         .go();
-    if (changed == 0)
+    if (changed == 0) {
       throw StateError(
           'Only transactions in Trash can be permanently deleted.');
+    }
   }
 
   Future<String> createTransaction({
