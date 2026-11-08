@@ -10,7 +10,7 @@ class AccountBalanceLabel extends ConsumerWidget {
     final negative = paise < 0;
     final absolute = paise.abs();
     final rupees = (absolute ~/ 100).toString();
-    final grouped = rupees.replaceAllMapped(RegExp(r'(?<=\\d)(?=(\\d{2})+\\d{3}$)'), (m) => ',');
+    final grouped = rupees.replaceAllMapped(RegExp(r'(?<=\d)(?=(\d{2})+\d{3}$)'), (m) => ',');
     final fraction = absolute % 100;
     return '${negative ? '-' : ''}₹$grouped${fraction == 0 ? '' : '.${fraction.toString().padLeft(2, '0')}'}';
   }
