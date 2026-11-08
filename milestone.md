@@ -69,6 +69,7 @@ Current branches created for the initial foundation work:
 - Added a shared `MoneyFormatter` utility for integer-paise parsing and Indian rupee display, plus unit tests covering whole/fractional values, grouping, and invalid input. These tests are committed; local execution is unavailable.
 - Added Drift/SQLite dependencies, version-1 table definitions for Accounts, Categories, and Transactions, a local database connection, schema creation, initial category seeding, and supporting indexes.
 - Added account/category/transaction repositories and Riverpod providers, plus in-memory database and repository tests.
+- Added integer-paise Account balance calculation using opening balance plus effective income minus effective expenses; deleted and future-dated transactions are excluded based on a supplied UTC calendar date. Added tests for these rules, but execution remains unverified.
 - Added a Flutter GitHub Actions validation workflow to generate Drift source, format, analyze, and run tests. The workflow has not yet been verified as successful.
 - Documented the initial SQLite/Drift schema and migration policy in `docs/DATABASE_SCHEMA_V1.md`, covering Accounts, Categories, and regular Transactions, including fields, indexes, integrity rules, seed behavior, and deferred feature tables.
 - Confirmed timestamp storage with date-only UI display. Architecture distinguishes UTC-normalized calendar-date timestamps from actual UTC audit/event timestamps.
@@ -110,3 +111,5 @@ When updating this file, record:
 - Evidence: source files, tests, build output, or approved decision/document
 
 Keep this tracker concise and evidence-based.
+
+| 2026-11-08 | Added date-aware Account balance calculation and repository tests for future/deleted transaction exclusion. Generated Drift source is present on the feature branch; Flutter validation results remain unverified. |
