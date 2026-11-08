@@ -128,3 +128,4 @@ Keep this tracker concise and evidence-based.
 
 | 2026-11-08 | M5/M4: introduced schema version 2 with a non-destructive balance-adjustment migration; added signed adjustment storage, reason and date validation, date-aware balance calculations, Account-level adjustment entry/history UI, and repository/database tests. Drift code generation, formatting, analysis, tests, and Android build are not yet verified. |
 | 2026-11-08 | M5: removed an accidentally duplicated trailing fragment from the Add Transaction screen that caused Dart parser errors. CI formatting, analysis, and tests must still pass before validation is considered complete. |
+| 2026-11-08 | M5: fixed static-analysis findings in transaction editing, Trash list layout, and Drift/Matcher test imports. Validation is running again; test results remain pending. |
