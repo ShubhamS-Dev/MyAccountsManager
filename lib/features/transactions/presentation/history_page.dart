@@ -168,9 +168,11 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                           PopupMenuButton<String>(
                             tooltip: 'Transaction actions',
                             onSelected: (action) {
+                              if (action == 'edit') context.push('/transaction/${transaction.id}/edit');
                               if (action == 'trash') _moveToTrash(transaction.id, transaction.accountId);
                             },
                             itemBuilder: (_) => const [
+                              PopupMenuItem(value: 'edit', child: ListTile(leading: Icon(Icons.edit_outlined), title: Text('Edit'))),
                               PopupMenuItem(value: 'trash', child: ListTile(leading: Icon(Icons.delete_outline), title: Text('Move to Trash'))),
                             ],
                           ),
