@@ -49,7 +49,7 @@ class TransactionTrashPage extends ConsumerWidget {
       if (context.mounted)
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text(
-                'Could not delete this transaction. Refresh and try again.'))); }
+                'Could not delete this transaction. Refresh and try again.')));
     }
   }
 
@@ -66,7 +66,7 @@ class TransactionTrashPage extends ConsumerWidget {
                 child: const Text('Could not load Trash. Retry'))),
         data: (items) {
           if (items.isEmpty)
-            return const Center(child: Text('Trash is empty.'))
+            return const Center(child: Text('Trash is empty.'));
           return ListView.separated(
             padding: const EdgeInsets.all(12),
             itemCount: items.length,
