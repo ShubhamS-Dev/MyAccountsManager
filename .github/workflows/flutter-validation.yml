@@ -63,8 +63,41 @@ jobs:
       - name: Run tests
         run: flutter test --reporter expanded --timeout 2m --concurrency=1
 
+      - name: Cache Gradle distributions and dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper/dists
+          key: ${{ runner.os }}-gradle-${{ hashFiles('android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
       - name: Build Android debug APK
-        run: flutter build apk --debug
+        shell: bash
+        run: |
+          set -o pipefail
+          for attempt in 1 2 3; do
+            echo "Android debug build attempt ${attempt}/3"
+            if flutter build apk --debug 2>&1 | tee /tmp/flutter-build-apk.log; then
+              exit 0
+            else
+              build_status=$?
+            fi
+
+            if grep -Eiq 'HTTP response code: 5[0-9]{2}|timed out|temporary failure in name resolution|connection reset|connection refused|remote host terminated the handshake' /tmp/flutter-build-apk.log; then
+              if [ "${attempt}" -lt 3 ]; then
+                delay=$((attempt * 20))
+                echo "Transient Gradle/network failure detected. Retrying in ${delay}s..."
+                sleep "${delay}"
+                continue
+              fi
+              echo "Gradle/network download failed after 3 attempts."
+            else
+              echo "Build failed for a non-transient reason; not retrying."
+            fi
+            exit "${build_status}"
+          done
 
       - name: Upload Android debug APK
         uses: actions/upload-artifact@v4
