@@ -66,8 +66,9 @@ class TransactionTrashPage extends ConsumerWidget {
                 onPressed: () => ref.invalidate(transactionTrashProvider),
                 child: const Text('Could not load Trash. Retry'))),
         data: (items) {
-          if (items.isEmpty)
+          if (items.isEmpty) {
             return const Center(child: Text('Trash is empty.'));
+          }
           return ListView.separated(
             padding: const EdgeInsets.all(12),
             itemCount: items.length,
