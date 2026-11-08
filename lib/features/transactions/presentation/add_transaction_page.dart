@@ -120,8 +120,9 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
             ));
           }
           _accountId ??= accountRows.length == 1 ? accountRows.first.id : null;
-          if (_accountId != null && !accountRows.any((a) => a.id == _accountId))
+          if (_accountId != null && !accountRows.any((a) => a.id == _accountId)) {
             _accountId = null;
+          }
           return Form(
             key: _formKey,
             child: ListView(
