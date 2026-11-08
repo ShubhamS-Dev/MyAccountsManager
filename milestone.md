@@ -40,7 +40,7 @@ Current branches created for the initial foundation work:
 | M2 | Technical architecture and data design | In Progress | Architecture, feature boundaries, database entities/relations, migration strategy, security design, and backup format are documented and reviewed. |
 | M3 | Flutter project foundation | In Progress | Real Flutter/Dart source project exists; app launches; approved dependencies, routing, Riverpod setup, theme, and feature structure are in place. |
 | M4 | Local database and integrity foundation | In Progress | Version 1 schema and migration policy are documented in docs/DATABASE_SCHEMA_V1.md. Drift table definitions, database connection, version-1 creation/seed logic, repository classes, Riverpod providers, and initial database/repository tests have been added. Generated code and all checks remain unverified until the Flutter workflow completes. |
-| M5 | Accounts, categories, and transactions | Not Started | Account management, categories, income/expense, adjustments, future-dated records, history, attachments, and Trash meet approved requirements. |
+| M5 | Accounts, categories, and transactions | In Progress | Account management, categories, income/expense, adjustments, future-dated records, history, attachments, and Trash meet approved requirements. |
 | M6 | Dashboards and budgets | Not Started | Global and Account dashboards, date filters, configurable sections, budgets, and alerts work as specified. |
 | M7 | Recurring transactions and notifications | Not Started | Automatic and reminder-based recurrence, catch-up/idempotency, notification center, preferences, and Quiet Hours are implemented and tested. |
 | M8 | Savings Goals | Not Started | Goal lifecycle, contributions/withdrawals, transaction linking, history, dashboard widget, and reminders meet approved requirements. |
@@ -70,11 +70,14 @@ Current branches created for the initial foundation work:
 - Added Drift/SQLite dependencies, version-1 table definitions for Accounts, Categories, and Transactions, a local database connection, schema creation, initial category seeding, and supporting indexes.
 - Added account/category/transaction repositories and Riverpod providers, plus in-memory database and repository tests.
 - Added integer-paise Account balance calculation using opening balance plus effective income minus effective expenses; deleted and future-dated transactions are excluded based on a supplied UTC calendar date. Added tests for these rules, but execution remains unverified.
+- Connected the Accounts navigation destination to a Drift-backed active Account list with loading, error/retry, and empty states.
+- Added Account creation UI with required name, optional description, and signed opening balance input parsed directly into integer paise. Account rows persist through the repository and appear through the Riverpod stream.
+- Changed the app default to Light mode, retaining the existing Dark theme definition.
 - Added a Flutter GitHub Actions validation workflow to generate Drift source, format, analyze, and run tests. The workflow has not yet been verified as successful.
 - Documented the initial SQLite/Drift schema and migration policy in `docs/DATABASE_SCHEMA_V1.md`, covering Accounts, Categories, and regular Transactions, including fields, indexes, integrity rules, seed behavior, and deferred feature tables.
 - Confirmed timestamp storage with date-only UI display. Architecture distinguishes UTC-normalized calendar-date timestamps from actual UTC audit/event timestamps.
 - Added `DateOnly` and `AuditTimestamp` utilities with tests for UTC-midnight date storage, date-only formatting, and UTC audit instants. Tests are committed but not yet executed.
-- These screens are intentionally scaffolds: persistence, validation, account/category selection, and saving are not implemented yet.
+- Transaction entry and the remaining module screens are still scaffolds. Account editing, pin/unpin, archive/delete UI, balance display on the Account list, and Account-specific dashboard are not implemented yet.
 - Android native platform scaffolding and package identifier wiring remain pending; it must be generated/configured and built before this milestone can be marked Done.
 - Flutter formatting, analysis, tests, and Android build have **not** been run in this environment. No successful build is claimed.
 
@@ -113,3 +116,5 @@ When updating this file, record:
 Keep this tracker concise and evidence-based.
 
 | 2026-11-08 | Added date-aware Account balance calculation and repository tests for future/deleted transaction exclusion. Generated Drift source is present on the feature branch; Flutter validation results remain unverified. |
+
+| 2026-11-08 | M5 started: connected Accounts navigation to the local database, implemented active Account list and Account creation form with integer-paise opening balance parsing; set Light mode as default. Formatting, analysis, tests, and device build remain unverified. |
