@@ -136,3 +136,10 @@ Example for a project-foundation task created on 8 November 2026:
 - `development/20261108`
 - `feature/20261108/project-foundation`
 
+
+## 12. UI/UX implementation requirements
+
+- Read and follow docs/UI_UX_REQUIREMENTS.md before implementing or changing any screen or shared component.
+- Treat its premium visual design, restrained animations, compact dropdown/date-picker controls, Add Transaction field order, Today/date label behavior, Indian digit grouping, semantic amount colors, and reactive data-refresh requirements as cross-app requirements.
+- Prefer shared formatters, theme tokens, reusable components, and reactive provider patterns over screen-specific workarounds.
+- Add widget/provider tests for date-label changes, formatted positive/negative amounts, and propagation of database mutations to dependent views when those behaviors are implemented.
