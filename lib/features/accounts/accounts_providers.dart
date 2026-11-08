@@ -26,3 +26,7 @@ final accountBalancePaiseProvider = FutureProvider.family<int?, String>((ref, id
     asOfDate: todayUtc,
   );
 });
+
+final allAccountsProvider = StreamProvider<List<AccountRow>>((ref) {
+  return ref.watch(accountsRepositoryProvider).watchAllAccounts();
+});
