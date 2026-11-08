@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../accounts/accounts_providers.dart';
 import '../../categories/categories_providers.dart';
-import '../../transactions_providers.dart';
+import '../transactions_providers.dart';
 
 enum TransactionKind { expense, income }
 
