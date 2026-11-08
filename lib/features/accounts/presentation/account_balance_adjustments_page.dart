@@ -90,12 +90,13 @@ class _AccountBalanceAdjustmentsPageState
         _saving = false;
       });
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _saving = false;
           _error =
               'Could not save adjustment. Check the amount and Account status.';
         });
+      }
     }
   }
 
