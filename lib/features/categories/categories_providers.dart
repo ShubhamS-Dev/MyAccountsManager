@@ -1,12 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/database/database_provider.dart';
+import '../../core/database/app_database.dart';
 import 'data/categories_repository.dart';
 
 final categoriesRepositoryProvider = Provider<CategoriesRepository>((ref) {
   return CategoriesRepository(ref.watch(appDatabaseProvider));
 });
 
-final activeCategoriesByTypeProvider = StreamProvider.family((ref, String type) {
+final activeCategoriesByTypeProvider = StreamProvider.family<List<CategoryRow>, String>((ref, type) {
   return ref.watch(categoriesRepositoryProvider).watchActiveByType(type);
 });
