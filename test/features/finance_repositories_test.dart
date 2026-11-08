@@ -157,4 +157,16 @@ void main() {
     );
   });
 
+  test('restores archived Account without changing its financial data', () async {
+    final id = await accounts.createAccount(name: 'Trip', openingBalancePaise: 7654);
+    await accounts.archiveAccount(id);
+    expect((await accounts.watchActiveAccounts().first).any((row) => row.id == id), isFalse);
+    expect((await accounts.watchArchivedAccounts().first).any((row) => row.id == id), isTrue);
+    await accounts.restoreAccount(id);
+    final restored = await accounts.getAccount(id);
+    expect(restored?.archivedAt, isNull);
+    expect(restored?.openingBalancePaise, 7654);
+    expect((await accounts.watchActiveAccounts().first).any((row) => row.id == id), isTrue);
+  });
+
 }
