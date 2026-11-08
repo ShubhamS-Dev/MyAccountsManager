@@ -28,8 +28,9 @@ class TransactionsRepository {
           _database.categories.id.equalsExp(_database.transactions.categoryId)),
     ])
       ..where(_database.transactions.deletedAt.isNull());
-    if (accountId != null)
+    if (accountId != null) {
       query.where(_database.transactions.accountId.equals(accountId));
+    }
     if (fromDate != null)
       query.where(_database.transactions.transactionDate
           .isBiggerOrEqualValue(fromDate));
