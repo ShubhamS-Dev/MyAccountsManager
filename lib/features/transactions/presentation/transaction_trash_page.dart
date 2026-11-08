@@ -85,10 +85,7 @@ class TransactionTrashPage extends ConsumerWidget {
                     ],
                   ),
                   leading: CircleAvatar(child: Icon(income ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded)),
-                  isThreeLine: true,
                   dense: false,
-                  // Amount remains visible while the record is in Trash.
-                  subtitleTextStyle: Theme.of(context).textTheme.bodySmall,
                 ),
               );
             },
