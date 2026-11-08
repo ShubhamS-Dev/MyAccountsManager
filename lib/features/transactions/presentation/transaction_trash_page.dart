@@ -116,7 +116,7 @@ class TransactionTrashPage extends ConsumerWidget {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
                                         content: Text(
-                                            'Could not restore this transaction. Refresh and try again.'))); }
+                                            'Could not restore this transaction. Refresh and try again.')));
                             }
                           } else if (action == 'delete') {
                             await _permanentlyDelete(
