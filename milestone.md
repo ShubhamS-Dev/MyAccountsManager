@@ -82,6 +82,10 @@ Current branches created for the initial foundation work:
 - Android native platform scaffolding and package identifier wiring remain pending; it must be generated/configured and built before this milestone can be marked Done.
 - Flutter formatting, analysis, tests, and Android build have **not** been run in this environment. No successful build is claimed.
 
+## Root-cause repair update — 2026-11-08
+
+The previous control-flow lint cleanup introduced invalid Dart by appending empty blocks after statements and inserting a block between `ScaffoldMessenger.of(context)` and `.showSnackBar`. This was traced through the diffs of commits `29cc58a`, `47d9d6a`, `e2144a3`, `728a415`, `9d8be32`, `5a7057d`, `bfb2a1c`, `ac582fe`, and `29369f1`. The malformed syntax has been removed from the affected source files. Future lint cleanup must add braces around the complete intended statement body; it must never append braces after an already-complete statement.
+
 ## Open decisions / blockers
 
 Track unresolved decisions here. Do not silently decide them in code.
@@ -129,3 +133,5 @@ Keep this tracker concise and evidence-based.
 | 2026-11-08 | M5/M4: introduced schema version 2 with a non-destructive balance-adjustment migration; added signed adjustment storage, reason and date validation, date-aware balance calculations, Account-level adjustment entry/history UI, and repository/database tests. Drift code generation, formatting, analysis, tests, and Android build are not yet verified. |
 | 2026-11-08 | M5: removed an accidentally duplicated trailing fragment from the Add Transaction screen that caused Dart parser errors. CI formatting, analysis, and tests must still pass before validation is considered complete. |
 | 2026-11-08 | M5: fixed static-analysis findings in transaction editing, Trash list layout, and Drift/Matcher test imports. Validation is running again; test results remain pending. |
+
+| 2026-11-08 | M5/M13: traced formatter failures to nine earlier commits that incorrectly appended empty `{ ; }` blocks or malformed `ScaffoldMessenger` member access while attempting to fix curly-brace lint. Restored the original valid statements across transaction, Account, adjustment, and money-formatting source files. Root cause identified as an unsafe source-editing transformation, not Flutter tooling. Formatting, analysis, tests, and Android build must be rerun before validation is claimed. |
