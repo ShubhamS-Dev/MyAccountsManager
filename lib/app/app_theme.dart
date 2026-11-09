@@ -1,122 +1,105 @@
 import 'package:flutter/material.dart';
 
-/// Shared visual tokens for the MyAccountsManager premium-minimal UI.
-abstract final class AppColors {
-  static const primary = Color(0xFF2563EB);
-  static const navy = Color(0xFF172554);
-  static const positive = Color(0xFF15803D);
-  static const negative = Color(0xFFDC2626);
-  static const lightBackground = Color(0xFFF5F7FB);
-  static const lightSurface = Color(0xFFFFFFFF);
-  static const lightBorder = Color(0xFFE2E8F0);
-  static const darkBackground = Color(0xFF0F172A);
-  static const darkSurface = Color(0xFF1E293B);
-}
+import 'design_tokens.dart';
 
-abstract final class AppTypography {
-  static const screenTitle = TextStyle(
-    fontSize: 16,
-    height: 1.25,
-    fontWeight: FontWeight.w700,
-  );
-  static const sectionTitle = TextStyle(
-    fontSize: 14,
-    height: 1.3,
-    fontWeight: FontWeight.w600,
-  );
-  static const transactionAmount = TextStyle(
-    fontSize: 16,
-    height: 1.25,
-    fontWeight: FontWeight.w700,
-  );
-  static const supporting = TextStyle(
-    fontSize: 11,
-    height: 1.35,
-    fontWeight: FontWeight.w400,
-  );
-  static const button = TextStyle(
-    fontSize: 11,
-    height: 1.2,
-    fontWeight: FontWeight.w600,
-  );
-}
+export 'design_tokens.dart';
 
-/// All standard Material action buttons have a 40 logical-pixel visual height.
 ButtonStyle _actionButtonStyle(Color foreground, Color background) {
   return ButtonStyle(
-    minimumSize: const WidgetStatePropertyAll(Size(0, 40)),
-    maximumSize: const WidgetStatePropertyAll(Size(double.infinity, 40)),
+    minimumSize: const WidgetStatePropertyAll(Size(0, AppSpacing.buttonHeight)),
+    maximumSize: const WidgetStatePropertyAll(
+      Size(double.infinity, AppSpacing.buttonHeight),
+    ),
     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-    padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 14)),
+    padding: const WidgetStatePropertyAll(
+      EdgeInsets.symmetric(horizontal: AppSpacing.md),
+    ),
     textStyle: const WidgetStatePropertyAll(AppTypography.button),
     foregroundColor: WidgetStatePropertyAll(foreground),
     backgroundColor: WidgetStatePropertyAll(background),
     shape: const WidgetStatePropertyAll(
       RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(12)),
+        borderRadius: BorderRadius.all(Radius.circular(AppRadius.button)),
       ),
     ),
   );
 }
 
 ThemeData buildAppTheme({required Brightness brightness}) {
-  final isDark = brightness == Brightness.dark;
-  final seeded = ColorScheme.fromSeed(
-    seedColor: AppColors.primary,
+  final dark = brightness == Brightness.dark;
+  final scheme = ColorScheme(
     brightness: brightness,
-  );
-  final scheme = seeded.copyWith(
     primary: AppColors.primary,
-    secondary: AppColors.navy,
+    onPrimary: Colors.white,
+    primaryContainer: dark ? const Color(0xFF30256D) : const Color(0xFFE9E7FF),
+    onPrimaryContainer: dark ? const Color(0xFFE9E7FF) : const Color(0xFF27205D),
+    secondary: AppColors.violet,
+    onSecondary: Colors.white,
+    secondaryContainer: dark ? const Color(0xFF39245F) : const Color(0xFFF0E8FF),
+    onSecondaryContainer: dark ? const Color(0xFFEEDFFF) : const Color(0xFF342052),
     tertiary: AppColors.positive,
+    onTertiary: Colors.white,
+    tertiaryContainer: dark ? const Color(0xFF123D32) : const Color(0xFFD8F7EA),
+    onTertiaryContainer: dark ? const Color(0xFFB9F3DC) : const Color(0xFF064E3B),
     error: AppColors.negative,
-    surface: isDark ? AppColors.darkSurface : AppColors.lightSurface,
+    onError: Colors.white,
+    errorContainer: dark ? const Color(0xFF5B1E2B) : const Color(0xFFFFE4E8),
+    onErrorContainer: dark ? const Color(0xFFFFD9DF) : const Color(0xFF881337),
+    surface: dark ? AppColors.darkSurface : AppColors.lightSurface,
+    onSurface: dark ? AppColors.darkText : AppColors.lightText,
+    surfaceContainerHighest: dark
+        ? const Color(0xFF252936)
+        : const Color(0xFFF0F1F6),
+    onSurfaceVariant: dark ? const Color(0xFFB5BAC8) : const Color(0xFF626779),
+    outline: dark ? const Color(0xFF555B6D) : const Color(0xFFBFC3CE),
+    outlineVariant: dark ? const Color(0xFF343A49) : const Color(0xFFE1E3EB),
+    shadow: Colors.black,
+    scrim: Colors.black,
+    inverseSurface: dark ? const Color(0xFFE9EAF0) : const Color(0xFF252936),
+    onInverseSurface: dark ? const Color(0xFF252936) : Colors.white,
+    inversePrimary: const Color(0xFFB9B4FF),
   );
-  final foreground = scheme.onSurface;
+  final baseText = ThemeData(brightness: brightness).textTheme;
+  final textTheme = baseText.copyWith(
+    headlineLarge: AppTypography.balance.copyWith(color: scheme.onSurface),
+    headlineMedium: AppTypography.screenTitle.copyWith(color: scheme.onSurface),
+    headlineSmall: AppTypography.screenTitle.copyWith(color: scheme.onSurface),
+    titleLarge: AppTypography.screenTitle.copyWith(color: scheme.onSurface),
+    titleMedium: AppTypography.sectionTitle.copyWith(color: scheme.onSurface),
+    titleSmall: AppTypography.fieldValue.copyWith(
+      color: scheme.onSurface,
+      fontWeight: FontWeight.w600,
+    ),
+    bodyLarge: AppTypography.body.copyWith(color: scheme.onSurface),
+    bodyMedium: AppTypography.fieldValue.copyWith(color: scheme.onSurface),
+    bodySmall: AppTypography.supporting.copyWith(
+      color: scheme.onSurfaceVariant,
+    ),
+    labelLarge: AppTypography.button.copyWith(color: scheme.onSurface),
+    labelMedium: AppTypography.fieldLabel.copyWith(color: scheme.onSurface),
+    labelSmall: AppTypography.metadata.copyWith(color: scheme.onSurfaceVariant),
+  );
 
   return ThemeData(
     useMaterial3: true,
     brightness: brightness,
     colorScheme: scheme,
-    scaffoldBackgroundColor: isDark
-        ? AppColors.darkBackground
-        : AppColors.lightBackground,
+    scaffoldBackgroundColor:
+        dark ? AppColors.darkBackground : AppColors.lightBackground,
+    canvasColor: dark ? AppColors.darkBackground : AppColors.lightBackground,
     appBarTheme: AppBarTheme(
       centerTitle: false,
-      backgroundColor: isDark
-          ? AppColors.darkBackground
-          : AppColors.lightBackground,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      backgroundColor:
+          dark ? AppColors.darkBackground : AppColors.lightBackground,
       surfaceTintColor: Colors.transparent,
-      titleTextStyle: AppTypography.screenTitle.copyWith(color: foreground),
-      iconTheme: IconThemeData(color: foreground, size: 20),
+      titleTextStyle: AppTypography.screenTitle.copyWith(
+        color: scheme.onSurface,
+      ),
+      iconTheme: IconThemeData(color: scheme.onSurface, size: 20),
     ),
-    textTheme: ThemeData(brightness: brightness).textTheme.copyWith(
-      headlineLarge: AppTypography.screenTitle.copyWith(
-        fontSize: 16,
-        color: foreground,
-      ),
-      headlineMedium: AppTypography.screenTitle.copyWith(color: foreground),
-      headlineSmall: AppTypography.screenTitle.copyWith(color: foreground),
-      titleLarge: AppTypography.screenTitle.copyWith(color: foreground),
-      titleMedium: AppTypography.sectionTitle.copyWith(color: foreground),
-      titleSmall: AppTypography.supporting.copyWith(
-        fontWeight: FontWeight.w600,
-        color: foreground,
-      ),
-      bodyLarge: AppTypography.supporting.copyWith(
-        fontSize: 12,
-        color: foreground,
-      ),
-      bodyMedium: AppTypography.supporting.copyWith(color: foreground),
-      bodySmall: AppTypography.supporting.copyWith(
-        color: scheme.onSurfaceVariant,
-      ),
-      labelLarge: AppTypography.button.copyWith(color: foreground),
-      labelMedium: AppTypography.supporting.copyWith(color: foreground),
-      labelSmall: AppTypography.supporting.copyWith(
-        color: scheme.onSurfaceVariant,
-      ),
-    ),
+    textTheme: textTheme,
     filledButtonTheme: FilledButtonThemeData(
       style: _actionButtonStyle(scheme.onPrimary, scheme.primary),
     ),
@@ -142,23 +125,26 @@ ThemeData buildAppTheme({required Brightness brightness}) {
       isDense: true,
       filled: true,
       fillColor: scheme.surface,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      labelStyle: AppTypography.supporting.copyWith(
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      labelStyle: AppTypography.fieldLabel.copyWith(
         color: scheme.onSurfaceVariant,
       ),
-      hintStyle: AppTypography.supporting.copyWith(
+      hintStyle: AppTypography.fieldValue.copyWith(
         color: scheme.onSurfaceVariant,
       ),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.input),
         borderSide: BorderSide(color: scheme.outlineVariant),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.input),
         borderSide: BorderSide(color: scheme.outlineVariant),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.input),
         borderSide: BorderSide(color: scheme.primary, width: 1.4),
       ),
     ),
@@ -167,22 +153,28 @@ ThemeData buildAppTheme({required Brightness brightness}) {
       elevation: 0,
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.65)),
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        side: BorderSide(color: scheme.outlineVariant),
       ),
     ),
     navigationBarTheme: NavigationBarThemeData(
-      height: 68,
+      height: 72,
       labelTextStyle: WidgetStatePropertyAll(
-        AppTypography.supporting.copyWith(fontWeight: FontWeight.w600),
+        AppTypography.metadata.copyWith(fontWeight: FontWeight.w600),
       ),
       backgroundColor: scheme.surface,
       indicatorColor: scheme.primaryContainer,
     ),
     dividerTheme: DividerThemeData(
-      color: scheme.outlineVariant.withValues(alpha: 0.7),
+      color: scheme.outlineVariant,
       thickness: 1,
       space: 1,
+    ),
+    snackBarTheme: SnackBarThemeData(
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
     ),
   );
 }
