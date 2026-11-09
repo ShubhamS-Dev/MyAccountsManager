@@ -43,7 +43,11 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
                   account.name.toLowerCase().contains(query) ||
                   (account.description ?? '').toLowerCase().contains(query),
             )
-            .toList();
+            .toList()
+          ..sort((a, b) {
+            if (a.isPinned == b.isPinned) return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+            return a.isPinned ? -1 : 1;
+          });
 
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 104),
