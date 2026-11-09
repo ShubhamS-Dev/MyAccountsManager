@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/app_theme.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/formatting/money_formatter.dart';
 import '../accounts_providers.dart';
@@ -202,11 +203,14 @@ class _BalanceOverview extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: colors.surface,
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppColors.navy, Color(0xFF263F78)],
+        ),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: colors.outlineVariant.withValues(alpha: 0.7)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -216,8 +220,9 @@ class _BalanceOverview extends StatelessWidget {
               Expanded(
                 child: Text(
                   'TOTAL ACCOUNT BALANCE',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    letterSpacing: 0.7,
+                  style: AppTypography.supporting.copyWith(
+                    color: Colors.white.withValues(alpha: 0.76),
+                    letterSpacing: 0.8,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -230,6 +235,7 @@ class _BalanceOverview extends StatelessWidget {
                       ? Icons.visibility_off_outlined
                       : Icons.visibility_outlined,
                   size: 18,
+                  color: Colors.white,
                 ),
               ),
               IconButton(
@@ -246,17 +252,18 @@ class _BalanceOverview extends StatelessWidget {
             error: (error, stack) => const Text('Balance unavailable'),
             data: (value) => Text(
               hidden ? '₹ ••••••' : MoneyFormatter.formatPaise(value),
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-                color: value < 0 ? colors.error : colors.onSurface,
+              style: AppTypography.transactionAmount.copyWith(
+                fontSize: 24,
+                color: Colors.white,
               ),
             ),
           ),
           const SizedBox(height: 4),
           Text(
             'Across active accounts · MyKhata excluded',
-            style: Theme.of(context).textTheme.bodySmall,
+            style: AppTypography.supporting.copyWith(
+              color: Colors.white.withValues(alpha: 0.72),
+            ),
           ),
         ],
       ),
