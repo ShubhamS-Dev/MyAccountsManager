@@ -45,7 +45,9 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
             )
             .toList()
           ..sort((a, b) {
-            if (a.isPinned == b.isPinned) return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+            if (a.isPinned == b.isPinned) {
+              return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+            }
             return a.isPinned ? -1 : 1;
           });
 
