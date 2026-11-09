@@ -95,6 +95,9 @@ void main() {
     tester,
   ) async {
     await pumpApp(tester);
+    // Dashboard summaries are stream-backed; wait for the monthly metrics
+    // instead of asserting before their first values have rendered.
+    await pumpUntilFound(tester, find.text('Income'));
 
     // Verify the refreshed dashboard hierarchy and approved content.
     expect(find.text('OVERVIEW'), findsOneWidget);
