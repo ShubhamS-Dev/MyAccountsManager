@@ -171,7 +171,7 @@ class _HomeDashboardPageState extends ConsumerState<_HomeDashboardPage> {
                   totalBalance.when(
                     loading: () => const SizedBox(height: 42, child: Align(
                       alignment: Alignment.centerLeft,
-                      child: SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
+                      child: const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
                     )),
                     error: (error, stack) => Text('Balance unavailable', style: AppTypography.transactionAmount.copyWith(color: Colors.white)),
                     data: (value) => AnimatedSwitcher(
@@ -203,7 +203,7 @@ class _HomeDashboardPageState extends ConsumerState<_HomeDashboardPage> {
         const SizedBox(height: AppSpacing.sm),
         monthTransactions.when(
           loading: () => const LinearProgressIndicator(),
-          error: (error, stack) => Text('Monthly summary unavailable.', style: AppTypography.supporting.copyWith(color: scheme.error)),
+          error: (error, stack) => const Text('Monthly summary unavailable.'),
           data: (items) {
             var income = 0;
             var expense = 0;
@@ -296,7 +296,7 @@ class _HomeDashboardPageState extends ConsumerState<_HomeDashboardPage> {
           },
         ),
         const SizedBox(height: AppSpacing.lg),
-        SectionHeader(title: 'Spending by category'),
+        const SectionHeader(title: 'Spending by category'),
         const SizedBox(height: AppSpacing.sm),
         monthTransactions.when(
           loading: () => const SizedBox(height: 110, child: Center(child: CircularProgressIndicator())),
