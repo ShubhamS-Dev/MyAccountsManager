@@ -248,3 +248,12 @@ The source changes are committed, but the new workflow must pass before this sli
 - No PR has been opened and no merge has been performed.
 - Validation remains **not run**: Dart format, Flutter analyze, Flutter tests, Android debug build, and device visual review. Do not interpret the added test as a passing result.
 
+
+
+## CI failure and repair — 2026-11-09
+
+- Run #217 failed at `flutter analyze` on commit `3ef527f95e80c7e652db0f226291d336d1f87cc8`; dependency resolution, Drift generation, and Dart formatting passed. Tests and Android debug build were skipped.
+- RCA: missing import for the concrete `TransactionHistoryItem` type in Account Details (causing cascading type/nullability/fold diagnostics) and Flutter 3.47.9 theme API mismatch (`CardTheme` versus `CardThemeData`). Analyzer also reported an unused local, missing braces, import ordering, and deprecated opacity calls.
+- Corrective source commits: Account Details type/import and null-flow cleanup; theme `CardThemeData` and `withValues`; Accounts import ordering and `withValues`.
+- Added the detailed RCA and fix record to `docs/UI_IMPLEMENTATION_LOG.md`.
+- **Current validation status: pending a fresh workflow run.** Do not mark M5 or M13 Done, and do not proceed to the next feature slice until analysis, tests, and Android debug build are verified successful.
