@@ -83,3 +83,38 @@ The requirements are being implemented in this order:
 5. Regression tests, Android debug build, and visual review.
 
 A manual refresh affordance is not an acceptable substitute for reactive synchronization. Each implementation slice must include tests and pass CI before it is reported as validated.
+
+## 8. Typography, controls, and screen approval baseline
+
+### Typography
+Use the following shared sizes consistently across existing and future screens:
+- Screen/app-bar title: **16 logical pixels maximum**.
+- Section headings: **14 logical pixels**.
+- Transaction amounts and primary balance figures: **16 logical pixels**.
+- Labels, values, dates, supporting details, button labels, and bottom-navigation labels: **11 logical pixels**.
+- Use weight, spacing, and semantic color for hierarchy rather than increasing text size beyond these limits.
+
+### Action button dimensions
+- Every standard action button has an exact **40 logical-pixel visual height**.
+- Apply this consistently to Filled, Outlined, Elevated, and Text buttons, including form submit, retry, restore, archive, and other action controls.
+- Icon-only action controls use a 40 × 40 logical-pixel hit area.
+- Segmented selectors, navigation destinations, and the floating Add Transaction action are selection/navigation controls, not standard action buttons; preserve accessible touch targets and their established component behavior.
+
+### Approved screen scope
+The user has confirmed the proposed screen inventory for implementation. This approval authorizes implementing the proposed screen scope and layouts; it does not mean those screens are already implemented or validated.
+
+- Home Dashboard
+- Accounts list and Archived Accounts
+- Account Details
+- Create Account and Edit Account
+- Account balance adjustments
+- Add/Edit regular transaction and History/Trash
+- MyKhata People/Transactions
+- Person Details and Add/Edit Person
+- Khata Entry Details and Add Khata Entry
+- Record Repayment
+- Global Categories
+- More and its Appearance, Budget Alerts, Backup & Restore, Currency & Format, and About App destinations
+
+Keep the approved product rules and ledger boundaries intact while implementing these screens. Any unresolved behavior affecting stored data, security, financial calculations, or destructive actions remains governed by the open decisions in the PRD/architecture and must not be inferred from a visual mockup.
+
