@@ -173,7 +173,7 @@ ThemeData buildAppTheme({required Brightness brightness}) {
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.65)),
+        side: BorderSide(color: scheme.outlineVariant.withOpacity(0.65)),
       ),
     ),
     navigationBarTheme: NavigationBarThemeData(
@@ -185,7 +185,7 @@ ThemeData buildAppTheme({required Brightness brightness}) {
       indicatorColor: scheme.primaryContainer,
     ),
     dividerTheme: DividerThemeData(
-      color: scheme.outlineVariant.withValues(alpha: 0.7),
+      color: scheme.outlineVariant.withOpacity(0.7),
       thickness: 1,
       space: 1,
     ),
