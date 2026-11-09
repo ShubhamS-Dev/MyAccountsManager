@@ -7,7 +7,6 @@ import '../../../core/formatting/date_timestamp.dart';
 import '../../../core/formatting/money_formatter.dart';
 import '../../transactions/transactions_providers.dart';
 import '../accounts_providers.dart';
-import 'account_balance_label.dart';
 
 class AccountDetailsPage extends ConsumerWidget {
   const AccountDetailsPage({required this.accountId, super.key});
