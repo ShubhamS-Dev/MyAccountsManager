@@ -130,7 +130,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                       'Create an Account before adding a transaction.',
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
                     FilledButton(
                       onPressed: () => context.push('/accounts/new'),
                       child: const Text('Create Account'),
@@ -148,7 +148,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
           return Form(
             key: _formKey,
             child: ListView(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
               children: [
                 SegmentedButton<TransactionKind>(
                   segments: const [
@@ -169,7 +169,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                     _categoryId = null;
                   }),
                 ),
-                const SizedBox(height: 22),
+                const SizedBox(height: 14),
                 DropdownButtonFormField<String>(
                   initialValue: _accountId,
                   isExpanded: true,
@@ -213,7 +213,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                   trailing: const Icon(Icons.chevron_right_rounded),
                   onTap: _pickDate,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 TextFormField(
                   controller: _noteController,
                   maxLength: 500,
