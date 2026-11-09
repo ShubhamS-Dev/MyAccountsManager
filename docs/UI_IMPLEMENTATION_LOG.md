@@ -161,3 +161,14 @@ User approval: implement Phases 1–3 first; stop for user review before beginni
 - Extended the Home dashboard widget test to assert the monthly summary, Account section, and recent transaction section.
 - Source updates are committed to the feature branch. Flutter format, analyze, tests, Android debug APK, and device visual review must be verified by the next CI run; no completion claim is made before those checks pass.
 - MyKhata and More implementation remains out of scope until the user reviews Phases 1–3.
+
+
+## Run #240 RCA — Flutter analyze failure
+
+- Run: [#240](https://github.com/ShubhamS-Dev/MyAccountsManager/actions/runs/42579437350)
+- Head commit: `40970476c5efc806a30b80bd4a85b1aaff99c0e6`
+- Pipeline reached `flutter analyze`; dependency resolution, Drift generation, and `dart format .` completed successfully.
+- Failure: analyzer returned exit code 1 for two `curly_braces_in_flow_control_structures` info diagnostics in `lib/features/shell/presentation/app_shell.dart`. Both were single-line early returns in empty-state handling (empty Accounts and empty Recent Transactions). This workflow treats analyzer infos as validation failures.
+- Tests, Android debug APK build, and artifact upload were skipped because the analyze step failed.
+- Corrective action: wrap both conditional return statements in braces. No behavior change intended.
+- Next gate: rerun the full validation workflow and confirm analyze, tests, and APK build all pass.
