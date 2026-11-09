@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/app_theme.dart';
+import '../../../app/app_widgets.dart';
 import '../../../core/formatting/money_formatter.dart';
 import '../../accounts/accounts_providers.dart';
 import '../../accounts/presentation/account_balance_label.dart';
@@ -21,14 +22,11 @@ class _AppShellState extends State<AppShell> {
   int _selectedIndex = 0;
 
   static const _destinations = [
-    _ShellDestination(label: 'Home', icon: Icons.home_outlined),
-    _ShellDestination(
-      label: 'Accounts',
-      icon: Icons.account_balance_wallet_outlined,
-    ),
-    _ShellDestination(label: 'History', icon: Icons.receipt_long_outlined),
-    _ShellDestination(label: 'MyKhata', icon: Icons.people_outline),
-    _ShellDestination(label: 'More', icon: Icons.grid_view_outlined),
+    _ShellDestination(label: 'Home', icon: Icons.home_rounded),
+    _ShellDestination(label: 'Accounts', icon: Icons.account_balance_wallet_rounded),
+    _ShellDestination(label: 'History', icon: Icons.receipt_long_rounded),
+    _ShellDestination(label: 'MyKhata', icon: Icons.people_alt_rounded),
+    _ShellDestination(label: 'More', icon: Icons.grid_view_rounded),
   ];
 
   @override
@@ -42,24 +40,23 @@ class _AppShellState extends State<AppShell> {
             onPressed: () {},
             icon: const Icon(Icons.notifications_none_rounded),
           ),
+          const SizedBox(width: AppSpacing.sm),
         ],
       ),
       body: IndexedStack(
         index: _selectedIndex,
         children: const [
-          _HomeFoundationPage(),
+          _HomeDashboardPage(),
           AccountsPage(),
           HistoryPage(),
           _PlaceholderPage(
             title: 'MyKhata',
-            description:
-                'Track money lent and borrowed independently from your Accounts.',
+            description: 'Track money lent and borrowed independently from your Accounts.',
             icon: Icons.people_outline,
           ),
           _PlaceholderPage(
             title: 'More',
-            description:
-                'Budgets, savings goals, reports, backup and settings.',
+            description: 'Budgets, savings goals, reports, backup and settings.',
             icon: Icons.grid_view_outlined,
           ),
         ],
@@ -68,20 +65,19 @@ class _AppShellState extends State<AppShell> {
           ? FloatingActionButton(
               onPressed: () => context.push('/transaction/new'),
               tooltip: 'Add transaction',
-              child: const Icon(Icons.add_rounded),
+              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+              foregroundColor: Theme.of(context).colorScheme.primary,
+              child: const Icon(Icons.add_rounded, size: 28),
             )
           : null,
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
-        onDestinationSelected: (index) =>
-            setState(() => _selectedIndex = index),
+        onDestinationSelected: (index) => setState(() => _selectedIndex = index),
         destinations: _destinations
-            .map(
-              (destination) => NavigationDestination(
-                icon: Icon(destination.icon),
-                label: destination.label,
-              ),
-            )
+            .map((destination) => NavigationDestination(
+                  icon: Icon(destination.icon),
+                  label: destination.label,
+                ))
             .toList(),
       ),
     );
@@ -90,51 +86,41 @@ class _AppShellState extends State<AppShell> {
 
 class _ShellDestination {
   const _ShellDestination({required this.label, required this.icon});
-
   final String label;
   final IconData icon;
 }
 
-class _HomeFoundationPage extends ConsumerStatefulWidget {
-  const _HomeFoundationPage();
+class _HomeDashboardPage extends ConsumerStatefulWidget {
+  const _HomeDashboardPage();
 
   @override
-  ConsumerState<_HomeFoundationPage> createState() =>
-      _HomeFoundationPageState();
+  ConsumerState<_HomeDashboardPage> createState() => _HomeDashboardPageState();
 }
 
-class _HomeFoundationPageState extends ConsumerState<_HomeFoundationPage> {
+class _HomeDashboardPageState extends ConsumerState<_HomeDashboardPage> {
   bool _hideAmounts = false;
+
+  String get _greeting {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  }
 
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
-    final monthStart = DateTime.utc(
-      now.year,
-      now.month,
-      1,
-    ).millisecondsSinceEpoch;
-    final today = DateTime.utc(
-      now.year,
-      now.month,
-      now.day,
-    ).millisecondsSinceEpoch;
-    final monthFilter = TransactionHistoryFilter(
-      fromDate: monthStart,
-      throughDate: today,
-    );
-    final monthTransactions = ref.watch(
-      transactionHistoryProvider(monthFilter),
-    );
-    final latestTransactions = ref.watch(
-      transactionHistoryProvider(const TransactionHistoryFilter()),
-    );
+    final monthStart = DateTime.utc(now.year, now.month, 1).millisecondsSinceEpoch;
+    final today = DateTime.utc(now.year, now.month, now.day).millisecondsSinceEpoch;
+    final monthFilter = TransactionHistoryFilter(fromDate: monthStart, throughDate: today);
+    final monthTransactions = ref.watch(transactionHistoryProvider(monthFilter));
+    final latestTransactions = ref.watch(transactionHistoryProvider(const TransactionHistoryFilter()));
     final accounts = ref.watch(activeAccountsProvider);
     final totalBalance = ref.watch(totalActiveBalancePaiseProvider);
-    final colors = Theme.of(context).colorScheme;
+    final scheme = Theme.of(context).colorScheme;
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, 112),
       children: [
         Row(
           children: [
@@ -142,118 +128,78 @@ class _HomeFoundationPageState extends ConsumerState<_HomeFoundationPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'OVERVIEW',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      letterSpacing: 1.1,
-                      fontWeight: FontWeight.w700,
-                      color: colors.primary,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    'Your finances',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  Text(
-                    'A clear view of your money this month.',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
+                  Text('YOUR MONEY, IN FOCUS', style: AppTypography.metadata.copyWith(
+                    color: scheme.primary, letterSpacing: 1.1, fontWeight: FontWeight.w800,
+                  )),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text('$_greeting 👋', style: AppTypography.screenTitle.copyWith(fontSize: 20)),
+                  Text('Here’s your financial snapshot.', style: AppTypography.supporting.copyWith(color: scheme.onSurfaceVariant)),
                 ],
               ),
             ),
             IconButton(
               tooltip: _hideAmounts ? 'Show amounts' : 'Hide amounts',
               onPressed: () => setState(() => _hideAmounts = !_hideAmounts),
-              icon: Icon(
-                _hideAmounts
-                    ? Icons.visibility_off_outlined
-                    : Icons.visibility_outlined,
-              ),
+              icon: Icon(_hideAmounts ? Icons.visibility_off_rounded : Icons.visibility_rounded),
             ),
           ],
         ),
-        const SizedBox(height: 14),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [AppColors.navy, Color(0xFF263F78)],
-            ),
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        const SizedBox(height: AppSpacing.lg),
+        GradientCard(
+          colors: AppColors.heroGradient,
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Stack(
             children: [
-              Text(
-                'TOTAL ACCOUNT BALANCE',
-                style: AppTypography.supporting.copyWith(
-                  color: Colors.white.withValues(alpha: 0.78),
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.8,
-                ),
-              ),
-              const SizedBox(height: 9),
-              totalBalance.when(
-                loading: () => const SizedBox(
-                  height: 22,
-                  width: 22,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
+              Positioned(right: -28, top: -36, child: _GlowOrb(size: 150)),
+              Positioned(right: 48, bottom: -66, child: _GlowOrb(size: 112)),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(child: Text('TOTAL ACCOUNT BALANCE', style: AppTypography.metadata.copyWith(
+                        color: Colors.white.withValues(alpha: .78), letterSpacing: 1.1, fontWeight: FontWeight.w800,
+                      ))),
+                      Icon(Icons.auto_awesome_rounded, color: Colors.white.withValues(alpha: .8), size: 18),
+                    ],
                   ),
-                ),
-                error: (error, stack) => Text(
-                  'Balance unavailable',
-                  style: AppTypography.transactionAmount.copyWith(
-                    color: Colors.white,
+                  const SizedBox(height: AppSpacing.md),
+                  totalBalance.when(
+                    loading: () => const SizedBox(height: 42, child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
+                    )),
+                    error: (error, stack) => Text('Balance unavailable', style: AppTypography.transactionAmount.copyWith(color: Colors.white)),
+                    data: (value) => AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 250),
+                      child: Text(
+                        _hideAmounts ? '₹ ••••••' : MoneyFormatter.formatPaise(value),
+                        key: ValueKey('$_hideAmounts-$value'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.balance.copyWith(color: Colors.white),
+                      ),
+                    ),
                   ),
-                ),
-                data: (value) => Text(
-                  _hideAmounts ? '₹ ••••••' : MoneyFormatter.formatPaise(value),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTypography.transactionAmount.copyWith(
-                    fontSize: 25,
-                    color: Colors.white,
+                  const SizedBox(height: AppSpacing.sm),
+                  Text('Across active accounts  ·  MyKhata excluded', style: AppTypography.supporting.copyWith(color: Colors.white.withValues(alpha: .78))),
+                  const SizedBox(height: AppSpacing.md),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+                    decoration: BoxDecoration(color: Colors.white.withValues(alpha: .16), borderRadius: BorderRadius.circular(AppRadius.pill)),
+                    child: Text('This month overview', style: AppTypography.metadata.copyWith(color: Colors.white, fontWeight: FontWeight.w700)),
                   ),
-                ),
-              ),
-              const SizedBox(height: 7),
-              Text(
-                'Across active Accounts  ·  MyKhata excluded',
-                style: AppTypography.supporting.copyWith(
-                  color: Colors.white.withValues(alpha: 0.72),
-                ),
+                ],
               ),
             ],
           ),
         ),
-        const SizedBox(height: 14),
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                'This month',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ),
-            Text(
-              'INR',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: colors.onSurfaceVariant,
-                letterSpacing: 0.7,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.lg),
+        SectionHeader(title: 'This month'),
+        const SizedBox(height: AppSpacing.sm),
         monthTransactions.when(
           loading: () => const LinearProgressIndicator(),
-          error: (error, stack) => const Text('Monthly summary unavailable.'),
+          error: (error, stack) => Text('Monthly summary unavailable.', style: AppTypography.supporting.copyWith(color: scheme.error)),
           data: (items) {
             var income = 0;
             var expense = 0;
@@ -267,165 +213,172 @@ class _HomeFoundationPageState extends ConsumerState<_HomeFoundationPage> {
             final net = income - expense;
             return Row(
               children: [
-                Expanded(
-                  child: _MonthMetric(
-                    label: 'Income',
-                    amount: income,
-                    color: colors.tertiary,
-                    hidden: _hideAmounts,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _MonthMetric(
-                    label: 'Expenses',
-                    amount: expense,
-                    color: colors.error,
-                    hidden: _hideAmounts,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _MonthMetric(
-                    label: 'Net cash flow',
-                    amount: net,
-                    color: net < 0 ? colors.error : colors.tertiary,
-                    hidden: _hideAmounts,
-                  ),
-                ),
+                Expanded(child: _MonthMetric(label: 'Income', amount: income, color: AppColors.positive, icon: Icons.south_west_rounded, hidden: _hideAmounts)),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(child: _MonthMetric(label: 'Expenses', amount: expense, color: AppColors.negative, icon: Icons.north_east_rounded, hidden: _hideAmounts)),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(child: _MonthMetric(label: 'Net flow', amount: net, color: net < 0 ? AppColors.negative : AppColors.positive, icon: Icons.swap_vert_rounded, hidden: _hideAmounts)),
               ],
             );
           },
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.lg),
+        SectionHeader(title: 'Quick actions'),
+        const SizedBox(height: AppSpacing.sm),
         Row(
           children: [
-            Expanded(
-              child: Text(
-                'Your Accounts',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ),
+            Expanded(child: _QuickAction(icon: Icons.north_east_rounded, label: 'Expense', color: AppColors.negative, onTap: () => context.push('/transaction/new?type=expense'))),
+            Expanded(child: _QuickAction(icon: Icons.south_west_rounded, label: 'Income', color: AppColors.positive, onTap: () => context.push('/transaction/new?type=income'))),
+            Expanded(child: _QuickAction(icon: Icons.account_balance_wallet_rounded, label: 'Accounts', color: scheme.primary, onTap: () => context.push('/accounts/new'))),
+            Expanded(child: _QuickAction(icon: Icons.people_alt_rounded, label: 'MyKhata', color: AppColors.violet, onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Open MyKhata from the bottom navigation.')))),
           ],
         ),
+        const SizedBox(height: AppSpacing.lg),
+        SectionHeader(title: 'Your accounts', action: 'View all', onAction: () => context.go('/')),
+        const SizedBox(height: AppSpacing.sm),
         accounts.when(
           loading: () => const LinearProgressIndicator(),
-          error: (error, stack) => const Text('Accounts unavailable.'),
+          error: (error, stack) => Text('Accounts unavailable.', style: AppTypography.supporting.copyWith(color: scheme.error)),
           data: (items) {
             if (items.isEmpty) {
-              return const Text('Add an Account to start tracking your money.');
+              return EmptyState(
+                title: 'Start with an account',
+                message: 'Add a bank, wallet or cash account to see your money in one place.',
+                icon: Icons.account_balance_wallet_outlined,
+                actionLabel: 'Add account',
+                onAction: () => context.push('/accounts/new'),
+              );
             }
-            final pinned = items.where((a) => a.isPinned).toList();
-            final rest = items.where((a) => !a.isPinned).toList();
-            final ordered = [...pinned, ...rest];
-            return GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: ordered.length,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: 8,
-                crossAxisSpacing: 8,
-                childAspectRatio: 1.75,
-              ),
-              itemBuilder: (context, index) {
-                final account = ordered[index];
-                return Card(
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(14),
-                    onTap: () => context.push('/accounts/${account.id}'),
-                    child: Padding(
-                      padding: const EdgeInsets.all(10),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.account_balance_wallet_outlined,
-                            size: 18,
-                            color: colors.primary,
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            account.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(fontWeight: FontWeight.w700),
-                          ),
-                          if (_hideAmounts)
-                            Text(
-                              '₹ ••••••',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            )
-                          else
-                            AccountBalanceLabel(accountId: account.id),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
-            );
-          },
-        ),
-        const SizedBox(height: 16),
-        Text(
-          'Recent transactions',
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        const SizedBox(height: 8),
-        latestTransactions.when(
-          loading: () => const LinearProgressIndicator(),
-          error: (error, stack) => const Text('Transactions unavailable.'),
-          data: (items) {
-            if (items.isEmpty) {
-              return const Text('Your latest transactions will appear here.');
-            }
-            return Column(
-              children: [
-                for (final item in items.take(5))
-                  Card(
-                    child: ListTile(
-                      dense: true,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 2,
-                      ),
-                      leading: Icon(
-                        item.transaction.type == 'income'
-                            ? Icons.south_west_rounded
-                            : Icons.north_east_rounded,
-                        color: item.transaction.type == 'income'
-                            ? colors.tertiary
-                            : colors.error,
-                      ),
-                      title: Text(
-                        item.transaction.note?.isNotEmpty == true
-                            ? item.transaction.note!
-                            : item.categoryName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      subtitle: Text(
-                        '${item.accountName} · ${item.categoryName}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      trailing: Text(
-                        _hideAmounts
-                            ? '••••'
-                            : '${item.transaction.type == 'income' ? '+' : '-'}${MoneyFormatter.formatPaise(item.transaction.amountPaise)}',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: item.transaction.type == 'income'
-                              ? colors.tertiary
-                              : colors.error,
+            final ordered = [...items.where((a) => a.isPinned), ...items.where((a) => !a.isPinned)];
+            return SizedBox(
+              height: 148,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: ordered.length,
+                separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
+                itemBuilder: (context, index) {
+                  final account = ordered[index];
+                  final gradient = AppColors.accountGradients[index % AppColors.accountGradients.length];
+                  return SizedBox(
+                    width: 196,
+                    child: GradientCard(
+                      colors: gradient,
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      radius: AppRadius.card,
+                      child: InkWell(
+                        onTap: () => context.push('/accounts/${account.id}'),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 22),
+                            const Spacer(),
+                            Text(account.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTypography.sectionTitle.copyWith(color: Colors.white)),
+                            const SizedBox(height: AppSpacing.xs),
+                            if (_hideAmounts)
+                              Text('₹ ••••••', style: AppTypography.transactionAmount.copyWith(color: Colors.white))
+                            else
+                              DefaultTextStyle(
+                                style: AppTypography.transactionAmount.copyWith(color: Colors.white),
+                                child: AccountBalanceLabel(accountId: account.id),
+                              ),
+                          ],
                         ),
                       ),
                     ),
+                  );
+                },
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        SectionHeader(title: 'Spending by category'),
+        const SizedBox(height: AppSpacing.sm),
+        monthTransactions.when(
+          loading: () => const SizedBox(height: 110, child: Center(child: CircularProgressIndicator())),
+          error: (error, stack) => const SizedBox.shrink(),
+          data: (items) {
+            final totals = <String, int>{};
+            for (final item in items.where((e) => e.transaction.type == 'expense')) {
+              totals.update(item.categoryName, (v) => v + item.transaction.amountPaise, ifAbsent: () => item.transaction.amountPaise);
+            }
+            if (totals.isEmpty) {
+              return const AppCard(
+                child: EmptyState(
+                  title: 'No spending yet',
+                  message: 'Your category breakdown will appear here after your first expense.',
+                  icon: Icons.donut_small_rounded,
+                ),
+              );
+            }
+            final entries = totals.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+            final total = entries.fold<int>(0, (sum, entry) => sum + entry.value);
+            final colors = [AppColors.primary, AppColors.positive, AppColors.negative, AppColors.violet, const Color(0xFFF59E0B), const Color(0xFF0EA5E9)];
+            return AppCard(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 116,
+                    height: 116,
+                    child: CustomPaint(
+                      painter: _DonutPainter(values: entries.map((e) => e.value.toDouble()).toList(), colors: colors),
+                      child: Center(child: Text(_hideAmounts ? '•••' : MoneyFormatter.formatPaise(total), textAlign: TextAlign.center, style: AppTypography.fieldValue.copyWith(fontWeight: FontWeight.w800))),
+                    ),
                   ),
-              ],
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        for (var i = 0; i < entries.take(4).length; i++)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            child: Row(
+                              children: [
+                                Container(width: 9, height: 9, decoration: BoxDecoration(color: colors[i % colors.length], shape: BoxShape.circle)),
+                                const SizedBox(width: AppSpacing.sm),
+                                Expanded(child: Text(entries[i].key, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTypography.supporting)),
+                                Text(_hideAmounts ? '•••' : MoneyFormatter.formatPaise(entries[i].value), style: AppTypography.metadata.copyWith(fontWeight: FontWeight.w700)),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        SectionHeader(title: 'Recent transactions', action: 'See history', onAction: () => context.go('/')),
+        const SizedBox(height: AppSpacing.sm),
+        latestTransactions.when(
+          loading: () => const LinearProgressIndicator(),
+          error: (error, stack) => Text('Transactions unavailable.', style: AppTypography.supporting.copyWith(color: scheme.error)),
+          data: (items) {
+            if (items.isEmpty) {
+              return AppCard(
+                child: EmptyState(
+                  title: 'Nothing here yet',
+                  message: 'Your recent income and expenses will show up here.',
+                  icon: Icons.receipt_long_rounded,
+                  actionLabel: 'Add transaction',
+                  onAction: () => context.push('/transaction/new'),
+                ),
+              );
+            }
+            final recent = items.take(6).toList();
+            return AppCard(
+              padding: EdgeInsets.zero,
+              child: Column(
+                children: [
+                  for (var i = 0; i < recent.length; i++) ...[
+                    _RecentTransaction(item: recent[i], hidden: _hideAmounts),
+                    if (i != recent.length - 1) Divider(height: 1, color: scheme.outlineVariant),
+                  ],
+                ],
+              ),
             );
           },
         ),
@@ -434,80 +387,148 @@ class _HomeFoundationPageState extends ConsumerState<_HomeFoundationPage> {
   }
 }
 
+class _GlowOrb extends StatelessWidget {
+  const _GlowOrb({required this.size});
+  final double size;
+  @override
+  Widget build(BuildContext context) => Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      gradient: RadialGradient(colors: [Colors.white.withValues(alpha: .22), Colors.white.withValues(alpha: 0)]),
+    ),
+  );
+}
+
 class _MonthMetric extends StatelessWidget {
-  const _MonthMetric({
-    required this.label,
-    required this.amount,
-    required this.color,
-    required this.hidden,
-  });
+  const _MonthMetric({required this.label, required this.amount, required this.color, required this.icon, required this.hidden});
   final String label;
   final int amount;
   final Color color;
+  final IconData icon;
   final bool hidden;
 
   @override
-  Widget build(BuildContext context) => Card(
-    child: Padding(
-      padding: const EdgeInsets.all(9),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-          const SizedBox(height: 5),
-          Text(
-            hidden ? '₹ •••' : MoneyFormatter.formatPaise(amount),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: color,
+  Widget build(BuildContext context) => AppCard(
+    padding: const EdgeInsets.all(AppSpacing.sm),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 17, color: color),
+        const SizedBox(height: AppSpacing.sm),
+        Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTypography.metadata.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+        const SizedBox(height: AppSpacing.xs),
+        Text(hidden ? '₹ •••' : MoneyFormatter.formatPaise(amount), maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTypography.transactionAmount.copyWith(color: color)),
+        const SizedBox(height: AppSpacing.sm),
+        Container(height: 3, decoration: BoxDecoration(color: color.withValues(alpha: .16), borderRadius: BorderRadius.circular(4)), child: Align(alignment: Alignment.centerLeft, child: FractionallySizedBox(widthFactor: amount == 0 ? 0.08 : .72, child: DecoratedBox(decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(4)))))),
+      ],
+    ),
+  );
+}
+
+class _QuickAction extends StatelessWidget {
+  const _QuickAction({required this.icon, required this.label, required this.color, required this.onTap});
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppRadius.md),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+        child: Column(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(color: color.withValues(alpha: .12), shape: BoxShape.circle),
+              child: Icon(icon, color: color, size: 21),
             ),
-          ),
-        ],
+            const SizedBox(height: AppSpacing.xs),
+            Text(label, style: AppTypography.metadata, maxLines: 1, overflow: TextOverflow.ellipsis),
+          ],
+        ),
       ),
     ),
   );
 }
 
-class _PlaceholderPage extends StatelessWidget {
-  const _PlaceholderPage({
-    required this.title,
-    required this.description,
-    required this.icon,
-  });
+class _RecentTransaction extends StatelessWidget {
+  const _RecentTransaction({required this.item, required this.hidden});
+  final TransactionHistoryItem item;
+  final bool hidden;
 
+  @override
+  Widget build(BuildContext context) {
+    final income = item.transaction.type == 'income';
+    final color = income ? AppColors.positive : AppColors.negative;
+    return ListTile(
+      minVerticalPadding: 10,
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(color: color.withValues(alpha: .12), borderRadius: BorderRadius.circular(14)),
+        child: Icon(income ? Icons.south_west_rounded : Icons.north_east_rounded, color: color, size: 18),
+      ),
+      title: Text(item.transaction.note?.isNotEmpty == true ? item.transaction.note! : item.categoryName, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTypography.fieldValue.copyWith(fontWeight: FontWeight.w700)),
+      subtitle: Text('${item.accountName} · ${item.categoryName}', maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTypography.metadata.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+      trailing: Text(hidden ? '••••' : '${income ? '+' : '-'}${MoneyFormatter.formatPaise(item.transaction.amountPaise)}', style: AppTypography.transactionAmount.copyWith(color: color)),
+    );
+  }
+}
+
+class _DonutPainter extends CustomPainter {
+  const _DonutPainter({required this.values, required this.colors});
+  final List<double> values;
+  final List<Color> colors;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final total = values.fold<double>(0, (sum, value) => sum + value);
+    if (total <= 0) return;
+    final rect = Offset.zero & size;
+    final paint = Paint()..style = PaintingStyle.stroke..strokeWidth = 13..strokeCap = StrokeCap.round;
+    var start = -1.5708;
+    for (var i = 0; i < values.length; i++) {
+      final sweep = values[i] / total * 6.28318;
+      paint.color = colors[i % colors.length];
+      canvas.drawArc(rect.deflate(8), start, sweep - .035, false, paint);
+      start += sweep;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DonutPainter oldDelegate) => oldDelegate.values != values || oldDelegate.colors != colors;
+}
+
+class _PlaceholderPage extends StatelessWidget {
+  const _PlaceholderPage({required this.title, required this.description, required this.icon});
   final String title;
   final String description;
   final IconData icon;
 
   @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 48, color: Theme.of(context).colorScheme.primary),
-            const SizedBox(height: 16),
-            Text(title, style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: 8),
-            Text(description, textAlign: TextAlign.center),
-            const SizedBox(height: 12),
-            const Text(
-              'Foundation placeholder — feature implementation is pending.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12, color: Colors.grey),
-            ),
-          ],
-        ),
+  Widget build(BuildContext context) => Center(
+    child: Padding(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 48, color: Theme.of(context).colorScheme.primary),
+          const SizedBox(height: AppSpacing.md),
+          Text(title, style: AppTypography.screenTitle),
+          const SizedBox(height: AppSpacing.sm),
+          Text(description, textAlign: TextAlign.center, style: AppTypography.supporting),
+          const SizedBox(height: AppSpacing.md),
+          Text('Feature implementation is pending.', textAlign: TextAlign.center, style: AppTypography.metadata.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+        ],
       ),
-    );
-  }
+    ),
+  );
 }
