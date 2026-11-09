@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/formatting/money_formatter.dart';
+import '../../../core/database/app_database.dart';
 import '../accounts_providers.dart';
 import 'account_balance_label.dart';
 
@@ -27,8 +28,6 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
   Widget build(BuildContext context) {
     final accounts = ref.watch(activeAccountsProvider);
     final total = ref.watch(totalActiveBalancePaiseProvider);
-    final colors = Theme.of(context).colorScheme;
-
     return accounts.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, stack) => _MessageState(
@@ -106,7 +105,7 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
                   mainAxisExtent: 132,
                 ),
                 itemBuilder: (context, index) {
-                  final account = filtered[index];
+                  final AccountRow account = filtered[index];
                   return _AccountCard(
                     account: account,
                     hidden: _hideBalances,
@@ -127,7 +126,7 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
     );
   }
 
-  Future<void> _handleAction(BuildContext context, dynamic account, String action) async {
+  Future<void> _handleAction(BuildContext context, AccountRow account, String action) async {
     final repository = ref.read(accountsRepositoryProvider);
     if (action == 'details') {
       context.push('/accounts/${account.id}');
@@ -200,7 +199,7 @@ class _BalanceOverview extends StatelessWidget {
 
 class _AccountCard extends StatelessWidget {
   const _AccountCard({required this.account, required this.hidden, required this.onTap, required this.onAction});
-  final dynamic account;
+  final AccountRow account;
   final bool hidden;
   final VoidCallback onTap;
   final ValueChanged<String> onAction;
