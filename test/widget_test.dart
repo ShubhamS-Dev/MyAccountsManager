@@ -75,6 +75,9 @@ void main() {
           accountBalancePaiseProvider.overrideWith(
             (ref, accountId) => Stream.value(0),
           ),
+          balanceAdjustmentsProvider.overrideWith(
+            (ref, accountId) => Stream.value(<BalanceAdjustmentRow>[]),
+          ),
           activeCategoriesByTypeProvider.overrideWith(
             (ref, type) => Stream.value(<CategoryRow>[]),
           ),
