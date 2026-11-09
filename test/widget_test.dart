@@ -97,6 +97,9 @@ void main() {
     await pumpApp(tester);
 
     expect(find.text('Your money, clearly organised.'), findsOneWidget);
+    expect(find.text('This month'), findsOneWidget);
+    expect(find.text('Your Accounts'), findsOneWidget);
+    expect(find.text('Recent transactions'), findsOneWidget);
     expect(find.text('Accounts'), findsOneWidget);
     expect(find.text('MyKhata'), findsOneWidget);
   });
