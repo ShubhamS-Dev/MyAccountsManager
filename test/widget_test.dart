@@ -102,10 +102,7 @@ void main() {
     // Verify the refreshed dashboard hierarchy and approved content.
     expect(find.text('OVERVIEW'), findsOneWidget);
     expect(find.text('Your finances'), findsOneWidget);
-    expect(
-      find.text('A clear view of your money this month.'),
-      findsOneWidget,
-    );
+    expect(find.text('A clear view of your money this month.'), findsOneWidget);
     expect(find.text('TOTAL ACCOUNT BALANCE'), findsOneWidget);
     expect(
       find.text('Across active Accounts  ·  MyKhata excluded'),
@@ -129,7 +126,13 @@ void main() {
 
     // Verify navigation through user-visible taps instead of inspecting
     // NavigationBar internals. This covers the actual destination behavior.
-    for (final destination in ['Accounts', 'History', 'MyKhata', 'More', 'Home']) {
+    for (final destination in [
+      'Accounts',
+      'History',
+      'MyKhata',
+      'More',
+      'Home',
+    ]) {
       await tester.tap(find.text(destination).last);
       await tester.pumpAndSettle();
       expect(

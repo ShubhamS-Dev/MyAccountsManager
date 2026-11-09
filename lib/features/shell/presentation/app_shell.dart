@@ -213,9 +213,7 @@ class _HomeFoundationPageState extends ConsumerState<_HomeFoundationPage> {
                   ),
                 ),
                 data: (value) => Text(
-                  _hideAmounts
-                      ? '₹ ••••••'
-                      : MoneyFormatter.formatPaise(value),
+                  _hideAmounts ? '₹ ••••••' : MoneyFormatter.formatPaise(value),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppTypography.transactionAmount.copyWith(
