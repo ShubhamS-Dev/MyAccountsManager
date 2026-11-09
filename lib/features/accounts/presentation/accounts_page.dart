@@ -105,13 +105,52 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
             const SizedBox(height: 12),
             if (filtered.isEmpty)
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 32),
-                child: Text(
-                  items.isEmpty
-                      ? 'No accounts yet. Add your first account.'
-                      : 'No accounts match your search.',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium,
+                padding: const EdgeInsets.symmetric(vertical: 28),
+                child: Column(
+                  children: [
+                    Icon(
+                      items.isEmpty
+                          ? Icons.account_balance_wallet_outlined
+                          : Icons.search_off_rounded,
+                      size: 34,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      items.isEmpty
+                          ? 'No accounts yet'
+                          : 'No matching accounts',
+                      style: AppTypography.sectionTitle,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      items.isEmpty
+                          ? 'Add an account to start tracking your money.'
+                          : 'Try another name or clear your search.',
+                      style: AppTypography.supporting.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 40,
+                      child: items.isEmpty
+                          ? FilledButton.icon(
+                              onPressed: () => context.push('/accounts/new'),
+                              icon: const Icon(Icons.add, size: 17),
+                              label: const Text('Add new account'),
+                            )
+                          : TextButton(
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() {});
+                              },
+                              child: const Text('Clear search'),
+                            ),
+                    ),
+                  ],
                 ),
               )
             else
