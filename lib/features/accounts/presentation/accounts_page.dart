@@ -37,19 +37,20 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
       ),
       data: (items) {
         final query = _searchController.text.trim().toLowerCase();
-        final filtered = items
-            .where(
-              (account) =>
-                  account.name.toLowerCase().contains(query) ||
-                  (account.description ?? '').toLowerCase().contains(query),
-            )
-            .toList()
-          ..sort((a, b) {
-            if (a.isPinned == b.isPinned) {
-              return a.name.toLowerCase().compareTo(b.name.toLowerCase());
-            }
-            return a.isPinned ? -1 : 1;
-          });
+        final filtered =
+            items
+                .where(
+                  (account) =>
+                      account.name.toLowerCase().contains(query) ||
+                      (account.description ?? '').toLowerCase().contains(query),
+                )
+                .toList()
+              ..sort((a, b) {
+                if (a.isPinned == b.isPinned) {
+                  return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+                }
+                return a.isPinned ? -1 : 1;
+              });
 
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 104),
