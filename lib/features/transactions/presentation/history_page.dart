@@ -78,12 +78,20 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
           if(t.transactionDate<from || t.transactionDate>through) {
             return false;
           }
-          if(_accountId!=null && t.accountId!=_accountId) return false;
-          if(_category!=null && i.categoryName!=_category) return false;
-          if(_type!=null && t.type!=_type) return false;
+          if(_accountId!=null && t.accountId!=_accountId) {
+            return false;
+          }
+          if(_category!=null && i.categoryName!=_category) {
+            return false;
+          }
+          if(_type!=null && t.type!=_type) {
+            return false;
+          }
           if(q.isNotEmpty) {
             final searchable='${t.note??''} ${i.accountName} ${i.categoryName} ${MoneyFormatter.formatPaise(t.amountPaise)} ${t.amountPaise}'.toLowerCase();
-            if(!searchable.contains(q)) return false;
+            if(!searchable.contains(q)) {
+              return false;
+            }
           }
           return true;
         }).toList();
@@ -213,7 +221,12 @@ class _HistoryTile extends StatelessWidget {
         subtitle:Text('${item.categoryName} · ${item.accountName}',maxLines:1,overflow:TextOverflow.ellipsis,style:AppTypography.supporting.copyWith(color:colors.onSurfaceVariant)),
         trailing:Row(mainAxisSize:MainAxisSize.min,children:[
           Text('${income?'+':'-'}${MoneyFormatter.formatPaise(t.amountPaise)}',style:AppTypography.transactionAmount.copyWith(color:income?AppColors.positive:AppColors.negative)),
-          PopupMenuButton<String>(tooltip:'Transaction actions',onSelected:(v){if(v=='edit')onEdit();if(v=='trash')onTrash();},itemBuilder:(_)=>const[
+          PopupMenuButton<String>(tooltip:'Transaction actions',onSelected:(v){if(v=='edit') {
+              onEdit();
+            }
+            if(v=='trash') {
+              onTrash();
+            }},itemBuilder:(_)=>const[
             PopupMenuItem(value:'edit',child:Text('Edit')),
             PopupMenuItem(value:'trash',child:Text('Move to Trash')),
           ]),
