@@ -230,11 +230,15 @@ void main() {
     expect(amountY, lessThan(categoryY));
     expect(find.text('Today'), findsOneWidget);
     expect(find.text('What was this transaction for?'), findsOneWidget);
-    // ListView is the widget that builds the scrollable viewport, but
-    // scrollUntilVisible requires a Finder for its Scrollable descendant.
-    // Scope it to this Form so the app shell's scrollables cannot match.
-    final formScrollable = find.descendant(
+    // Find the Scrollable owned by this Form's ListView. Other
+    // Scrollables under Form can belong to dropdown controls.
+    final formListView = find.descendant(
       of: find.byType(Form),
+      matching: find.byType(ListView),
+    );
+    expect(formListView, findsOneWidget);
+    final formScrollable = find.descendant(
+      of: formListView,
       matching: find.byType(Scrollable),
     );
     expect(formScrollable, findsOneWidget);
