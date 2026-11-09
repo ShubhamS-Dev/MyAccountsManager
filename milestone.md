@@ -257,3 +257,16 @@ The source changes are committed, but the new workflow must pass before this sli
 - Corrective source commits: Account Details type/import and null-flow cleanup; theme `CardThemeData` and `withValues`; Accounts import ordering and `withValues`.
 - Added the detailed RCA and fix record to `docs/UI_IMPLEMENTATION_LOG.md`.
 - **Current validation status: pending a fresh workflow run.** Do not mark M5 or M13 Done, and do not proceed to the next feature slice until analysis, tests, and Android debug build are verified successful.
+
+
+## Premium design system foundation — 2026-11-10
+
+- M12/UI foundation started on `feature/20261109/ui-refresh`.
+- Added centralized design tokens in `lib/app/design_tokens.dart`: fintech indigo/violet and semantic emerald/rose colors, light/dark surfaces, spacing, radii, shadows, tabular amount typography, and the approved 40px button / 48px touch-target dimensions.
+- Rebuilt `lib/app/app_theme.dart` with explicit Material 3 light/dark ColorSchemes and shared component themes; removed the generated seed-blue palette.
+- Added reusable `AppCard`, `GradientCard`, `AmountText`, `SectionHeader`, `PrimaryButton`, `CategoryChip`, and `EmptyState` in `lib/app/app_widgets.dart`.
+- Changed app theme selection to `ThemeMode.system`; the app now follows Android's system appearance and retains both light and dark themes.
+- Added `test/app/design_system_test.dart` for token values, light/dark surfaces, and the 48px hit-area / 40px visual-button contract.
+- This is the design-system foundation slice. Home, Accounts, History, and Add Transaction screen layouts have not yet been redesigned with the new components.
+- Google Fonts runtime loading is intentionally not enabled in this offline-first app: it can fetch font files over the network unless font assets are bundled. Typography currently uses Flutter's local platform font fallback with tabular figures. Animation, chart, Lottie, and SVG packages will be added only in the screen slice that actually uses them.
+- Validation for this slice is pending CI; do not mark it Done until formatting, analysis, tests, and Android debug build pass.
