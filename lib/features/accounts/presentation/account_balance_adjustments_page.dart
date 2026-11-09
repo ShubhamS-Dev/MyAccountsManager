@@ -45,7 +45,11 @@ class _AccountBalanceAdjustmentsPageState
   }
 
   String _money(int paise) {
-    final sign = paise < 0 ? '-' : paise > 0 ? '+' : '';
+    final sign = paise < 0
+        ? '-'
+        : paise > 0
+        ? '+'
+        : '';
     return '$sign${MoneyFormatter.formatPaise(paise.abs())}';
   }
 

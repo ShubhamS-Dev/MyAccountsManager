@@ -66,7 +66,9 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
 
   bool _isToday(DateTime date) {
     final now = DateTime.now();
-    return date.year == now.year && date.month == now.month && date.day == now.day;
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
   }
 
   Future<void> _pickDate() async {
@@ -208,7 +210,9 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
                         for (final account in accountRows)
                           DropdownMenuItem(
                             value: account.id,
-                            enabled: account.archivedAt == null || account.id == _accountId,
+                            enabled:
+                                account.archivedAt == null ||
+                                account.id == _accountId,
                             child: Text(
                               '${account.name}${account.archivedAt == null ? '' : ' (Archived — keep only)'}',
                               overflow: TextOverflow.ellipsis,
@@ -216,7 +220,8 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
                           ),
                       ],
                       onChanged: (value) => setState(() => _accountId = value),
-                      validator: (value) => value == null ? 'Select an Account.' : null,
+                      validator: (value) =>
+                          value == null ? 'Select an Account.' : null,
                     ),
                     const SizedBox(height: 8),
                     ListTile(
@@ -225,7 +230,11 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
                       leading: const Icon(Icons.calendar_today_outlined),
                       title: const Text('Transaction date'),
                       subtitle: Text(
-                        _isToday(_date!) ? 'Today' : DateOnly.format(DateOnly.toUtcEpochMilliseconds(_date!)),
+                        _isToday(_date!)
+                            ? 'Today'
+                            : DateOnly.format(
+                                DateOnly.toUtcEpochMilliseconds(_date!),
+                              ),
                       ),
                       trailing: const Icon(Icons.chevron_right_rounded),
                       onTap: _pickDate,
@@ -244,7 +253,9 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
                     const SizedBox(height: 10),
                     TextFormField(
                       controller: _amountController,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       decoration: const InputDecoration(
                         prefixText: '₹ ',
                         labelText: 'Amount',
@@ -261,15 +272,22 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
                     categories.when(
                       loading: () => const LinearProgressIndicator(),
                       error: (error, stack) => TextButton(
-                        onPressed: () => ref.invalidate(activeCategoriesByTypeProvider(_kind!)),
+                        onPressed: () => ref.invalidate(
+                          activeCategoriesByTypeProvider(_kind!),
+                        ),
                         child: const Text('Could not load categories. Retry'),
                       ),
                       data: (categoryRows) {
-                        if (_categoryId != null && !categoryRows.any((category) => category.id == _categoryId)) {
+                        if (_categoryId != null &&
+                            !categoryRows.any(
+                              (category) => category.id == _categoryId,
+                            )) {
                           _categoryId = null;
                         }
                         if (categoryRows.isEmpty) {
-                          return const Text('No active categories for this transaction type.');
+                          return const Text(
+                            'No active categories for this transaction type.',
+                          );
                         }
                         return DropdownButtonFormField<String>(
                           initialValue: _categoryId,
@@ -280,10 +298,18 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
                           ),
                           items: [
                             for (final category in categoryRows)
-                              DropdownMenuItem(value: category.id, child: Text(category.name, overflow: TextOverflow.ellipsis)),
+                              DropdownMenuItem(
+                                value: category.id,
+                                child: Text(
+                                  category.name,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
                           ],
-                          onChanged: (value) => setState(() => _categoryId = value),
-                          validator: (value) => value == null ? 'Select a category.' : null,
+                          onChanged: (value) =>
+                              setState(() => _categoryId = value),
+                          validator: (value) =>
+                              value == null ? 'Select a category.' : null,
                         );
                       },
                     ),

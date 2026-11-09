@@ -98,7 +98,8 @@ class _HomeFoundationPage extends ConsumerStatefulWidget {
   const _HomeFoundationPage();
 
   @override
-  ConsumerState<_HomeFoundationPage> createState() => _HomeFoundationPageState();
+  ConsumerState<_HomeFoundationPage> createState() =>
+      _HomeFoundationPageState();
 }
 
 class _HomeFoundationPageState extends ConsumerState<_HomeFoundationPage> {
@@ -107,11 +108,26 @@ class _HomeFoundationPageState extends ConsumerState<_HomeFoundationPage> {
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
-    final monthStart = DateTime.utc(now.year, now.month, 1).millisecondsSinceEpoch;
-    final today = DateTime.utc(now.year, now.month, now.day).millisecondsSinceEpoch;
-    final monthFilter = TransactionHistoryFilter(fromDate: monthStart, throughDate: today);
-    final monthTransactions = ref.watch(transactionHistoryProvider(monthFilter));
-    final latestTransactions = ref.watch(transactionHistoryProvider(const TransactionHistoryFilter()));
+    final monthStart = DateTime.utc(
+      now.year,
+      now.month,
+      1,
+    ).millisecondsSinceEpoch;
+    final today = DateTime.utc(
+      now.year,
+      now.month,
+      now.day,
+    ).millisecondsSinceEpoch;
+    final monthFilter = TransactionHistoryFilter(
+      fromDate: monthStart,
+      throughDate: today,
+    );
+    final monthTransactions = ref.watch(
+      transactionHistoryProvider(monthFilter),
+    );
+    final latestTransactions = ref.watch(
+      transactionHistoryProvider(const TransactionHistoryFilter()),
+    );
     final accounts = ref.watch(activeAccountsProvider);
     final totalBalance = ref.watch(totalActiveBalancePaiseProvider);
     final colors = Theme.of(context).colorScheme;
@@ -121,15 +137,27 @@ class _HomeFoundationPageState extends ConsumerState<_HomeFoundationPage> {
       children: [
         Row(
           children: [
-            Expanded(child: Text('Your money, clearly organised.', style: Theme.of(context).textTheme.titleLarge)),
+            Expanded(
+              child: Text(
+                'Your money, clearly organised.',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+            ),
             IconButton(
               tooltip: _hideAmounts ? 'Show amounts' : 'Hide amounts',
               onPressed: () => setState(() => _hideAmounts = !_hideAmounts),
-              icon: Icon(_hideAmounts ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+              icon: Icon(
+                _hideAmounts
+                    ? Icons.visibility_off_outlined
+                    : Icons.visibility_outlined,
+              ),
             ),
           ],
         ),
-        Text('A clear view of your finances this month.', style: Theme.of(context).textTheme.bodySmall),
+        Text(
+          'A clear view of your finances this month.',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
         const SizedBox(height: 14),
         Card(
           child: Padding(
@@ -137,15 +165,32 @@ class _HomeFoundationPageState extends ConsumerState<_HomeFoundationPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('TOTAL ACCOUNT BALANCE', style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700, letterSpacing: .5)),
+                Text(
+                  'TOTAL ACCOUNT BALANCE',
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: .5,
+                  ),
+                ),
                 const SizedBox(height: 8),
                 totalBalance.when(
                   loading: () => const LinearProgressIndicator(),
                   error: (error, stack) => const Text('Balance unavailable'),
-                  data: (value) => Text(_hideAmounts ? '₹ ••••••' : MoneyFormatter.formatPaise(value),
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 22, fontWeight: FontWeight.w700, color: value < 0 ? colors.error : colors.tertiary)),
+                  data: (value) => Text(
+                    _hideAmounts
+                        ? '₹ ••••••'
+                        : MoneyFormatter.formatPaise(value),
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: value < 0 ? colors.error : colors.tertiary,
+                    ),
+                  ),
                 ),
-                Text('Across active Accounts · MyKhata excluded', style: Theme.of(context).textTheme.bodySmall),
+                Text(
+                  'Across active Accounts · MyKhata excluded',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ],
             ),
           ),
@@ -169,11 +214,32 @@ class _HomeFoundationPageState extends ConsumerState<_HomeFoundationPage> {
             final net = income - expense;
             return Row(
               children: [
-                Expanded(child: _MonthMetric(label: 'Income', amount: income, color: colors.tertiary, hidden: _hideAmounts)),
+                Expanded(
+                  child: _MonthMetric(
+                    label: 'Income',
+                    amount: income,
+                    color: colors.tertiary,
+                    hidden: _hideAmounts,
+                  ),
+                ),
                 const SizedBox(width: 8),
-                Expanded(child: _MonthMetric(label: 'Expenses', amount: expense, color: colors.error, hidden: _hideAmounts)),
+                Expanded(
+                  child: _MonthMetric(
+                    label: 'Expenses',
+                    amount: expense,
+                    color: colors.error,
+                    hidden: _hideAmounts,
+                  ),
+                ),
                 const SizedBox(width: 8),
-                Expanded(child: _MonthMetric(label: 'Net cash flow', amount: net, color: net < 0 ? colors.error : colors.tertiary, hidden: _hideAmounts)),
+                Expanded(
+                  child: _MonthMetric(
+                    label: 'Net cash flow',
+                    amount: net,
+                    color: net < 0 ? colors.error : colors.tertiary,
+                    hidden: _hideAmounts,
+                  ),
+                ),
               ],
             );
           },
@@ -181,7 +247,12 @@ class _HomeFoundationPageState extends ConsumerState<_HomeFoundationPage> {
         const SizedBox(height: 16),
         Row(
           children: [
-            Expanded(child: Text('Your Accounts', style: Theme.of(context).textTheme.titleMedium)),
+            Expanded(
+              child: Text(
+                'Your Accounts',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
           ],
         ),
         accounts.when(
@@ -198,7 +269,12 @@ class _HomeFoundationPageState extends ConsumerState<_HomeFoundationPage> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: ordered.length,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: 8, crossAxisSpacing: 8, childAspectRatio: 1.75),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 8,
+                crossAxisSpacing: 8,
+                childAspectRatio: 1.75,
+              ),
               itemBuilder: (context, index) {
                 final account = ordered[index];
                 return Card(
@@ -211,11 +287,24 @@ class _HomeFoundationPageState extends ConsumerState<_HomeFoundationPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.account_balance_wallet_outlined, size: 18, color: colors.primary),
+                          Icon(
+                            Icons.account_balance_wallet_outlined,
+                            size: 18,
+                            color: colors.primary,
+                          ),
                           const SizedBox(height: 6),
-                          Text(account.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700)),
+                          Text(
+                            account.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(fontWeight: FontWeight.w700),
+                          ),
                           if (_hideAmounts)
-                            Text('₹ ••••••', style: Theme.of(context).textTheme.bodySmall)
+                            Text(
+                              '₹ ••••••',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            )
                           else
                             AccountBalanceLabel(accountId: account.id),
                         ],
@@ -228,7 +317,10 @@ class _HomeFoundationPageState extends ConsumerState<_HomeFoundationPage> {
           },
         ),
         const SizedBox(height: 16),
-        Text('Recent transactions', style: Theme.of(context).textTheme.titleMedium),
+        Text(
+          'Recent transactions',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
         const SizedBox(height: 8),
         latestTransactions.when(
           loading: () => const LinearProgressIndicator(),
@@ -243,13 +335,41 @@ class _HomeFoundationPageState extends ConsumerState<_HomeFoundationPage> {
                   Card(
                     child: ListTile(
                       dense: true,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-                      leading: Icon(item.transaction.type == 'income' ? Icons.south_west_rounded : Icons.north_east_rounded,
-                        color: item.transaction.type == 'income' ? colors.tertiary : colors.error),
-                      title: Text(item.transaction.note?.isNotEmpty == true ? item.transaction.note! : item.categoryName, maxLines: 1, overflow: TextOverflow.ellipsis),
-                      subtitle: Text('${item.accountName} · ${item.categoryName}', maxLines: 1, overflow: TextOverflow.ellipsis),
-                      trailing: Text(_hideAmounts ? '••••' : '${item.transaction.type == 'income' ? '+' : '-'}${MoneyFormatter.formatPaise(item.transaction.amountPaise)}',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700, color: item.transaction.type == 'income' ? colors.tertiary : colors.error)),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 2,
+                      ),
+                      leading: Icon(
+                        item.transaction.type == 'income'
+                            ? Icons.south_west_rounded
+                            : Icons.north_east_rounded,
+                        color: item.transaction.type == 'income'
+                            ? colors.tertiary
+                            : colors.error,
+                      ),
+                      title: Text(
+                        item.transaction.note?.isNotEmpty == true
+                            ? item.transaction.note!
+                            : item.categoryName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      subtitle: Text(
+                        '${item.accountName} · ${item.categoryName}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      trailing: Text(
+                        _hideAmounts
+                            ? '••••'
+                            : '${item.transaction.type == 'income' ? '+' : '-'}${MoneyFormatter.formatPaise(item.transaction.amountPaise)}',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: item.transaction.type == 'income'
+                              ? colors.tertiary
+                              : colors.error,
+                        ),
+                      ),
                     ),
                   ),
               ],
@@ -262,7 +382,12 @@ class _HomeFoundationPageState extends ConsumerState<_HomeFoundationPage> {
 }
 
 class _MonthMetric extends StatelessWidget {
-  const _MonthMetric({required this.label, required this.amount, required this.color, required this.hidden});
+  const _MonthMetric({
+    required this.label,
+    required this.amount,
+    required this.color,
+    required this.hidden,
+  });
   final String label;
   final int amount;
   final Color color;
@@ -272,12 +397,27 @@ class _MonthMetric extends StatelessWidget {
   Widget build(BuildContext context) => Card(
     child: Padding(
       padding: const EdgeInsets.all(9),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodySmall),
-        const SizedBox(height: 5),
-        Text(hidden ? '₹ •••' : MoneyFormatter.formatPaise(amount), maxLines: 1, overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700, color: color)),
-      ]),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: 5),
+          Text(
+            hidden ? '₹ •••' : MoneyFormatter.formatPaise(amount),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
+        ],
+      ),
     ),
   );
 }
