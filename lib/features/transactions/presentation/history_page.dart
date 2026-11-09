@@ -90,7 +90,7 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
           child: Column(
             children: [
               accounts.when(
@@ -122,7 +122,7 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               Row(
                 children: [
                   Expanded(
@@ -265,16 +265,22 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                             itemBuilder: (_) => const [
                               PopupMenuItem(
                                 value: 'edit',
-                                child: ListTile(
-                                  leading: Icon(Icons.edit_outlined),
-                                  title: Text('Edit'),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.edit_outlined, size: 18),
+                                    SizedBox(width: 10),
+                                    Text('Edit'),
+                                  ],
                                 ),
                               ),
                               PopupMenuItem(
                                 value: 'trash',
-                                child: ListTile(
-                                  leading: Icon(Icons.delete_outline),
-                                  title: Text('Move to Trash'),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.delete_outline, size: 18),
+                                    SizedBox(width: 10),
+                                    Text('Move to Trash'),
+                                  ],
                                 ),
                               ),
                             ],
