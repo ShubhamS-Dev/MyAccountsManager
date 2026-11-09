@@ -221,7 +221,7 @@ class _HomeDashboardPageState extends ConsumerState<_HomeDashboardPage> {
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(child: _MonthMetric(label: 'Expenses', amount: expense, color: AppColors.negative, icon: Icons.north_east_rounded, hidden: _hideAmounts)),
                 const SizedBox(width: AppSpacing.sm),
-                Expanded(child: _MonthMetric(label: 'Net flow', amount: net, color: net < 0 ? AppColors.negative : AppColors.positive, icon: Icons.swap_vert_rounded, hidden: _hideAmounts)),
+                Expanded(child: _MonthMetric(label: 'Net cash flow', amount: net, color: net < 0 ? AppColors.negative : AppColors.positive, icon: Icons.swap_vert_rounded, hidden: _hideAmounts)),
               ],
             );
           },
