@@ -14,15 +14,14 @@ final appRouter = GoRouter(
   initialLocation: '/',
   routes: [
     GoRoute(path: '/', builder: (context, state) => const AppShell()),
-    GoRoute(
-      path: '/accounts/:accountId',
-      builder: (context, state) => AccountDetailsPage(
-        accountId: state.pathParameters['accountId']!,
-      ),
-    ),
+    // Static Account paths must precede the /accounts/:accountId matcher.
     GoRoute(
       path: '/accounts/archived',
       builder: (context, state) => const ArchivedAccountsPage(),
+    ),
+    GoRoute(
+      path: '/accounts/new',
+      builder: (context, state) => const CreateAccountPage(),
     ),
     GoRoute(
       path: '/accounts/:accountId/edit',
@@ -36,8 +35,10 @@ final appRouter = GoRouter(
       ),
     ),
     GoRoute(
-      path: '/accounts/new',
-      builder: (context, state) => const CreateAccountPage(),
+      path: '/accounts/:accountId',
+      builder: (context, state) => AccountDetailsPage(
+        accountId: state.pathParameters['accountId']!,
+      ),
     ),
     GoRoute(
       path: '/transaction/:transactionId/edit',
