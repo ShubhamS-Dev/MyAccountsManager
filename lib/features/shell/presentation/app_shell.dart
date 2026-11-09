@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/formatting/money_formatter.dart';
+import '../../../app/app_theme.dart';
 import '../../accounts/accounts_providers.dart';
 import '../../accounts/presentation/account_balance_label.dart';
 import '../../accounts/presentation/accounts_page.dart';
@@ -138,9 +139,27 @@ class _HomeFoundationPageState extends ConsumerState<_HomeFoundationPage> {
         Row(
           children: [
             Expanded(
-              child: Text(
-                'Your money, clearly organised.',
-                style: Theme.of(context).textTheme.titleLarge,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'OVERVIEW',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      letterSpacing: 1.1,
+                      fontWeight: FontWeight.w700,
+                      color: colors.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    'Your finances',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  Text(
+                    'A clear view of your money this month.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
               ),
             ),
             IconButton(
@@ -154,49 +173,85 @@ class _HomeFoundationPageState extends ConsumerState<_HomeFoundationPage> {
             ),
           ],
         ),
-        Text(
-          'A clear view of your finances this month.',
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
         const SizedBox(height: 14),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'TOTAL ACCOUNT BALANCE',
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: .5,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                totalBalance.when(
-                  loading: () => const LinearProgressIndicator(),
-                  error: (error, stack) => const Text('Balance unavailable'),
-                  data: (value) => Text(
-                    _hideAmounts
-                        ? '₹ ••••••'
-                        : MoneyFormatter.formatPaise(value),
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w700,
-                      color: value < 0 ? colors.error : colors.tertiary,
-                    ),
-                  ),
-                ),
-                Text(
-                  'Across active Accounts · MyKhata excluded',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [AppColors.navy, Color(0xFF263F78)],
             ),
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'TOTAL ACCOUNT BALANCE',
+                style: AppTypography.supporting.copyWith(
+                  color: Colors.white.withValues(alpha: 0.78),
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.8,
+                ),
+              ),
+              const SizedBox(height: 9),
+              totalBalance.when(
+                loading: () => const SizedBox(
+                  height: 22,
+                  width: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                ),
+                error: (error, stack) => Text(
+                  'Balance unavailable',
+                  style: AppTypography.transactionAmount.copyWith(
+                    color: Colors.white,
+                  ),
+                ),
+                data: (value) => Text(
+                  _hideAmounts
+                      ? '₹ ••••••'
+                      : MoneyFormatter.formatPaise(value),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.transactionAmount.copyWith(
+                    fontSize: 25,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 7),
+              Text(
+                'Across active Accounts  ·  MyKhata excluded',
+                style: AppTypography.supporting.copyWith(
+                  color: Colors.white.withValues(alpha: 0.72),
+                ),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 14),
-        Text('This month', style: Theme.of(context).textTheme.titleMedium),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'This month',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+            Text(
+              'INR',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: colors.onSurfaceVariant,
+                letterSpacing: 0.7,
+              ),
+            ),
+          ],
+        ),
         const SizedBox(height: 8),
         monthTransactions.when(
           loading: () => const LinearProgressIndicator(),
