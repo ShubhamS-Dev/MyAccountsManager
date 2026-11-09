@@ -49,7 +49,6 @@ jobs:
             android/build.gradle.kts
             android/app/build.gradle.kts
             android/gradle/wrapper/gradle-wrapper.properties
-            android/gradlew
             android/app/src/main/AndroidManifest.xml
           )
 
