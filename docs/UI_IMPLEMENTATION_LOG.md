@@ -183,3 +183,14 @@ User approval: implement Phases 1–3 first; stop for user review before beginni
 - Corrective action: scope the finder to the `SegmentedButton` using `find.byWidgetPredicate`, assert exactly one matching Income segment, then tap it.
 - This changes only the test target selection; transaction form behavior is unchanged.
 - Android debug APK build was skipped in Run #242 because the test step failed. Re-run full validation after this fix.
+
+
+## Run #244 RCA — SQLite native asset checksum download failure
+
+- Run: [#244](https://github.com/ShubhamS-Dev/MyAccountsManager/actions/runs/42580416899)
+- Dependency resolution, Drift generation, formatting, Flutter analysis, and all tests passed.
+- Android debug APK build failed inside the `sqlite3 3.8.0` native-assets hook while downloading `libsqlite3.arm.android.so`.
+- Exact failure: downloaded asset SHA-256 `bef140a1...e8a29e8a` differed from the package-pinned expected SHA-256 `d0d6eeaf...fceecf3`.
+- This occurs before application compilation and indicates a corrupted/inconsistent downloaded native asset, not an application source or test failure. Do not bypass checksum validation or alter the expected hash.
+- Corrective action: classify the sqlite3 native asset checksum-mismatch message as a retryable download failure in the Android debug build retry loop. A subsequent attempt reruns Flutter's native asset hook and performs the package's own checksum verification again. The existing three-attempt cap remains in place.
+- APK upload remains gated on a successful debug build.
