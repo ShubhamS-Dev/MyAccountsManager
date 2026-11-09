@@ -45,18 +45,8 @@ class _AccountBalanceAdjustmentsPageState
   }
 
   String _money(int paise) {
-    final absolute = paise.abs();
-    final digits = (absolute ~/ 100).toString();
-    final grouped = digits.replaceAllMapped(
-      RegExp(r'(?<=\d)(?=(\d{2})+\d{3}$)'),
-      (_) => ',',
-    );
-    final fraction = absolute % 100;
-    return '${paise < 0
-        ? '-'
-        : paise > 0
-        ? '+'
-        : ''}₹$grouped${fraction == 0 ? '' : '.${fraction.toString().padLeft(2, '0')}'}';
+    final sign = paise < 0 ? '-' : paise > 0 ? '+' : '';
+    return '$sign${MoneyFormatter.formatPaise(paise.abs())}';
   }
 
   String _dateLabel(int timestamp) {
