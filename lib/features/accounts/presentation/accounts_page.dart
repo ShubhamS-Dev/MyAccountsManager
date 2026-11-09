@@ -54,7 +54,7 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
               onToggle: () => setState(() => _hideBalances = !_hideBalances),
               onArchived: () => context.push('/accounts/archived'),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 14),
             Row(
               children: [
                 const Expanded(
@@ -115,7 +115,7 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
                   crossAxisCount: 2,
                   crossAxisSpacing: 10,
                   mainAxisSpacing: 10,
-                  mainAxisExtent: 132,
+                  mainAxisExtent: 120,
                 ),
                 itemBuilder: (context, index) {
                   final AccountRow account = filtered[index];
@@ -195,7 +195,7 @@ class _BalanceOverview extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: colors.surface,
         borderRadius: BorderRadius.circular(18),
@@ -240,7 +240,7 @@ class _BalanceOverview extends StatelessWidget {
             data: (value) => Text(
               hidden ? '₹ ••••••' : MoneyFormatter.formatPaise(value),
               style: TextStyle(
-                fontSize: 24,
+                fontSize: 20,
                 fontWeight: FontWeight.w800,
                 color: value < 0 ? colors.error : colors.onSurface,
               ),
@@ -277,7 +277,7 @@ class _AccountCard extends StatelessWidget {
       onLongPress: () => _showMenu(context),
       borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           color: colors.surface,
           borderRadius: BorderRadius.circular(16),
