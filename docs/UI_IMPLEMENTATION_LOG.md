@@ -130,3 +130,34 @@ Run: [Flutter validation #224](https://github.com/ShubhamS-Dev/MyAccountsManager
 - Test fix commit: `d6a3cbc5fa82aaa639f736dabcf9989d3a1c5a5c`.
 
 This is a source-level RCA and correction, not passing validation evidence. Confirm the new workflow run passes the complete test suite and Android debug APK build before proceeding.
+
+
+## Approved UI refresh — Phases 1–3 implementation slice
+
+User approval: implement Phases 1–3 first; stop for user review before beginning MyKhata and More.
+
+### Shared UI foundation
+- Tightened shared input decoration vertical padding while preserving the 40px standard action-button theme and 40×40 icon action target.
+- Reduced card corner radius and adjusted bottom navigation sizing for a more compact, consistent visual rhythm.
+- Kept Light as default and Dark theme support intact.
+- Removed the global Add Transaction FAB from MyKhata and More tabs; it remains available on Home, Accounts, and History.
+
+### Home Dashboard
+- Replaced the foundation welcome/lock/getting-started composition with a live finance dashboard.
+- Added current-month Income, Expenses, and Net Cash Flow from the reactive transaction-history stream.
+- Added active Account balance summary, pinned-first two-column Account cards, and the latest five transactions.
+- Added a local show/hide amounts control covering dashboard balances and transaction amounts.
+- MyKhata summary is intentionally deferred until the separately approved MyKhata phase; no placeholder financial value is fabricated.
+
+### Accounts and forms
+- Tightened Accounts overview spacing, total-balance card proportions, and Account grid card height without changing the approved two-column layout or Account actions.
+- Compactened Create Account and Edit Account form spacing; shared theme field padding now applies.
+- Compactened Add Transaction form spacing while retaining the approved Account → Date → Note → Amount → Category order and Today/date behavior.
+- Reordered Edit Transaction to match the same field sequence, including Today / DD MMM YYYY date presentation.
+- Compactened History filter spacing and removed nested ListTile padding from Edit / Move to Trash popup menu items.
+- Balance Adjustments now uses the shared MoneyFormatter and DateOnly formatter instead of its own currency/date presentation logic, with tighter form spacing.
+
+### Regression coverage and validation
+- Extended the Home dashboard widget test to assert the monthly summary, Account section, and recent transaction section.
+- Source updates are committed to the feature branch. Flutter format, analyze, tests, Android debug APK, and device visual review must be verified by the next CI run; no completion claim is made before those checks pass.
+- MyKhata and More implementation remains out of scope until the user reviews Phases 1–3.
