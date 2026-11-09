@@ -72,7 +72,7 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
     body: Form(
       key: _formKey,
       child: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         children: [
           TextFormField(
             controller: _nameController,
@@ -87,13 +87,14 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
                 ? 'Enter an Account name.'
                 : null,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           TextFormField(
             controller: _descriptionController,
             textCapitalization: TextCapitalization.sentences,
             maxLines: 2,
             decoration: const InputDecoration(
               labelText: 'Description (optional)',
+              alignLabelWithHint: true,
               border: OutlineInputBorder(),
             ),
           ),
@@ -121,7 +122,7 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
               style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
           ],
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           FilledButton(
             onPressed: _saving ? null : _save,
             child: _saving
