@@ -230,13 +230,17 @@ void main() {
     expect(amountY, lessThan(categoryY));
     expect(find.text('Today'), findsOneWidget);
     expect(find.text('What was this transaction for?'), findsOneWidget);
-    // The form's ListView is the gesture surface in this route. Target it
-    // directly instead of looking up an internal Scrollable widget: the
-    // latter is not exposed by the finder in this test's widget tree.
+    // Scope the scrollable to this Form: the surrounding app shell may
+    // contain other lists, so a global ListView finder is ambiguous.
+    final formListView = find.descendant(
+      of: find.byType(Form),
+      matching: find.byType(ListView),
+    );
+    expect(formListView, findsOneWidget);
     await tester.scrollUntilVisible(
       find.text('Save transaction'),
       250,
-      scrollable: find.byType(ListView),
+      scrollable: formListView,
     );
     await tester.pumpAndSettle();
     expect(find.text('Save transaction'), findsOneWidget);
