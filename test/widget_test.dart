@@ -96,12 +96,35 @@ void main() {
   ) async {
     await pumpApp(tester);
 
-    expect(find.text('Your money, clearly organised.'), findsOneWidget);
+    // Verify the refreshed dashboard hierarchy and approved content.
+    expect(find.text('OVERVIEW'), findsOneWidget);
+    expect(find.text('Your finances'), findsOneWidget);
+    expect(
+      find.text('A clear view of your money this month.'),
+      findsOneWidget,
+    );
+    expect(find.text('TOTAL ACCOUNT BALANCE'), findsOneWidget);
+    expect(
+      find.text('Across active Accounts  ·  MyKhata excluded'),
+      findsOneWidget,
+    );
     expect(find.text('This month'), findsOneWidget);
+    expect(find.text('Income'), findsOneWidget);
+    expect(find.text('Expenses'), findsOneWidget);
+    expect(find.text('Net cash flow'), findsOneWidget);
     expect(find.text('Your Accounts'), findsOneWidget);
     expect(find.text('Recent transactions'), findsOneWidget);
     expect(find.text('Accounts'), findsOneWidget);
     expect(find.text('MyKhata'), findsOneWidget);
+
+    // The balance privacy control must remain interactive.
+    expect(find.byTooltip('Hide amounts'), findsOneWidget);
+    await tester.tap(find.byTooltip('Hide amounts'));
+    await tester.pump();
+    expect(find.byTooltip('Show amounts'), findsOneWidget);
+    await tester.tap(find.byTooltip('Show amounts'));
+    await tester.pump();
+    expect(find.byTooltip('Hide amounts'), findsOneWidget);
   });
 
   testWidgets('opens Account Details from the Accounts grid', (tester) async {
