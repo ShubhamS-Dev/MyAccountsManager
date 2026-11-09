@@ -153,9 +153,12 @@ class _BreakdownCard extends StatelessWidget {
             loading: () => const LinearProgressIndicator(),
             error: (error, stack) => const Text('Breakdown unavailable.'),
             data: (rows) {
-              final income = items.where((e) => e.transaction.type == 'income').fold<int>(0, (sum, e) => sum + e.transaction.amountPaise);
-              final expense = items.where((e) => e.transaction.type == 'expense').fold<int>(0, (sum, e) => sum + e.transaction.amountPaise);
-              final adjustment = rows.fold<int>(0, (sum, e) => sum + e.amountPaise);
+              final asOfDate = DateOnly.toUtcEpochMilliseconds(DateTime.now());
+              final effectiveItems = items.where((e) => e.transaction.transactionDate <= asOfDate).toList();
+              final effectiveAdjustments = rows.where((e) => e.adjustmentDate <= asOfDate);
+              final income = effectiveItems.where((e) => e.transaction.type == 'income').fold<int>(0, (sum, e) => sum + e.transaction.amountPaise);
+              final expense = effectiveItems.where((e) => e.transaction.type == 'expense').fold<int>(0, (sum, e) => sum + e.transaction.amountPaise);
+              final adjustment = effectiveAdjustments.fold<int>(0, (sum, e) => sum + e.amountPaise);
               return Column(
                 children: [
                   _BreakdownRow(label: 'Opening balance', amount: openingBalance),
