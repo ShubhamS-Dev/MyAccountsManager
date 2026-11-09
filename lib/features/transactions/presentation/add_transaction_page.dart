@@ -112,15 +112,20 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
     );
     return Padding(
       padding: const EdgeInsets.only(bottom: 7),
-      child: Row(children: [
-        Text(value, style: style),
-        if (hint != null) ...[
-          const SizedBox(width: 5),
-          Text(hint, style: AppTypography.supporting.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          )),
+      child: Row(
+        children: [
+          Text(value, style: style),
+          if (hint != null) ...[
+            const SizedBox(width: 5),
+            Text(
+              hint,
+              style: AppTypography.supporting.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
         ],
-      ]),
+      ),
     );
   }
 
@@ -160,19 +165,22 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
-                child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  const Icon(Icons.account_balance_wallet_outlined, size: 34),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Create an Account before adding a transaction.',
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 14),
-                  FilledButton(
-                    onPressed: () => context.push('/accounts/new'),
-                    child: const Text('Create Account'),
-                  ),
-                ]),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.account_balance_wallet_outlined, size: 34),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Create an Account before adding a transaction.',
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 14),
+                    FilledButton(
+                      onPressed: () => context.push('/accounts/new'),
+                      child: const Text('Create Account'),
+                    ),
+                  ],
+                ),
               ),
             );
           }
@@ -189,17 +197,23 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                 Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: scheme.surfaceContainerHighest.withValues(alpha: 0.65),
+                    color: scheme.surfaceContainerHighest.withValues(
+                      alpha: 0.65,
+                    ),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: SegmentedButton<TransactionKind>(
                     showSelectedIcon: false,
                     style: ButtonStyle(
                       minimumSize: const WidgetStatePropertyAll(Size(0, 42)),
-                      textStyle: const WidgetStatePropertyAll(AppTypography.button),
-                      shape: WidgetStatePropertyAll(RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(11),
-                      )),
+                      textStyle: const WidgetStatePropertyAll(
+                        AppTypography.button,
+                      ),
+                      shape: WidgetStatePropertyAll(
+                        RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(11),
+                        ),
+                      ),
                     ),
                     segments: const [
                       ButtonSegment(
@@ -222,58 +236,78 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                 ),
                 const SizedBox(height: 18),
                 _label(context, 'Account'),
-                _surface(context, DropdownButtonFormField<String>(
-                  initialValue: _accountId,
-                  isExpanded: true,
-                  icon: const Icon(Icons.keyboard_arrow_down_rounded),
-                  decoration: const InputDecoration(
-                    hintText: 'Choose an account',
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.zero,
-                    isDense: true,
+                _surface(
+                  context,
+                  DropdownButtonFormField<String>(
+                    initialValue: _accountId,
+                    isExpanded: true,
+                    icon: const Icon(Icons.keyboard_arrow_down_rounded),
+                    decoration: const InputDecoration(
+                      hintText: 'Choose an account',
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.zero,
+                      isDense: true,
+                    ),
+                    menuMaxHeight: 320,
+                    items: [
+                      for (final account in accountRows)
+                        DropdownMenuItem(
+                          value: account.id,
+                          child: Text(
+                            account.name,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                    ],
+                    onChanged: (value) => setState(() => _accountId = value),
+                    validator: (value) =>
+                        value == null ? 'Select an Account.' : null,
                   ),
-                  menuMaxHeight: 320,
-                  items: [
-                    for (final account in accountRows)
-                      DropdownMenuItem(
-                        value: account.id,
-                        child: Text(account.name, overflow: TextOverflow.ellipsis),
-                      ),
-                  ],
-                  onChanged: (value) => setState(() => _accountId = value),
-                  validator: (value) =>
-                      value == null ? 'Select an Account.' : null,
-                )),
+                ),
                 const SizedBox(height: 15),
                 _label(context, 'Transaction date'),
-                _surface(context, InkWell(
-                  borderRadius: BorderRadius.circular(10),
-                  onTap: _pickDate,
-                  child: Row(children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: scheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(Icons.calendar_today_outlined,
-                          size: 17, color: scheme.primary),
+                _surface(
+                  context,
+                  InkWell(
+                    borderRadius: BorderRadius.circular(10),
+                    onTap: _pickDate,
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: scheme.primaryContainer,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            Icons.calendar_today_outlined,
+                            size: 17,
+                            color: scheme.primary,
+                          ),
+                        ),
+                        const SizedBox(width: 11),
+                        Expanded(
+                          child: Text(
+                            _isToday(_date)
+                                ? 'Today'
+                                : DateOnly.format(
+                                    DateOnly.toUtcEpochMilliseconds(_date),
+                                  ),
+                            style: AppTypography.supporting.copyWith(
+                              color: scheme.onSurface,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 11),
-                    Expanded(child: Text(
-                      _isToday(_date)
-                          ? 'Today'
-                          : DateOnly.format(DateOnly.toUtcEpochMilliseconds(_date)),
-                      style: AppTypography.supporting.copyWith(
-                        color: scheme.onSurface,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    )),
-                    Icon(Icons.chevron_right_rounded,
-                        color: scheme.onSurfaceVariant),
-                  ]),
-                )),
+                  ),
+                ),
                 const SizedBox(height: 15),
                 _label(context, 'Note', hint: 'Optional'),
                 TextFormField(
@@ -281,7 +315,9 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                   maxLength: 500,
                   maxLines: 2,
                   textCapitalization: TextCapitalization.sentences,
-                  style: AppTypography.supporting.copyWith(color: scheme.onSurface),
+                  style: AppTypography.supporting.copyWith(
+                    color: scheme.onSurface,
+                  ),
                   decoration: const InputDecoration(
                     hintText: 'What was this transaction for?',
                     counterStyle: AppTypography.supporting,
@@ -289,31 +325,46 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                 ),
                 const SizedBox(height: 14),
                 _label(context, 'Amount'),
-                _surface(context, Row(children: [
-                  Text('₹', style: TextStyle(
-                    fontSize: 22, fontWeight: FontWeight.w600, color: accent,
-                  )),
-                  const SizedBox(width: 10),
-                  Expanded(child: TextFormField(
-                    controller: _amountController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    style: AppTypography.transactionAmount.copyWith(
-                      fontSize: 22, color: scheme.onSurface,
-                    ),
-                    decoration: const InputDecoration(
-                      hintText: '0.00',
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.zero,
-                      isDense: true,
-                    ),
-                    validator: (value) {
-                      final paise = _parsePaise(value ?? '');
-                      return paise == null || paise <= 0
-                          ? 'Enter an amount greater than ₹0 (up to 2 decimal places).'
-                          : null;
-                    },
-                  )),
-                ])),
+                _surface(
+                  context,
+                  Row(
+                    children: [
+                      Text(
+                        '₹',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w600,
+                          color: accent,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _amountController,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          style: AppTypography.transactionAmount.copyWith(
+                            fontSize: 22,
+                            color: scheme.onSurface,
+                          ),
+                          decoration: const InputDecoration(
+                            hintText: '0.00',
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.zero,
+                            isDense: true,
+                          ),
+                          validator: (value) {
+                            final paise = _parsePaise(value ?? '');
+                            return paise == null || paise <= 0
+                                ? 'Enter an amount greater than ₹0 (up to 2 decimal places).'
+                                : null;
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 const SizedBox(height: 6),
                 Text(
                   _kind == TransactionKind.expense
@@ -335,38 +386,47 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                   ),
                   data: (categoryRows) {
                     if (categoryRows.isEmpty) {
-                      return _surface(context, const Text(
-                        'No active categories for this transaction type.',
-                        style: AppTypography.supporting,
-                      ));
+                      return _surface(
+                        context,
+                        const Text(
+                          'No active categories for this transaction type.',
+                          style: AppTypography.supporting,
+                        ),
+                      );
                     }
                     if (_categoryId != null &&
                         !categoryRows.any((c) => c.id == _categoryId)) {
                       _categoryId = null;
                     }
-                    return _surface(context, DropdownButtonFormField<String>(
-                      initialValue: _categoryId,
-                      isExpanded: true,
-                      icon: const Icon(Icons.keyboard_arrow_down_rounded),
-                      decoration: const InputDecoration(
-                        hintText: 'Choose a category',
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.zero,
-                        isDense: true,
+                    return _surface(
+                      context,
+                      DropdownButtonFormField<String>(
+                        initialValue: _categoryId,
+                        isExpanded: true,
+                        icon: const Icon(Icons.keyboard_arrow_down_rounded),
+                        decoration: const InputDecoration(
+                          hintText: 'Choose a category',
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.zero,
+                          isDense: true,
+                        ),
+                        menuMaxHeight: 320,
+                        items: [
+                          for (final category in categoryRows)
+                            DropdownMenuItem(
+                              value: category.id,
+                              child: Text(
+                                category.name,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                        ],
+                        onChanged: (value) =>
+                            setState(() => _categoryId = value),
+                        validator: (value) =>
+                            value == null ? 'Select a category.' : null,
                       ),
-                      menuMaxHeight: 320,
-                      items: [
-                        for (final category in categoryRows)
-                          DropdownMenuItem(
-                            value: category.id,
-                            child: Text(category.name,
-                                overflow: TextOverflow.ellipsis),
-                          ),
-                      ],
-                      onChanged: (value) => setState(() => _categoryId = value),
-                      validator: (value) =>
-                          value == null ? 'Select a category.' : null,
-                    ));
+                    );
                   },
                 ),
                 if (_error != null) ...[
@@ -380,7 +440,8 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                     onPressed: _saving ? null : _save,
                     child: _saving
                         ? const SizedBox(
-                            height: 18, width: 18,
+                            height: 18,
+                            width: 18,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Text('Save transaction'),
