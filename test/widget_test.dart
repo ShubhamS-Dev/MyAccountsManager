@@ -232,6 +232,34 @@ void main() {
     expect(find.byTooltip('Hide amounts'), findsOneWidget);
   });
 
+  testWidgets('shows and filters the refreshed Accounts overview', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+
+    await tester.tap(find.text('Accounts').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('TOTAL ACCOUNT BALANCE'), findsOneWidget);
+    expect(find.text('Your accounts'), findsOneWidget);
+    expect(find.text('1 active'), findsOneWidget);
+    expect(find.text('Widget test Account'), findsOneWidget);
+    expect(find.byTooltip('Archived accounts'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Hide balance'));
+    await tester.pump();
+    expect(find.byTooltip('Show balance'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField), 'no matching account');
+    await tester.pumpAndSettle();
+    expect(find.text('No matching accounts'), findsOneWidget);
+    expect(find.text('Try another name or clear your search.'), findsOneWidget);
+
+    await tester.tap(find.text('Clear search'));
+    await tester.pumpAndSettle();
+    expect(find.text('Widget test Account'), findsOneWidget);
+  });
+
   testWidgets('opens Account Details from the Accounts grid', (tester) async {
     await pumpApp(tester);
 

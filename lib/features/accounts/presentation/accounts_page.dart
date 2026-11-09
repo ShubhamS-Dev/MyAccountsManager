@@ -136,12 +136,14 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
                   );
                 },
               ),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: () => context.push('/accounts/new'),
-              icon: const Icon(Icons.add, size: 17),
-              label: const Text('Add new account'),
-            ),
+            if (filtered.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: () => context.push('/accounts/new'),
+                icon: const Icon(Icons.add, size: 17),
+                label: const Text('Add new account'),
+              ),
+            ],
           ],
         );
       },
