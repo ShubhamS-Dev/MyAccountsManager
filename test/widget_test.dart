@@ -230,17 +230,18 @@ void main() {
     expect(amountY, lessThan(categoryY));
     expect(find.text('Today'), findsOneWidget);
     expect(find.text('What was this transaction for?'), findsOneWidget);
-    // Scope the scrollable to this Form: the surrounding app shell may
-    // contain other lists, so a global ListView finder is ambiguous.
-    final formListView = find.descendant(
+    // ListView is the widget that builds the scrollable viewport, but
+    // scrollUntilVisible requires a Finder for its Scrollable descendant.
+    // Scope it to this Form so the app shell's scrollables cannot match.
+    final formScrollable = find.descendant(
       of: find.byType(Form),
-      matching: find.byType(ListView),
+      matching: find.byType(Scrollable),
     );
-    expect(formListView, findsOneWidget);
+    expect(formScrollable, findsOneWidget);
     await tester.scrollUntilVisible(
       find.text('Save transaction'),
       250,
-      scrollable: formListView,
+      scrollable: formScrollable,
     );
     await tester.pumpAndSettle();
     expect(find.text('Save transaction'), findsOneWidget);
