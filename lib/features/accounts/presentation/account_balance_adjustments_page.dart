@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../core/formatting/date_timestamp.dart';
+import '../../../core/formatting/money_formatter.dart';
 import '../accounts_providers.dart';
 
 class AccountBalanceAdjustmentsPage extends ConsumerStatefulWidget {
@@ -57,8 +60,7 @@ class _AccountBalanceAdjustmentsPageState
   }
 
   String _dateLabel(int timestamp) {
-    final date = DateTime.fromMillisecondsSinceEpoch(timestamp, isUtc: true);
-    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+    return DateOnly.format(timestamp);
   }
 
   Future<void> _pickDate() async {
@@ -127,14 +129,14 @@ class _AccountBalanceAdjustmentsPageState
           }
           final isArchived = row.archivedAt != null;
           return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
             children: [
               Text(row.name, style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 4),
               const Text(
                 'Add a signed correction without changing the original opening balance.',
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               if (isArchived)
                 const Card(
                   child: Padding(
@@ -147,7 +149,7 @@ class _AccountBalanceAdjustmentsPageState
               else
                 Card(
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(12),
                     child: Form(
                       key: _formKey,
                       child: Column(
@@ -223,7 +225,7 @@ class _AccountBalanceAdjustmentsPageState
                     ),
                   ),
                 ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
               Text(
                 'Adjustment history',
                 style: Theme.of(context).textTheme.titleMedium,
