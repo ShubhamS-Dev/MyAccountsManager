@@ -1,0 +1,132 @@
+name: Build debug APK
+
+# Manual only: Actions tab -> "Build debug APK" -> Run workflow -> pick a branch.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: build-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-apk:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Generate Android platform scaffold when missing
+        run: |
+          if [ ! -d android ]; then
+            flutter create --platforms=android --org com.shubhams --project-name myaccountsmanager .
+          fi
+          if ! grep -Rqs "com.shubhams.myaccountsmanager" android/app; then
+            echo "Expected Android application ID com.shubhams.myaccountsmanager was not generated."
+            exit 1
+          fi
+
+      - name: Configure reliable Gradle distribution endpoint
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          wrapper = Path("android/gradle/wrapper/gradle-wrapper.properties")
+          if not wrapper.is_file():
+              raise SystemExit(f"Gradle wrapper properties not found: {wrapper}")
+
+          lines = wrapper.read_text().splitlines()
+          updated = False
+          for index, line in enumerate(lines):
+              if line.startswith("distributionUrl="):
+                  raw_url = line.split("=", 1)[1].replace(chr(92) + ":", ":")
+                  filename = raw_url.rsplit("/", 1)[-1]
+                  if not re.fullmatch(r"gradle-[0-9]+(?:\\.[0-9]+)*-(?:all|bin)\\.zip", filename):
+                      raise SystemExit(f"Unexpected Gradle distribution filename: {filename}")
+                  lines[index] = "distributionUrl=https" + chr(92) + "://downloads.gradle.org/distributions/" + filename
+                  updated = True
+                  break
+
+          if not updated:
+              raise SystemExit("Gradle wrapper distributionUrl property was not found.")
+
+          if not any(line.startswith("networkTimeout=") for line in lines):
+              lines.append("networkTimeout=120000")
+
+          wrapper.write_text("\\n".join(lines) + "\\n")
+          print(f"Configured Gradle wrapper to use downloads.gradle.org: {filename}")
+          PY
+          grep -E '^(distributionUrl|networkTimeout)=' android/gradle/wrapper/gradle-wrapper.properties
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Cache build_runner output
+        uses: actions/cache@v4
+        with:
+          path: .dart_tool/build
+          key: build-runner-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}-${{ github.sha }}
+          restore-keys: |
+            build-runner-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}-
+
+      - name: Generate Drift code
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      # Replaces the manual actions/cache step: caches Gradle distribution,
+      # dependencies and build cache. Branches can write, so feature branches warm it too.
+      - name: Set up Gradle cache
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
+
+      - name: Build Android debug APK (arm64 only)
+        shell: bash
+        run: |
+          set -o pipefail
+          for attempt in 1 2 3; do
+            echo "Android debug build attempt ${attempt}/3"
+            if flutter build apk --debug --target-platform android-arm64 2>&1 | tee /tmp/flutter-build-apk.log; then
+              exit 0
+            else
+              build_status=$?
+            fi
+
+            if grep -Eiq 'HTTP response code: 5[0-9]{2}|timed out|temporary failure in name resolution|connection reset|connection refused|remote host terminated the handshake|Hash of downloaded file .* does not match expected' /tmp/flutter-build-apk.log; then
+              if [ "${attempt}" -lt 3 ]; then
+                delay=$((attempt * 20))
+                echo "Transient Gradle/network failure detected. Retrying in ${delay}s..."
+                sleep "${delay}"
+                continue
+              fi
+              echo "Gradle/network download failed after 3 attempts."
+            else
+              echo "Build failed for a non-transient reason; not retrying."
+            fi
+            exit "${build_status}"
+          done
+
+      - name: Upload Android debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: myaccountsmanager-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
