@@ -23,7 +23,11 @@ class TransactionDetailsPage extends ConsumerWidget {
         loading:()=>const Center(child:CircularProgressIndicator()),
         error:(e,s)=>Center(child:TextButton(onPressed:()=>ref.invalidate(transactionByIdProvider(transactionId)),child:const Text('Could not load transaction. Retry'))),
         data:(row){
-          if(row==null||row.deletedAt!=null)return const Center(child:Text('This transaction is unavailable or has been moved to Trash.'));
+          if(row==null||row.deletedAt!=null) {
+            return const Center(
+              child:Text('This transaction is unavailable or has been moved to Trash.'),
+            );
+          }
           final accounts=ref.watch(allAccountsProvider);
           final categories=ref.watch(activeCategoriesByTypeProvider(row.type));
           final income=row.type=='income';

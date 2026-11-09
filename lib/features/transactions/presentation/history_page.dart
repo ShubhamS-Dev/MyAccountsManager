@@ -40,7 +40,9 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
         ],
       ),
     );
-    if (confirmed != true) return;
+    if (confirmed != true) {
+      return;
+    }
     try {
       await ref.read(transactionsRepositoryProvider).softDeleteTransaction(item.transaction.id);
       ref.invalidate(accountBalancePaiseProvider(item.transaction.accountId));
@@ -73,7 +75,9 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
         final q = _search.text.trim().toLowerCase();
         final filtered = items.where((i) {
           final t=i.transaction;
-          if(t.transactionDate<from || t.transactionDate>through) return false;
+          if(t.transactionDate<from || t.transactionDate>through) {
+            return false;
+          }
           if(_accountId!=null && t.accountId!=_accountId) return false;
           if(_category!=null && i.categoryName!=_category) return false;
           if(_type!=null && t.type!=_type) return false;
