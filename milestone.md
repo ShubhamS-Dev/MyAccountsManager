@@ -238,3 +238,13 @@ The source changes are committed, but the new workflow must pass before this sli
 - Updated `lib/app/my_accounts_manager_app.dart` to use the shared theme, retaining Light as the default and Dark as the supported alternate.
 - This is the first shared-theme implementation slice only. Existing screen layouts still need migration to shared components/tokens; unimplemented modules remain unimplemented. Flutter formatting, analysis, tests, visual review, and Android build have not yet been run on this branch.
 
+## UI refresh implementation progress — 2026-11-09 (continued)
+
+- Implemented the approved compact Accounts overview: active-balance summary (excluding MyKhata), visibility toggle, archived navigation, searchable two-column Account grid, add action, pinned ordering from the repository, details/edit/adjust/pin/archive actions, and long-press quick actions.
+- Added Account Details route and screen. It reads the existing Account, balance, adjustment, and transaction providers; shows the current balance, opening balance, income, expenses, adjustments, and up to 30 transaction rows.
+- Added a widget regression test for Accounts → Account Details navigation and key sections.
+- Added `docs/UI_IMPLEMENTATION_LOG.md` to track file-level implementation, behavior, remaining gaps, and validation evidence.
+- Updated `docs/UI_UX_REQUIREMENTS.md` earlier with the user's confirmed screen scope and typography/button sizing.
+- No PR has been opened and no merge has been performed.
+- Validation remains **not run**: Dart format, Flutter analyze, Flutter tests, Android debug build, and device visual review. Do not interpret the added test as a passing result.
+
