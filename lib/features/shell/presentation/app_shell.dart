@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/formatting/money_formatter.dart';
 import '../../../app/app_theme.dart';
+import '../../../core/formatting/money_formatter.dart';
 import '../../accounts/accounts_providers.dart';
 import '../../accounts/presentation/account_balance_label.dart';
 import '../../accounts/presentation/accounts_page.dart';
