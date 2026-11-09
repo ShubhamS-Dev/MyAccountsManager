@@ -116,6 +116,15 @@ void main() {
     expect(find.text('Expenses'), findsOneWidget);
     expect(find.text('Net cash flow'), findsOneWidget);
     expect(find.text('Your Accounts'), findsOneWidget);
+
+    // Recent transactions is below the account grid in the ListView, so
+    // scroll it into the viewport before asserting its lazily built header.
+    await tester.scrollUntilVisible(
+      find.text('Recent transactions'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
     expect(find.text('Recent transactions'), findsOneWidget);
     expect(find.text('Accounts'), findsOneWidget);
     expect(find.text('MyKhata'), findsOneWidget);
