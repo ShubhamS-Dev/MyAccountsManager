@@ -75,7 +75,7 @@ class _EditAccountPageState extends ConsumerState<EditAccountPage> {
           return Form(
             key: _formKey,
             child: ListView(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
               children: [
                 TextFormField(
                   controller: _nameController,
@@ -89,7 +89,7 @@ class _EditAccountPageState extends ConsumerState<EditAccountPage> {
                       ? 'Enter an Account name.'
                       : null,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 TextFormField(
                   controller: _descriptionController,
                   textCapitalization: TextCapitalization.sentences,
@@ -113,7 +113,7 @@ class _EditAccountPageState extends ConsumerState<EditAccountPage> {
                     ),
                   ),
                 ],
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
                 FilledButton(
                   onPressed: _saving ? null : _save,
                   child: _saving
