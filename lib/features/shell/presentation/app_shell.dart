@@ -4,8 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/formatting/money_formatter.dart';
 import '../../accounts/accounts_providers.dart';
-import '../../accounts/presentation/accounts_page.dart';
 import '../../accounts/presentation/account_balance_label.dart';
+import '../../accounts/presentation/accounts_page.dart';
 import '../../transactions/presentation/history_page.dart';
 import '../../transactions/transactions_providers.dart';
 
