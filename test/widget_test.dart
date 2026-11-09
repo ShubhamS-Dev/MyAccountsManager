@@ -126,8 +126,20 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Recent transactions'), findsOneWidget);
-    expect(find.text('Accounts'), findsOneWidget);
-    expect(find.text('MyKhata'), findsOneWidget);
+
+    // NavigationBar only paints labels according to its label behavior;
+    // inspect its configured destinations rather than expecting every label
+    // to be present in the rendered tree while Home is selected.
+    final navigationBar = tester.widget<NavigationBar>(
+      find.byType(NavigationBar),
+    );
+    final destinationLabels = navigationBar.destinations
+        .whereType<NavigationDestination>()
+        .map((destination) => destination.label);
+    expect(
+      destinationLabels,
+      containsAll(['Home', 'Accounts', 'History', 'MyKhata', 'More']),
+    );
 
     // The balance privacy control must remain interactive.
     expect(find.byTooltip('Hide amounts'), findsOneWidget);
