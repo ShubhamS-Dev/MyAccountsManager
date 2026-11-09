@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/formatting/date_timestamp.dart';
 import '../../../core/formatting/money_formatter.dart';
+import '../../transactions/data/transactions_repository.dart';
 import '../../transactions/transactions_providers.dart';
 import '../accounts_providers.dart';
 
@@ -17,10 +18,8 @@ class AccountDetailsPage extends ConsumerWidget {
     final account = ref.watch(accountByIdProvider(accountId));
     final balance = ref.watch(accountBalancePaiseProvider(accountId));
     final adjustments = ref.watch(balanceAdjustmentsProvider(accountId));
-    final history = ref.watch(transactionHistoryProvider(
-      TransactionHistoryFilter(accountId: accountId),
-    ));
-    final colors = Theme.of(context).colorScheme;
+    final filter = TransactionHistoryFilter(accountId: accountId);
+    final history = ref.watch(transactionHistoryProvider(filter));
 
     return Scaffold(
       appBar: AppBar(
@@ -42,7 +41,9 @@ class AccountDetailsPage extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => const Center(child: Text('Account could not be loaded.')),
         data: (row) {
-          if (row == null) return const Center(child: Text('Account not found.'));
+          if (row == null) {
+            return const Center(child: Text('Account not found.'));
+          }
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
             children: [
@@ -67,7 +68,10 @@ class AccountDetailsPage extends ConsumerWidget {
               ),
               history.when(
                 loading: () => const Padding(padding: EdgeInsets.all(20), child: Center(child: CircularProgressIndicator())),
-                error: (error, stack) => TextButton(onPressed: () => ref.invalidate(transactionHistoryProvider(TransactionHistoryFilter(accountId: accountId))), child: const Text('Could not load history. Retry')),
+                error: (error, stack) => TextButton(
+                  onPressed: () => ref.invalidate(transactionHistoryProvider(filter)),
+                  child: const Text('Could not load history. Retry'),
+                ),
                 data: (items) {
                   if (items.isEmpty) {
                     return const _EmptyHistory();
@@ -154,11 +158,15 @@ class _BreakdownCard extends StatelessWidget {
             error: (error, stack) => const Text('Breakdown unavailable.'),
             data: (rows) {
               final asOfDate = DateOnly.toUtcEpochMilliseconds(DateTime.now());
-              final effectiveItems = items.where((e) => e.transaction.transactionDate <= asOfDate).toList();
-              final effectiveAdjustments = rows.where((e) => e.adjustmentDate <= asOfDate);
-              final income = effectiveItems.where((e) => e.transaction.type == 'income').fold<int>(0, (sum, e) => sum + e.transaction.amountPaise);
-              final expense = effectiveItems.where((e) => e.transaction.type == 'expense').fold<int>(0, (sum, e) => sum + e.transaction.amountPaise);
-              final adjustment = effectiveAdjustments.fold<int>(0, (sum, e) => sum + e.amountPaise);
+              final effectiveItems = items.where((item) => item.transaction.transactionDate <= asOfDate);
+              final effectiveAdjustments = rows.where((item) => item.adjustmentDate <= asOfDate);
+              final income = effectiveItems
+                  .where((item) => item.transaction.type == 'income')
+                  .fold<int>(0, (sum, item) => sum + item.transaction.amountPaise);
+              final expense = effectiveItems
+                  .where((item) => item.transaction.type == 'expense')
+                  .fold<int>(0, (sum, item) => sum + item.transaction.amountPaise);
+              final adjustment = effectiveAdjustments.fold<int>(0, (sum, item) => sum + item.amountPaise);
               return Column(
                 children: [
                   _BreakdownRow(label: 'Opening balance', amount: openingBalance),
