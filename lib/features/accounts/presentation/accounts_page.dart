@@ -213,7 +213,7 @@ class _AccountCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: colors.outlineVariant.withOpacity(0.7))),
+        decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: colors.outlineVariant.withValues(alpha: 0.7))),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
