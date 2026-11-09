@@ -237,9 +237,19 @@ void main() {
       matching: find.byType(ListView),
     );
     expect(formListView, findsOneWidget);
+    // The form contains nested TextFormFields. Flutter gives each editable
+    // field its own Scrollable (for caret/selection handling), so matching
+    // every Scrollable below the Form is ambiguous. The outer ListView's
+    // Scrollable has no restorationId; editable field scrollables use
+    // restorationId "editable". Match the actual form viewport explicitly.
     final formScrollable = find.descendant(
       of: formListView,
-      matching: find.byType(Scrollable),
+      matching: find.byWidgetPredicate(
+        (widget) =>
+            widget is Scrollable &&
+            widget.restorationId == null &&
+            widget.axisDirection == AxisDirection.down,
+      ),
     );
     expect(formScrollable, findsOneWidget);
     await tester.scrollUntilVisible(
