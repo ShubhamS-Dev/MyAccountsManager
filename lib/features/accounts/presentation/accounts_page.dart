@@ -303,6 +303,10 @@ class _AccountCard extends StatelessWidget {
                     color: colors.primary,
                   ),
                 ),
+                if (account.isPinned) ...[
+                  const SizedBox(width: 6),
+                  Icon(Icons.push_pin_rounded, size: 14, color: colors.primary),
+                ],
                 const Spacer(),
                 PopupMenuButton<String>(
                   padding: EdgeInsets.zero,
