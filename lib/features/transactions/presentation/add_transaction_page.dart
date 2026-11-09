@@ -11,7 +11,9 @@ import '../transactions_providers.dart';
 enum TransactionKind { expense, income }
 
 class AddTransactionPage extends ConsumerStatefulWidget {
-  const AddTransactionPage({super.key});
+  const AddTransactionPage({super.key, this.initialType});
+
+  final String? initialType;
 
   @override
   ConsumerState<AddTransactionPage> createState() => _AddTransactionPageState();
@@ -27,6 +29,14 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
   DateTime _date = DateTime.now();
   bool _saving = false;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialType == 'income') {
+      _kind = TransactionKind.income;
+    }
+  }
 
   @override
   void dispose() {
