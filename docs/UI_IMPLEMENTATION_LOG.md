@@ -85,3 +85,21 @@ At the time of this entry:
 - Android device/emulator visual review: **Not run**.
 
 Do not report any of these checks as passed until a Flutter-enabled runner or developer machine executes them and the result is inspected.
+
+
+## CI root-cause analysis and corrective changes — Run #217
+
+Run: [Flutter validation #217](https://github.com/ShubhamS-Dev/MyAccountsManager/actions/runs/42573625248)
+
+- Commit under validation: `3ef527f95e80c7e652db0f226291d336d1f87cc8`.
+- The workflow successfully checked out the feature branch, installed Flutter 3.47.9, resolved dependencies, generated Drift code, and formatted Dart sources.
+- The job failed at `flutter analyze`; tests and Android debug APK build were skipped as downstream steps.
+- Root causes: Account Details referenced `TransactionHistoryItem` without importing its defining repository library; this caused follow-on invalid type/nullability/fold diagnostics. The theme supplied `CardTheme` instead of Flutter 3.47.9's `CardThemeData`.
+- Additional analyzer findings included an unused local, missing braces, import ordering, and deprecated `withOpacity` calls.
+
+Corrective source changes committed after Run #217:
+- `account_details_page.dart`: import the concrete transaction repository type, reuse a single typed history filter for watch/invalidation, add explicit null-account block, remove unused color variable, and use typed transaction history items for integer-paise aggregation.
+- `app_theme.dart`: use `CardThemeData` and `Color.withValues(alpha: ...)`.
+- `accounts_page.dart`: sort imports and replace deprecated opacity calls.
+
+These changes are fixes, not validation evidence. A new workflow run must pass analysis, tests, and Android debug build before the UI refresh can be considered validated. Do not start the next feature slice until that run is inspected.
