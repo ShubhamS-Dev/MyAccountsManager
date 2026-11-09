@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 abstract final class AppColors {
   static const primary = Color(0xFF4F46E5);
+  static const navy = Color(0xFF1E1B4B);
   static const violet = Color(0xFF7C3AED);
   static const positive = Color(0xFF10B981);
   static const negative = Color(0xFFF43F5E);
@@ -34,6 +35,7 @@ abstract final class AppSpacing {
 
 abstract final class AppRadius {
   static const sm = 10.0;
+  static const md = 16.0;
   static const button = 12.0;
   static const input = 16.0;
   static const card = 22.0;
