@@ -276,7 +276,25 @@ void main() {
     expect(find.text('Total income'), findsOneWidget);
     expect(find.text('Total expenses'), findsOneWidget);
     expect(find.text('Transaction history'), findsOneWidget);
-    expect(find.text('Manage balance adjustments'), findsOneWidget);
+    expect(
+      find.text('No transactions recorded for this account yet.'),
+      findsOneWidget,
+    );
+    expect(find.byTooltip('Edit account'), findsOneWidget);
+    expect(find.byTooltip('Balance adjustments'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('Manage balance adjustments'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+    final adjustmentsAction = find.widgetWithText(
+      OutlinedButton,
+      'Manage balance adjustments',
+    );
+    expect(adjustmentsAction, findsOneWidget);
+    expect(tester.getSize(adjustmentsAction).height, 40);
   });
 
   testWidgets(

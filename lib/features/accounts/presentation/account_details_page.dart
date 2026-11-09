@@ -47,7 +47,7 @@ class AccountDetailsPage extends ConsumerWidget {
             return const Center(child: Text('Account not found.'));
           }
           return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
             children: [
               _BalanceCard(
                 name: row.name,
@@ -57,7 +57,7 @@ class AccountDetailsPage extends ConsumerWidget {
               const SizedBox(height: 16),
               const Text(
                 'Balance breakdown',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                style: AppTypography.sectionTitle,
               ),
               const SizedBox(height: 8),
               _BreakdownCard(
@@ -71,10 +71,7 @@ class AccountDetailsPage extends ConsumerWidget {
                   const Expanded(
                     child: Text(
                       'Transaction history',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: AppTypography.sectionTitle,
                     ),
                   ),
                   TextButton(
@@ -133,7 +130,7 @@ class _BalanceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
@@ -175,7 +172,7 @@ class _BalanceCard extends StatelessWidget {
               style: const TextStyle(color: Colors.white70, fontSize: 11),
             ),
           ],
-          const SizedBox(height: 18),
+          const SizedBox(height: 14),
           const Text(
             'CURRENT BALANCE',
             style: TextStyle(
@@ -201,10 +198,8 @@ class _BalanceCard extends StatelessWidget {
             ),
             data: (value) => Text(
               value == null ? '—' : MoneyFormatter.formatPaise(value),
-              style: const TextStyle(
+              style: AppTypography.transactionAmount.copyWith(
                 color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
               ),
             ),
           ),
@@ -309,19 +304,21 @@ class _BreakdownRow extends StatelessWidget {
         ? colors.error
         : colors.onSurface;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
+      padding: const EdgeInsets.symmetric(vertical: 9),
       child: Row(
         children: [
           Expanded(
-            child: Text(label, style: Theme.of(context).textTheme.bodyMedium),
+            child: Text(
+              label,
+              style: AppTypography.supporting.copyWith(
+                color: colors.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
           Text(
             MoneyFormatter.formatPaise(amount),
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: color,
-            ),
+            style: AppTypography.transactionAmount.copyWith(color: color),
           ),
         ],
       ),
@@ -357,7 +354,9 @@ class _TransactionTile extends StatelessWidget {
               : item.categoryName,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+          style: AppTypography.supporting.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
         ),
         subtitle: Text(
           '${item.categoryName} · ${DateOnly.format(transaction.transactionDate)}',
@@ -366,7 +365,7 @@ class _TransactionTile extends StatelessWidget {
         trailing: Text(
           '${income ? '+' : '-'}${MoneyFormatter.formatPaise(transaction.amountPaise)}',
           style: TextStyle(
-            fontSize: 12,
+            fontSize: 16,
             fontWeight: FontWeight.w700,
             color: income ? colors.tertiary : colors.error,
           ),
