@@ -98,6 +98,22 @@ void main() {
     expect(find.text('MyKhata'), findsOneWidget);
   });
 
+  testWidgets('opens Account Details from the Accounts grid', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+
+    await tester.tap(find.text('Accounts').last);
+    await tester.pumpAndSettle();
+    await pumpUntilFound(tester, find.text('Widget test Account'));
+
+    await tester.tap(find.text('Widget test Account'));
+    await pumpUntilFound(tester, find.text('Balance breakdown'));
+
+    expect(find.text('CURRENT BALANCE'), findsOneWidget);
+    expect(find.text('Transaction history'), findsOneWidget);
+  });
+
   testWidgets(
     'opens the add transaction form from the floating action button',
     (tester) async {
