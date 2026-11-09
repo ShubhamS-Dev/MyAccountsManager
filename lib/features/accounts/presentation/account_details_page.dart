@@ -354,9 +354,7 @@ class _TransactionTile extends StatelessWidget {
               : item.categoryName,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: AppTypography.supporting.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
+          style: AppTypography.supporting.copyWith(fontWeight: FontWeight.w600),
         ),
         subtitle: Text(
           '${item.categoryName} · ${DateOnly.format(transaction.transactionDate)}',
