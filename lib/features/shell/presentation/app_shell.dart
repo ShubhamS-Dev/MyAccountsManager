@@ -8,6 +8,7 @@ import '../../../core/formatting/money_formatter.dart';
 import '../../accounts/accounts_providers.dart';
 import '../../accounts/presentation/account_balance_label.dart';
 import '../../accounts/presentation/accounts_page.dart';
+import '../../transactions/data/transactions_repository.dart';
 import '../../transactions/presentation/history_page.dart';
 import '../../transactions/transactions_providers.dart';
 
@@ -45,16 +46,16 @@ class _AppShellState extends State<AppShell> {
       ),
       body: IndexedStack(
         index: _selectedIndex,
-        children: const [
-          _HomeDashboardPage(),
-          AccountsPage(),
+        children: [
+          _HomeDashboardPage(onNavigate: (index) => setState(() => _selectedIndex = index)),
+          const AccountsPage(),
           HistoryPage(),
-          _PlaceholderPage(
+          const _PlaceholderPage(
             title: 'MyKhata',
             description: 'Track money lent and borrowed independently from your Accounts.',
             icon: Icons.people_outline,
           ),
-          _PlaceholderPage(
+          const _PlaceholderPage(
             title: 'More',
             description: 'Budgets, savings goals, reports, backup and settings.',
             icon: Icons.grid_view_outlined,
@@ -91,7 +92,9 @@ class _ShellDestination {
 }
 
 class _HomeDashboardPage extends ConsumerStatefulWidget {
-  const _HomeDashboardPage();
+  const _HomeDashboardPage({required this.onNavigate});
+
+  final ValueChanged<int> onNavigate;
 
   @override
   ConsumerState<_HomeDashboardPage> createState() => _HomeDashboardPageState();
@@ -128,12 +131,13 @@ class _HomeDashboardPageState extends ConsumerState<_HomeDashboardPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('YOUR MONEY, IN FOCUS', style: AppTypography.metadata.copyWith(
+                  Text('OVERVIEW', style: AppTypography.metadata.copyWith(
                     color: scheme.primary, letterSpacing: 1.1, fontWeight: FontWeight.w800,
                   )),
                   const SizedBox(height: AppSpacing.xs),
-                  Text('$_greeting 👋', style: AppTypography.screenTitle.copyWith(fontSize: 20)),
-                  Text('Here’s your financial snapshot.', style: AppTypography.supporting.copyWith(color: scheme.onSurfaceVariant)),
+                  Text('Your finances', style: AppTypography.screenTitle),
+                  Text('$_greeting 👋', style: AppTypography.supporting.copyWith(color: scheme.primary)),
+                  Text('A clear view of your money this month.', style: AppTypography.supporting.copyWith(color: scheme.onSurfaceVariant)),
                 ],
               ),
             ),
@@ -182,7 +186,7 @@ class _HomeDashboardPageState extends ConsumerState<_HomeDashboardPage> {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.sm),
-                  Text('Across active accounts  ·  MyKhata excluded', style: AppTypography.supporting.copyWith(color: Colors.white.withValues(alpha: .78))),
+                  Text('Across active Accounts  ·  MyKhata excluded', style: AppTypography.supporting.copyWith(color: Colors.white.withValues(alpha: .78))),
                   const SizedBox(height: AppSpacing.md),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
@@ -229,12 +233,12 @@ class _HomeDashboardPageState extends ConsumerState<_HomeDashboardPage> {
           children: [
             Expanded(child: _QuickAction(icon: Icons.north_east_rounded, label: 'Expense', color: AppColors.negative, onTap: () => context.push('/transaction/new?type=expense'))),
             Expanded(child: _QuickAction(icon: Icons.south_west_rounded, label: 'Income', color: AppColors.positive, onTap: () => context.push('/transaction/new?type=income'))),
-            Expanded(child: _QuickAction(icon: Icons.account_balance_wallet_rounded, label: 'Accounts', color: scheme.primary, onTap: () => context.push('/accounts/new'))),
-            Expanded(child: _QuickAction(icon: Icons.people_alt_rounded, label: 'MyKhata', color: AppColors.violet, onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Open MyKhata from the bottom navigation.')))),
+            Expanded(child: _QuickAction(icon: Icons.account_balance_wallet_rounded, label: 'Accounts', color: scheme.primary, onTap: () => widget.onNavigate(1))),
+            Expanded(child: _QuickAction(icon: Icons.people_alt_rounded, label: 'MyKhata', color: AppColors.violet, onTap: () => widget.onNavigate(3))),
           ],
         ),
         const SizedBox(height: AppSpacing.lg),
-        SectionHeader(title: 'Your accounts', action: 'View all', onAction: () => context.go('/')),
+        SectionHeader(title: 'Your Accounts', action: 'View all', onAction: () => widget.onNavigate(1)),
         const SizedBox(height: AppSpacing.sm),
         accounts.when(
           loading: () => const LinearProgressIndicator(),
@@ -351,7 +355,7 @@ class _HomeDashboardPageState extends ConsumerState<_HomeDashboardPage> {
           },
         ),
         const SizedBox(height: AppSpacing.lg),
-        SectionHeader(title: 'Recent transactions', action: 'See history', onAction: () => context.go('/')),
+        SectionHeader(title: 'Recent transactions', action: 'See history', onAction: () => widget.onNavigate(2)),
         const SizedBox(height: AppSpacing.sm),
         latestTransactions.when(
           loading: () => const LinearProgressIndicator(),
