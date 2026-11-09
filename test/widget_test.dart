@@ -139,7 +139,12 @@ void main() {
     await tester.tap(find.byTooltip('Add transaction'));
     await pumpUntilFound(tester, find.text('How much did you spend?'));
 
-    await tester.tap(find.text('Income'));
+    final incomeSegment = find.descendant(
+      of: find.byWidgetPredicate((widget) => widget is SegmentedButton),
+      matching: find.text('Income'),
+    );
+    expect(incomeSegment, findsOneWidget);
+    await tester.tap(incomeSegment);
     await pumpUntilFound(tester, find.text('How much did you receive?'));
 
     expect(find.text('How much did you receive?'), findsOneWidget);
