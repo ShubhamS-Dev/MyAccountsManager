@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/database/app_database.dart';
+import '../../../core/formatting/date_timestamp.dart';
 
 import '../../accounts/accounts_providers.dart';
 import '../../categories/categories_providers.dart';
@@ -61,6 +62,11 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
     _amountController.text =
         '${amount ~/ 100}.${(amount % 100).toString().padLeft(2, '0')}';
     _noteController.text = transaction.note ?? '';
+  }
+
+  bool _isToday(DateTime date) {
+    final now = DateTime.now();
+    return date.year == now.year && date.month == now.month && date.day == now.day;
   }
 
   Future<void> _pickDate() async {
@@ -169,7 +175,7 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
               return Form(
                 key: _formKey,
                 child: ListView(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                   children: [
                     SegmentedButton<String>(
                       segments: const [
@@ -190,27 +196,10 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
                         _categoryId = null;
                       }),
                     ),
-                    const SizedBox(height: 20),
-                    TextFormField(
-                      controller: _amountController,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      decoration: const InputDecoration(
-                        prefixText: '₹ ',
-                        labelText: 'Amount',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        final paise = _parsePaise(value ?? '');
-                        return paise == null || paise <= 0
-                            ? 'Enter an amount greater than ₹0 (up to 2 decimal places).'
-                            : null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
                     DropdownButtonFormField<String>(
                       initialValue: _accountId,
+                      isExpanded: true,
                       decoration: const InputDecoration(
                         labelText: 'Account',
                         border: OutlineInputBorder(),
@@ -219,66 +208,24 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
                         for (final account in accountRows)
                           DropdownMenuItem(
                             value: account.id,
-                            enabled:
-                                account.archivedAt == null ||
-                                account.id == _accountId,
+                            enabled: account.archivedAt == null || account.id == _accountId,
                             child: Text(
                               '${account.name}${account.archivedAt == null ? '' : ' (Archived — keep only)'}',
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                       ],
                       onChanged: (value) => setState(() => _accountId = value),
-                      validator: (value) =>
-                          value == null ? 'Select an Account.' : null,
-                    ),
-                    const SizedBox(height: 16),
-                    categories.when(
-                      loading: () => const LinearProgressIndicator(),
-                      error: (error, stack) => TextButton(
-                        onPressed: () => ref.invalidate(
-                          activeCategoriesByTypeProvider(_kind!),
-                        ),
-                        child: const Text('Could not load categories. Retry'),
-                      ),
-                      data: (categoryRows) {
-                        if (_categoryId != null &&
-                            !categoryRows.any(
-                              (category) => category.id == _categoryId,
-                            )) {
-                          _categoryId = null;
-                        }
-                        if (categoryRows.isEmpty) {
-                          return const Text(
-                            'No active categories for this transaction type.',
-                          );
-                        }
-                        return DropdownButtonFormField<String>(
-                          initialValue: _categoryId,
-                          decoration: const InputDecoration(
-                            labelText: 'Category',
-                            border: OutlineInputBorder(),
-                          ),
-                          items: [
-                            for (final category in categoryRows)
-                              DropdownMenuItem(
-                                value: category.id,
-                                child: Text(category.name),
-                              ),
-                          ],
-                          onChanged: (value) =>
-                              setState(() => _categoryId = value),
-                          validator: (value) =>
-                              value == null ? 'Select a category.' : null,
-                        );
-                      },
+                      validator: (value) => value == null ? 'Select an Account.' : null,
                     ),
                     const SizedBox(height: 8),
                     ListTile(
+                      dense: true,
                       contentPadding: EdgeInsets.zero,
                       leading: const Icon(Icons.calendar_today_outlined),
                       title: const Text('Transaction date'),
                       subtitle: Text(
-                        '${_date!.day.toString().padLeft(2, '0')}/${_date!.month.toString().padLeft(2, '0')}/${_date!.year}',
+                        _isToday(_date!) ? 'Today' : DateOnly.format(DateOnly.toUtcEpochMilliseconds(_date!)),
                       ),
                       trailing: const Icon(Icons.chevron_right_rounded),
                       onTap: _pickDate,
@@ -291,7 +238,54 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
                       decoration: const InputDecoration(
                         labelText: 'Note (optional)',
                         border: OutlineInputBorder(),
+                        alignLabelWithHint: true,
                       ),
+                    ),
+                    const SizedBox(height: 10),
+                    TextFormField(
+                      controller: _amountController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: const InputDecoration(
+                        prefixText: '₹ ',
+                        labelText: 'Amount',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value) {
+                        final paise = _parsePaise(value ?? '');
+                        return paise == null || paise <= 0
+                            ? 'Enter an amount greater than ₹0 (up to 2 decimal places).'
+                            : null;
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    categories.when(
+                      loading: () => const LinearProgressIndicator(),
+                      error: (error, stack) => TextButton(
+                        onPressed: () => ref.invalidate(activeCategoriesByTypeProvider(_kind!)),
+                        child: const Text('Could not load categories. Retry'),
+                      ),
+                      data: (categoryRows) {
+                        if (_categoryId != null && !categoryRows.any((category) => category.id == _categoryId)) {
+                          _categoryId = null;
+                        }
+                        if (categoryRows.isEmpty) {
+                          return const Text('No active categories for this transaction type.');
+                        }
+                        return DropdownButtonFormField<String>(
+                          initialValue: _categoryId,
+                          isExpanded: true,
+                          decoration: const InputDecoration(
+                            labelText: 'Category',
+                            border: OutlineInputBorder(),
+                          ),
+                          items: [
+                            for (final category in categoryRows)
+                              DropdownMenuItem(value: category.id, child: Text(category.name, overflow: TextOverflow.ellipsis)),
+                          ],
+                          onChanged: (value) => setState(() => _categoryId = value),
+                          validator: (value) => value == null ? 'Select a category.' : null,
+                        );
+                      },
                     ),
                     if (_error != null) ...[
                       const SizedBox(height: 8),
@@ -302,7 +296,7 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
                         ),
                       ),
                     ],
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 16),
                     FilledButton(
                       onPressed: _saving ? null : () => _save(row.accountId),
                       child: _saving
