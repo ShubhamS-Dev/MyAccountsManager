@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 
 import '../features/accounts/presentation/account_balance_adjustments_page.dart';
+import '../features/accounts/presentation/account_details_page.dart';
 import '../features/accounts/presentation/archived_accounts_page.dart';
 import '../features/accounts/presentation/create_account_page.dart';
 import '../features/accounts/presentation/edit_account_page.dart';
@@ -13,6 +14,12 @@ final appRouter = GoRouter(
   initialLocation: '/',
   routes: [
     GoRoute(path: '/', builder: (context, state) => const AppShell()),
+    GoRoute(
+      path: '/accounts/:accountId',
+      builder: (context, state) => AccountDetailsPage(
+        accountId: state.pathParameters['accountId']!,
+      ),
+    ),
     GoRoute(
       path: '/accounts/archived',
       builder: (context, state) => const ArchivedAccountsPage(),
