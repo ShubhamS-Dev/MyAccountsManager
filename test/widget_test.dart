@@ -229,7 +229,7 @@ void main() {
     expect(noteY, lessThan(amountY));
     expect(amountY, lessThan(categoryY));
     expect(find.text('Today'), findsOneWidget);
-    expect(find.text('Choose an account'), findsOneWidget);
+    expect(find.text('Widget test Account'), findsOneWidget);
     expect(find.text('What was this transaction for?'), findsOneWidget);
     expect(find.text('Save transaction'), findsOneWidget);
   });
