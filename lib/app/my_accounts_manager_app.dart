@@ -13,7 +13,7 @@ class MyAccountsManagerApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(brightness: Brightness.light),
       darkTheme: buildAppTheme(brightness: Brightness.dark),
-      themeMode: ThemeMode.light,
+      themeMode: ThemeMode.system,
       routerConfig: appRouter,
     );
   }
