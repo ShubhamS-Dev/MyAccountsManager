@@ -51,9 +51,9 @@ Files:
 - `lib/app/app_router.dart`
 
 Behavior:
-- Added route `/accounts/:accountId`.
+- Added route `/accounts/:accountId`. Static routes for `/accounts/archived` and `/accounts/new` are ordered before the dynamic Account Details route to prevent route shadowing.
 - Displays Account name, description, and current calculated balance.
-- Shows opening balance, income, expenses, and balance adjustments as separate breakdown rows.
+- Shows opening balance, income, expenses, and balance adjustments as separate breakdown rows. Income/expense/adjustment totals in the breakdown are restricted to records effective on or before the current local calendar date, matching the authoritative current-balance rule.
 - Displays recent Account transaction history (up to 30 entries), with date-only formatting and explicit income/expense signs.
 - Transaction rows navigate to the existing Edit Transaction screen.
 - Provides direct navigation to Edit Account and Balance Adjustments.
@@ -69,7 +69,7 @@ Added a widget test covering navigation from the Accounts tab to Account Details
 ## Known gaps / follow-up implementation
 
 - Home Dashboard still needs migration from the foundation scaffold to the previously approved dashboard composition (month income/expense/net, pinned account grid, latest five transactions, separate MyKhata summary, eye control).
-- Account Details breakdown should be checked against the effective-date rule for future-dated transactions/adjustments; current transaction history includes future-dated records while the authoritative current balance excludes them.
+- Account Details transaction history may include future-dated transactions as upcoming records; the current-balance breakdown excludes future-dated transactions and adjustments, matching the authoritative effective-date calculation.
 - Accounts archived screen still needs the approved premium styling and any remaining archive-management actions. Permanent Account deletion must not be added until its data-loss confirmation and repository behavior are fully specified.
 - MyKhata, Global Categories, More, Settings, budgets, savings, and backup/restore workflows remain pending unless separately recorded as implemented.
 - The Add Transaction page still requires a full pass for exact field order, Today/date label, shared formatter, compact date picker, and global button styling.
