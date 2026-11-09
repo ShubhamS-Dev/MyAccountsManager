@@ -192,6 +192,23 @@ void main() {
     },
   );
 
+  testWidgets('shows the approved History filters and monthly summary', (tester) async {
+    await pumpApp(tester);
+    await tester.tap(find.text('History').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Monthly overview'), findsOneWidget);
+    expect(find.text('Income'), findsWidgets);
+    expect(find.text('Expenses'), findsOneWidget);
+    expect(find.text('Search note, Account or amount'), findsOneWidget);
+    expect(find.text('All'), findsOneWidget);
+    expect(find.text('Expense'), findsOneWidget);
+    expect(find.text('Account'), findsOneWidget);
+    expect(find.text('Category'), findsOneWidget);
+    expect(find.byTooltip('Open Trash'), findsOneWidget);
+    expect(find.text('No transactions yet'), findsOneWidget);
+  });
+
   testWidgets('switches the transaction form from expense to income', (
     tester,
   ) async {
@@ -260,4 +277,5 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Save transaction'), findsOneWidget);
   });
+
 }
