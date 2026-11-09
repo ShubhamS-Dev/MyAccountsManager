@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:my_accounts_manager/app/app_router.dart';
+import 'package:my_accounts_manager/app/app_theme.dart';
 import 'package:my_accounts_manager/app/my_accounts_manager_app.dart';
 import 'package:my_accounts_manager/core/database/app_database.dart';
 import 'package:my_accounts_manager/core/database/database_provider.dart';
@@ -91,6 +92,39 @@ void main() {
     );
     await pumpUntilFound(tester, find.text('Home'));
   }
+
+  testWidgets('shared action buttons render at exactly 40px high', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildAppTheme(brightness: Brightness.light),
+        home: Scaffold(
+          body: Column(
+            children: [
+              FilledButton(onPressed: () {}, child: const Text('Filled')),
+              ElevatedButton(onPressed: () {}, child: const Text('Elevated')),
+              OutlinedButton(onPressed: () {}, child: const Text('Outlined')),
+              TextButton(onPressed: () {}, child: const Text('Text')),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    for (final buttonType in [
+      FilledButton,
+      ElevatedButton,
+      OutlinedButton,
+      TextButton,
+    ]) {
+      expect(
+        tester.getSize(find.byType(buttonType)).height,
+        40,
+        reason: '${buttonType.toString()} should render at exactly 40px high.',
+      );
+    }
+  });
 
   testWidgets('shows the empty Archived Accounts state', (tester) async {
     addTearDown(() async {

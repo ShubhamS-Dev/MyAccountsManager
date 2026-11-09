@@ -46,6 +46,7 @@ ButtonStyle _actionButtonStyle(Color foreground, Color background) {
   return ButtonStyle(
     minimumSize: const WidgetStatePropertyAll(Size(0, 40)),
     maximumSize: const WidgetStatePropertyAll(Size(double.infinity, 40)),
+    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
     padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 14)),
     textStyle: const WidgetStatePropertyAll(AppTypography.button),
     foregroundColor: WidgetStatePropertyAll(foreground),
