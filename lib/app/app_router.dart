@@ -36,9 +36,8 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/accounts/:accountId',
-      builder: (context, state) => AccountDetailsPage(
-        accountId: state.pathParameters['accountId']!,
-      ),
+      builder: (context, state) =>
+          AccountDetailsPage(accountId: state.pathParameters['accountId']!),
     ),
     GoRoute(
       path: '/transaction/:transactionId/edit',

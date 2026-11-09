@@ -46,14 +46,14 @@ ButtonStyle _actionButtonStyle(Color foreground, Color background) {
   return ButtonStyle(
     minimumSize: const WidgetStatePropertyAll(Size(0, 40)),
     maximumSize: const WidgetStatePropertyAll(Size(double.infinity, 40)),
-    padding: const WidgetStatePropertyAll(
-      EdgeInsets.symmetric(horizontal: 14),
-    ),
+    padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 14)),
     textStyle: const WidgetStatePropertyAll(AppTypography.button),
     foregroundColor: WidgetStatePropertyAll(foreground),
     backgroundColor: WidgetStatePropertyAll(background),
     shape: const WidgetStatePropertyAll(
-      RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+      RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(12)),
+      ),
     ),
   );
 }
@@ -123,10 +123,7 @@ ThemeData buildAppTheme({required Brightness brightness}) {
       style: _actionButtonStyle(scheme.onPrimary, scheme.primary),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
-      style: _actionButtonStyle(
-        scheme.primary,
-        Colors.transparent,
-      ).copyWith(
+      style: _actionButtonStyle(scheme.primary, Colors.transparent).copyWith(
         side: WidgetStatePropertyAll(BorderSide(color: scheme.outlineVariant)),
       ),
     ),
@@ -144,10 +141,7 @@ ThemeData buildAppTheme({required Brightness brightness}) {
       isDense: true,
       filled: true,
       fillColor: scheme.surface,
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 12,
-      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       labelStyle: AppTypography.supporting.copyWith(
         color: scheme.onSurfaceVariant,
       ),

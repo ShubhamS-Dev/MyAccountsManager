@@ -101,9 +101,7 @@ void main() {
     expect(find.text('MyKhata'), findsOneWidget);
   });
 
-  testWidgets('opens Account Details from the Accounts grid', (
-    tester,
-  ) async {
+  testWidgets('opens Account Details from the Accounts grid', (tester) async {
     await pumpApp(tester);
 
     await tester.tap(find.text('Accounts').last);

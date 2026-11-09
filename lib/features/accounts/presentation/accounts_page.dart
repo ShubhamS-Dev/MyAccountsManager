@@ -38,8 +38,11 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
       data: (items) {
         final query = _searchController.text.trim().toLowerCase();
         final filtered = items
-            .where((account) => account.name.toLowerCase().contains(query) ||
-                (account.description ?? '').toLowerCase().contains(query))
+            .where(
+              (account) =>
+                  account.name.toLowerCase().contains(query) ||
+                  (account.description ?? '').toLowerCase().contains(query),
+            )
             .toList();
 
         return ListView(
@@ -54,8 +57,16 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
             const SizedBox(height: 20),
             Row(
               children: [
-                const Expanded(child: Text('Your accounts', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700))),
-                Text('${items.length} active', style: Theme.of(context).textTheme.bodySmall),
+                const Expanded(
+                  child: Text(
+                    'Your accounts',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                  ),
+                ),
+                Text(
+                  '${items.length} active',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
                 const SizedBox(width: 8),
                 IconButton(
                   tooltip: 'Add Account',
@@ -88,7 +99,9 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 32),
                 child: Text(
-                  items.isEmpty ? 'No accounts yet. Add your first account.' : 'No accounts match your search.',
+                  items.isEmpty
+                      ? 'No accounts yet. Add your first account.'
+                      : 'No accounts match your search.',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
@@ -110,7 +123,8 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
                     account: account,
                     hidden: _hideBalances,
                     onTap: () => context.push('/accounts/${account.id}'),
-                    onAction: (action) => _handleAction(context, account, action),
+                    onAction: (action) =>
+                        _handleAction(context, account, action),
                   );
                 },
               ),
@@ -126,7 +140,11 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
     );
   }
 
-  Future<void> _handleAction(BuildContext context, AccountRow account, String action) async {
+  Future<void> _handleAction(
+    BuildContext context,
+    AccountRow account,
+    String action,
+  ) async {
     final repository = ref.read(accountsRepositoryProvider);
     if (action == 'details') {
       context.push('/accounts/${account.id}');
@@ -141,10 +159,18 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
         context: context,
         builder: (dialogContext) => AlertDialog(
           title: const Text('Archive account?'),
-          content: Text('${account.name} will be hidden from active accounts. Its transaction history will be preserved.'),
+          content: Text(
+            '${account.name} will be hidden from active accounts. Its transaction history will be preserved.',
+          ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancel')),
-            FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('Archive')),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Archive'),
+            ),
           ],
         ),
       );
@@ -154,7 +180,12 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
 }
 
 class _BalanceOverview extends StatelessWidget {
-  const _BalanceOverview({required this.total, required this.hidden, required this.onToggle, required this.onArchived});
+  const _BalanceOverview({
+    required this.total,
+    required this.hidden,
+    required this.onToggle,
+    required this.onArchived,
+  });
   final AsyncValue<int> total;
   final bool hidden;
   final VoidCallback onToggle;
@@ -175,22 +206,51 @@ class _BalanceOverview extends StatelessWidget {
         children: [
           Row(
             children: [
-              Expanded(child: Text('TOTAL ACCOUNT BALANCE', style: Theme.of(context).textTheme.labelSmall?.copyWith(letterSpacing: 0.7, fontWeight: FontWeight.w700))),
-              IconButton(onPressed: onToggle, tooltip: hidden ? 'Show balance' : 'Hide balance', icon: Icon(hidden ? Icons.visibility_off_outlined : Icons.visibility_outlined, size: 18)),
-              IconButton(onPressed: onArchived, tooltip: 'Archived accounts', icon: const Icon(Icons.archive_outlined, size: 18)),
+              Expanded(
+                child: Text(
+                  'TOTAL ACCOUNT BALANCE',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    letterSpacing: 0.7,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              IconButton(
+                onPressed: onToggle,
+                tooltip: hidden ? 'Show balance' : 'Hide balance',
+                icon: Icon(
+                  hidden
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
+                  size: 18,
+                ),
+              ),
+              IconButton(
+                onPressed: onArchived,
+                tooltip: 'Archived accounts',
+                icon: const Icon(Icons.archive_outlined, size: 18),
+              ),
             ],
           ),
           const SizedBox(height: 4),
           total.when(
-            loading: () => const SizedBox(height: 26, child: LinearProgressIndicator()),
+            loading: () =>
+                const SizedBox(height: 26, child: LinearProgressIndicator()),
             error: (error, stack) => const Text('Balance unavailable'),
             data: (value) => Text(
               hidden ? '₹ ••••••' : MoneyFormatter.formatPaise(value),
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: value < 0 ? colors.error : colors.onSurface),
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w800,
+                color: value < 0 ? colors.error : colors.onSurface,
+              ),
             ),
           ),
           const SizedBox(height: 4),
-          Text('Across active accounts · MyKhata excluded', style: Theme.of(context).textTheme.bodySmall),
+          Text(
+            'Across active accounts · MyKhata excluded',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
         ],
       ),
     );
@@ -198,7 +258,12 @@ class _BalanceOverview extends StatelessWidget {
 }
 
 class _AccountCard extends StatelessWidget {
-  const _AccountCard({required this.account, required this.hidden, required this.onTap, required this.onAction});
+  const _AccountCard({
+    required this.account,
+    required this.hidden,
+    required this.onTap,
+    required this.onAction,
+  });
   final AccountRow account;
   final bool hidden;
   final VoidCallback onTap;
@@ -213,34 +278,68 @@ class _AccountCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: colors.outlineVariant.withValues(alpha: 0.7))),
+        decoration: BoxDecoration(
+          color: colors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: colors.outlineVariant.withValues(alpha: 0.7),
+          ),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                CircleAvatar(radius: 16, backgroundColor: colors.primaryContainer, child: Icon(Icons.account_balance_wallet_outlined, size: 16, color: colors.primary)),
+                CircleAvatar(
+                  radius: 16,
+                  backgroundColor: colors.primaryContainer,
+                  child: Icon(
+                    Icons.account_balance_wallet_outlined,
+                    size: 16,
+                    color: colors.primary,
+                  ),
+                ),
                 const Spacer(),
                 PopupMenuButton<String>(
                   padding: EdgeInsets.zero,
                   tooltip: 'Account actions',
                   onSelected: onAction,
                   itemBuilder: (_) => [
-                    const PopupMenuItem(value: 'details', child: Text('View details')),
+                    const PopupMenuItem(
+                      value: 'details',
+                      child: Text('View details'),
+                    ),
                     const PopupMenuItem(value: 'edit', child: Text('Edit')),
-                    const PopupMenuItem(value: 'adjust', child: Text('Adjust balance')),
-                    PopupMenuItem(value: account.isPinned ? 'unpin' : 'pin', child: Text(account.isPinned ? 'Unpin' : 'Pin to top')),
-                    const PopupMenuItem(value: 'archive', child: Text('Archive')),
+                    const PopupMenuItem(
+                      value: 'adjust',
+                      child: Text('Adjust balance'),
+                    ),
+                    PopupMenuItem(
+                      value: account.isPinned ? 'unpin' : 'pin',
+                      child: Text(account.isPinned ? 'Unpin' : 'Pin to top'),
+                    ),
+                    const PopupMenuItem(
+                      value: 'archive',
+                      child: Text('Archive'),
+                    ),
                   ],
                   child: const Icon(Icons.more_horiz, size: 20),
                 ),
               ],
             ),
             const Spacer(),
-            Text(account.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+            Text(
+              account.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+            ),
             const SizedBox(height: 4),
             if (hidden)
-              const Text('₹ ••••••', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700))
+              const Text(
+                '₹ ••••••',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+              )
             else
               AccountBalanceLabel(accountId: account.id),
           ],
@@ -253,21 +352,57 @@ class _AccountCard extends StatelessWidget {
     showModalBottomSheet<void>(
       context: context,
       builder: (context) => SafeArea(
-        child: Wrap(children: [
-          ListTile(leading: const Icon(Icons.info_outline), title: const Text('View details'), onTap: () { Navigator.pop(context); onAction('details'); }),
-          ListTile(leading: const Icon(Icons.edit_outlined), title: const Text('Edit'), onTap: () { Navigator.pop(context); onAction('edit'); }),
-          ListTile(leading: const Icon(Icons.archive_outlined), title: const Text('Archive'), onTap: () { Navigator.pop(context); onAction('archive'); }),
-        ]),
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.info_outline),
+              title: const Text('View details'),
+              onTap: () {
+                Navigator.pop(context);
+                onAction('details');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.edit_outlined),
+              title: const Text('Edit'),
+              onTap: () {
+                Navigator.pop(context);
+                onAction('edit');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.archive_outlined),
+              title: const Text('Archive'),
+              onTap: () {
+                Navigator.pop(context);
+                onAction('archive');
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
 class _MessageState extends StatelessWidget {
-  const _MessageState({required this.message, required this.action, required this.onAction});
+  const _MessageState({
+    required this.message,
+    required this.action,
+    required this.onAction,
+  });
   final String message;
   final String action;
   final VoidCallback onAction;
   @override
-  Widget build(BuildContext context) => Center(child: Column(mainAxisSize: MainAxisSize.min, children: [Text(message), const SizedBox(height: 12), FilledButton(onPressed: onAction, child: Text(action))]));
+  Widget build(BuildContext context) => Center(
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(message),
+        const SizedBox(height: 12),
+        FilledButton(onPressed: onAction, child: Text(action)),
+      ],
+    ),
+  );
 }
