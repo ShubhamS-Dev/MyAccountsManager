@@ -171,7 +171,12 @@ void main() {
     await pumpUntilFound(tester, find.text('Balance breakdown'));
 
     expect(find.text('CURRENT BALANCE'), findsOneWidget);
+    expect(find.text('Balance breakdown'), findsOneWidget);
+    expect(find.text('Opening balance'), findsOneWidget);
+    expect(find.text('Total income'), findsOneWidget);
+    expect(find.text('Total expenses'), findsOneWidget);
     expect(find.text('Transaction history'), findsOneWidget);
+    expect(find.text('Manage balance adjustments'), findsOneWidget);
   });
 
   testWidgets(

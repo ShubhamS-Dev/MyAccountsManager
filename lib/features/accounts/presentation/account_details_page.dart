@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/app_theme.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/formatting/date_timestamp.dart';
 import '../../../core/formatting/money_formatter.dart';
@@ -135,39 +136,54 @@ class _BalanceCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: colors.surface,
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppColors.navy, Color(0xFF243B75)],
+        ),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: colors.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            name,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const Icon(Icons.account_balance_wallet_outlined,
+                  color: Colors.white70, size: 20),
+            ],
           ),
           if (description?.isNotEmpty == true) ...[
-            const SizedBox(height: 3),
-            Text(description!, style: Theme.of(context).textTheme.bodySmall),
+            const SizedBox(height: 4),
+            Text(description!, maxLines: 2, overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Colors.white70, fontSize: 11)),
           ],
           const SizedBox(height: 18),
-          Text(
-            'CURRENT BALANCE',
-            style: Theme.of(
-              context,
-            ).textTheme.labelSmall?.copyWith(letterSpacing: 0.7),
-          ),
-          const SizedBox(height: 5),
+          const Text('CURRENT BALANCE',
+              style: TextStyle(color: Colors.white70, fontSize: 11,
+                  fontWeight: FontWeight.w600, letterSpacing: 0.8)),
+          const SizedBox(height: 6),
           balance.when(
-            loading: () => const LinearProgressIndicator(),
-            error: (error, stack) => const Text('Balance unavailable'),
+            loading: () => const SizedBox(height: 20, width: 20,
+                child: CircularProgressIndicator(strokeWidth: 2,
+                    color: Colors.white)),
+            error: (error, stack) => const Text('Balance unavailable',
+                style: TextStyle(color: Colors.white, fontSize: 12)),
             data: (value) => Text(
               value == null ? '—' : MoneyFormatter.formatPaise(value),
-              style: TextStyle(
-                fontSize: 25,
-                fontWeight: FontWeight.w800,
-                color: (value ?? 0) < 0 ? colors.error : colors.onSurface,
-              ),
+              style: const TextStyle(color: Colors.white, fontSize: 16,
+                  fontWeight: FontWeight.w700),
             ),
           ),
         ],
@@ -190,7 +206,7 @@ class _BreakdownCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         child: history.when(
           loading: () => const LinearProgressIndicator(),
           error: (error, stack) => const Text('Breakdown unavailable.'),
@@ -271,7 +287,7 @@ class _BreakdownRow extends StatelessWidget {
         ? colors.error
         : colors.onSurface;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 7),
+      padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
         children: [
           Expanded(
@@ -280,7 +296,7 @@ class _BreakdownRow extends StatelessWidget {
           Text(
             MoneyFormatter.formatPaise(amount),
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 11,
               fontWeight: FontWeight.w600,
               color: color,
             ),
