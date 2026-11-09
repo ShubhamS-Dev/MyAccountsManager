@@ -182,7 +182,6 @@ class _HomeFoundationPageState extends ConsumerState<_HomeFoundationPage> {
         Row(
           children: [
             Expanded(child: Text('Your Accounts', style: Theme.of(context).textTheme.titleMedium)),
-            TextButton(onPressed: () => context.go('/'), child: const Text('')),
           ],
         ),
         accounts.when(
