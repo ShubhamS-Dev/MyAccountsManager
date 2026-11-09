@@ -103,3 +103,16 @@ Corrective source changes committed after Run #217:
 - `accounts_page.dart`: sort imports and replace deprecated opacity calls.
 
 These changes are fixes, not validation evidence. A new workflow run must pass analysis, tests, and Android debug build before the UI refresh can be considered validated. Do not start the next feature slice until that run is inspected.
+
+## CI root-cause analysis and corrective change — Run #222
+
+Run: [Flutter validation #222](https://github.com/ShubhamS-Dev/MyAccountsManager/actions/runs/42574187648)
+
+- Commit under validation: `84cbef57469576576af150ec517f20e2c94b2c74`.
+- Dependency resolution, Drift code generation, and Dart formatting passed.
+- `flutter analyze` failed on one remaining deprecated API call: `colors.outlineVariant.withOpacity(0.7)` in `lib/features/accounts/presentation/accounts_page.dart` (line 284, column 59).
+- The prior Run #217 remediation had replaced other deprecated opacity calls in this file but missed the Account Card border.
+- Corrective change: replaced the call with `colors.outlineVariant.withValues(alpha: 0.7)`. This preserves the intended 70% opacity and does not change layout or behavior.
+- Source fix commit: `6c4320a99bcca4c6a9614bfaad02d0734ac7a912`.
+
+This correction is not validation evidence. Inspect the subsequent workflow run and require `flutter analyze`, tests, and Android debug APK build to pass before starting another feature slice.
