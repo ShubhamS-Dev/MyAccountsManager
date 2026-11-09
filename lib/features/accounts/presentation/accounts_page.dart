@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/formatting/money_formatter.dart';
 import '../../../core/database/app_database.dart';
+import '../../../core/formatting/money_formatter.dart';
 import '../accounts_providers.dart';
 import 'account_balance_label.dart';
 
@@ -168,7 +168,7 @@ class _BalanceOverview extends StatelessWidget {
       decoration: BoxDecoration(
         color: colors.surface,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: colors.outlineVariant.withOpacity(0.7)),
+        border: Border.all(color: colors.outlineVariant.withValues(alpha: 0.7)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
