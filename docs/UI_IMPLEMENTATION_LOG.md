@@ -116,3 +116,17 @@ Run: [Flutter validation #222](https://github.com/ShubhamS-Dev/MyAccountsManager
 - Source fix commit: `6c4320a99bcca4c6a9614bfaad02d0734ac7a912`.
 
 This correction is not validation evidence. Inspect the subsequent workflow run and require `flutter analyze`, tests, and Android debug APK build to pass before starting another feature slice.
+
+
+## CI root-cause analysis and corrective change — Run #224
+
+Run: [Flutter validation #224](https://github.com/ShubhamS-Dev/MyAccountsManager/actions/runs/42574668809)
+
+- Commit under validation: `e95a55902e42667c8ccf131dc41471c7b2ae88e9`.
+- Checkout, Flutter setup, dependency resolution, Drift code generation, formatting, and `flutter analyze` passed.
+- The widget test `opens Account Details from the Accounts grid` failed with Flutter's pending-timer invariant: `A Timer is still pending even after the widget tree was disposed`.
+- Root cause identified in `test/widget_test.dart`: the test ProviderScope replaced the Account and transaction streams with deterministic `Stream.value` overrides, but omitted `balanceAdjustmentsProvider`. Account Details watches this provider, so the test unintentionally opened a real Drift query stream against the in-memory database. The widget teardown then closed the database while the query stream's internal timer/subscription lifecycle was still active.
+- Corrective test change: override `balanceAdjustmentsProvider` with `Stream.value(<BalanceAdjustmentRow>[])`, consistent with the test's existing strategy of avoiding database-backed query subscriptions in navigation/form widget tests. Repository stream behavior remains the responsibility of repository tests.
+- Test fix commit: `d6a3cbc5fa82aaa639f736dabcf9989d3a1c5a5c`.
+
+This is a source-level RCA and correction, not passing validation evidence. Confirm the new workflow run passes the complete test suite and Android debug APK build before proceeding.
