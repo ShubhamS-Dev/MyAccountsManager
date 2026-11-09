@@ -120,47 +120,48 @@ void main() {
     );
   });
 
-  testWidgets('restores an archived Account from the Archived Accounts screen', (
-    tester,
-  ) async {
-    addTearDown(() async {
-      await tester.pumpWidget(const SizedBox.shrink());
-      await tester.pump();
-      await testDatabase.close();
-    });
+  testWidgets(
+    'restores an archived Account from the Archived Accounts screen',
+    (tester) async {
+      addTearDown(() async {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+        await testDatabase.close();
+      });
 
-    final repository = AccountsRepository(testDatabase);
-    final archivedId = await repository.createAccount(
-      name: 'Archived test Account',
-      description: 'Savings account',
-    );
-    await repository.archiveAccount(archivedId);
-    final archivedAccount = (await repository.getAccount(archivedId))!;
+      final repository = AccountsRepository(testDatabase);
+      final archivedId = await repository.createAccount(
+        name: 'Archived test Account',
+        description: 'Savings account',
+      );
+      await repository.archiveAccount(archivedId);
+      final archivedAccount = (await repository.getAccount(archivedId))!;
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          appDatabaseProvider.overrideWithValue(testDatabase),
-          archivedAccountsProvider.overrideWith(
-            (ref) => Stream.value([archivedAccount]),
-          ),
-        ],
-        child: const MaterialApp(home: ArchivedAccountsPage()),
-      ),
-    );
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            appDatabaseProvider.overrideWithValue(testDatabase),
+            archivedAccountsProvider.overrideWith(
+              (ref) => Stream.value([archivedAccount]),
+            ),
+          ],
+          child: const MaterialApp(home: ArchivedAccountsPage()),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('Archived test Account'), findsOneWidget);
-    expect(find.text('Savings account'), findsOneWidget);
-    expect(find.text('1 Account'), findsOneWidget);
+      expect(find.text('Archived test Account'), findsOneWidget);
+      expect(find.text('Savings account'), findsOneWidget);
+      expect(find.text('1 Account'), findsOneWidget);
 
-    await tester.tap(find.text('Restore'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Restore'));
+      await tester.pumpAndSettle();
 
-    final restored = await repository.getAccount(archivedId);
-    expect(restored, isNotNull);
-    expect(restored!.archivedAt, isNull);
-  });
+      final restored = await repository.getAccount(archivedId);
+      expect(restored, isNotNull);
+      expect(restored!.archivedAt, isNull);
+    },
+  );
 
   testWidgets('launches the home dashboard with primary navigation', (
     tester,
