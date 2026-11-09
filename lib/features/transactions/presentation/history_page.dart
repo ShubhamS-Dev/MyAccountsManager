@@ -47,7 +47,11 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
       await ref.read(transactionsRepositoryProvider).softDeleteTransaction(item.transaction.id);
       ref.invalidate(accountBalancePaiseProvider(item.transaction.accountId));
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not move transaction to Trash. Try again.')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not move transaction to Trash. Try again.')),
+        );
+      }
     }
   }
 
