@@ -141,7 +141,7 @@ ThemeData buildAppTheme({required Brightness brightness}) {
       isDense: true,
       filled: true,
       fillColor: scheme.surface,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       labelStyle: AppTypography.supporting.copyWith(
         color: scheme.onSurfaceVariant,
       ),
@@ -166,12 +166,12 @@ ThemeData buildAppTheme({required Brightness brightness}) {
       elevation: 0,
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.65)),
       ),
     ),
     navigationBarTheme: NavigationBarThemeData(
-      height: 64,
+      height: 68,
       labelTextStyle: WidgetStatePropertyAll(
         AppTypography.supporting.copyWith(fontWeight: FontWeight.w600),
       ),
