@@ -1,0 +1,53 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:my_accounts_manager/app/app_theme.dart';
+import 'package:my_accounts_manager/app/app_widgets.dart';
+
+void main() {
+  test('design tokens keep the approved visual and touch dimensions', () {
+    expect(AppSpacing.buttonHeight, 40);
+    expect(AppSpacing.touchTarget, 48);
+    expect(AppTypography.screenTitle.fontSize, 16);
+    expect(AppTypography.sectionTitle.fontSize, 14);
+    expect(AppTypography.transactionAmount.fontSize, 16);
+    expect(AppTypography.balance.fontSize, greaterThanOrEqualTo(36));
+    expect(AppTypography.balance.fontSize, lessThanOrEqualTo(44));
+    expect(AppColors.primary, const Color(0xFF4F46E5));
+    expect(AppColors.violet, const Color(0xFF7C3AED));
+    expect(AppColors.positive, const Color(0xFF10B981));
+    expect(AppColors.negative, const Color(0xFFF43F5E));
+  });
+
+  testWidgets('premium themes expose the right light and dark surfaces', (
+    tester,
+  ) async {
+    final light = buildAppTheme(brightness: Brightness.light);
+    final dark = buildAppTheme(brightness: Brightness.dark);
+
+    expect(light.colorScheme.primary, AppColors.primary);
+    expect(light.scaffoldBackgroundColor, AppColors.lightBackground);
+    expect(dark.colorScheme.primary, AppColors.primary);
+    expect(dark.scaffoldBackgroundColor, AppColors.darkBackground);
+  });
+
+  testWidgets('reusable primary button preserves a 48px hit area and 40px face', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildAppTheme(brightness: Brightness.light),
+        home: const Scaffold(
+          body: Padding(
+            padding: EdgeInsets.all(16),
+            child: PrimaryButton(label: 'Continue', onPressed: _noop),
+          ),
+        ),
+      ),
+    );
+
+    expect(tester.getSize(find.byType(PrimaryButton)).height, 48);
+    expect(tester.getSize(find.byType(FilledButton)).height, 40);
+  });
+}
+
+void _noop() {}
