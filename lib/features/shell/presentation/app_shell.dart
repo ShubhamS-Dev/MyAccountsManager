@@ -188,7 +188,9 @@ class _HomeFoundationPageState extends ConsumerState<_HomeFoundationPage> {
           loading: () => const LinearProgressIndicator(),
           error: (error, stack) => const Text('Accounts unavailable.'),
           data: (items) {
-            if (items.isEmpty) return const Text('Add an Account to start tracking your money.');
+            if (items.isEmpty) {
+              return const Text('Add an Account to start tracking your money.');
+            }
             final pinned = items.where((a) => a.isPinned).toList();
             final rest = items.where((a) => !a.isPinned).toList();
             final ordered = [...pinned, ...rest];
@@ -232,7 +234,9 @@ class _HomeFoundationPageState extends ConsumerState<_HomeFoundationPage> {
           loading: () => const LinearProgressIndicator(),
           error: (error, stack) => const Text('Transactions unavailable.'),
           data: (items) {
-            if (items.isEmpty) return const Text('Your latest transactions will appear here.');
+            if (items.isEmpty) {
+              return const Text('Your latest transactions will appear here.');
+            }
             return Column(
               children: [
                 for (final item in items.take(5))
