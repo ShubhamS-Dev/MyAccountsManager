@@ -7,6 +7,7 @@ import 'package:my_accounts_manager/app/my_accounts_manager_app.dart';
 import 'package:my_accounts_manager/core/database/app_database.dart';
 import 'package:my_accounts_manager/core/database/database_provider.dart';
 import 'package:my_accounts_manager/features/accounts/accounts_providers.dart';
+import 'package:my_accounts_manager/features/accounts/presentation/archived_accounts_page.dart';
 import 'package:my_accounts_manager/features/accounts/data/accounts_repository.dart';
 import 'package:my_accounts_manager/features/categories/categories_providers.dart';
 import 'package:my_accounts_manager/features/transactions/data/transactions_repository.dart';
@@ -90,6 +91,76 @@ void main() {
     );
     await pumpUntilFound(tester, find.text('Home'));
   }
+
+  testWidgets('shows the empty Archived Accounts state', (tester) async {
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      await testDatabase.close();
+    });
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(testDatabase),
+          archivedAccountsProvider.overrideWith(
+            (ref) => Stream.value(<AccountRow>[]),
+          ),
+        ],
+        child: const MaterialApp(home: ArchivedAccountsPage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Archived Accounts'), findsOneWidget);
+    expect(find.text('No archived Accounts'), findsOneWidget);
+    expect(
+      find.textContaining('Accounts you archive will appear here'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('restores an archived Account from the Archived Accounts screen', (
+    tester,
+  ) async {
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      await testDatabase.close();
+    });
+
+    final repository = AccountsRepository(testDatabase);
+    final archivedId = await repository.createAccount(
+      name: 'Archived test Account',
+      description: 'Savings account',
+    );
+    await repository.archiveAccount(archivedId);
+    final archivedAccount = (await repository.getAccount(archivedId))!;
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(testDatabase),
+          archivedAccountsProvider.overrideWith(
+            (ref) => Stream.value([archivedAccount]),
+          ),
+        ],
+        child: const MaterialApp(home: ArchivedAccountsPage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Archived test Account'), findsOneWidget);
+    expect(find.text('Savings account'), findsOneWidget);
+    expect(find.text('1 Account'), findsOneWidget);
+
+    await tester.tap(find.text('Restore'));
+    await tester.pumpAndSettle();
+
+    final restored = await repository.getAccount(archivedId);
+    expect(restored, isNotNull);
+    expect(restored!.archivedAt, isNull);
+  });
 
   testWidgets('launches the home dashboard with primary navigation', (
     tester,
