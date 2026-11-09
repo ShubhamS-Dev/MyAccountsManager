@@ -127,19 +127,20 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Recent transactions'), findsOneWidget);
 
-    // NavigationBar only paints labels according to its label behavior;
-    // inspect its configured destinations rather than expecting every label
-    // to be present in the rendered tree while Home is selected.
-    final navigationBar = tester.widget<NavigationBar>(
-      find.byType(NavigationBar),
-    );
-    final destinationLabels = navigationBar.destinations
-        .whereType<NavigationDestination>()
-        .map((destination) => destination.label);
-    expect(
-      destinationLabels,
-      containsAll(['Home', 'Accounts', 'History', 'MyKhata', 'More']),
-    );
+    // Verify navigation through user-visible taps instead of inspecting
+    // NavigationBar internals. This covers the actual destination behavior.
+    for (final destination in ['Accounts', 'History', 'MyKhata', 'More', 'Home']) {
+      await tester.tap(find.text(destination).last);
+      await tester.pumpAndSettle();
+      expect(
+        find.descendant(
+          of: find.byType(AppBar),
+          matching: find.text(destination),
+        ),
+        findsOneWidget,
+        reason: 'Selecting $destination should update the app bar title.',
+      );
+    }
 
     // The balance privacy control must remain interactive.
     expect(find.byTooltip('Hide amounts'), findsOneWidget);
