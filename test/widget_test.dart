@@ -192,7 +192,9 @@ void main() {
     },
   );
 
-  testWidgets('shows the approved History filters and monthly summary', (tester) async {
+  testWidgets('shows the approved History filters and monthly summary', (
+    tester,
+  ) async {
     await pumpApp(tester);
     await tester.tap(find.text('History').last);
     await tester.pumpAndSettle();
@@ -277,5 +279,4 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Save transaction'), findsOneWidget);
   });
-
 }
