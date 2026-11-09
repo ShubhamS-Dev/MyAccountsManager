@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/app_theme.dart';
 import '../../../core/formatting/date_timestamp.dart';
 import '../../accounts/accounts_providers.dart';
 import '../../categories/categories_providers.dart';
@@ -104,10 +105,46 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
     }
   }
 
+  Widget _label(BuildContext context, String value, {String? hint}) {
+    final style = AppTypography.supporting.copyWith(
+      color: Theme.of(context).colorScheme.onSurface,
+      fontWeight: FontWeight.w600,
+    );
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 7),
+      child: Row(children: [
+        Text(value, style: style),
+        if (hint != null) ...[
+          const SizedBox(width: 5),
+          Text(hint, style: AppTypography.supporting.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          )),
+        ],
+      ]),
+    );
+  }
+
+  Widget _surface(BuildContext context, Widget child) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.7)),
+      ),
+      child: child,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final accounts = ref.watch(activeAccountsProvider);
     final categories = ref.watch(activeCategoriesByTypeProvider(_kind.name));
+    final scheme = Theme.of(context).colorScheme;
+    final accent = _kind == TransactionKind.expense
+        ? AppColors.negative
+        : AppColors.positive;
     return Scaffold(
       appBar: AppBar(title: const Text('Add transaction')),
       body: accounts.when(
@@ -123,20 +160,19 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      'Create an Account before adding a transaction.',
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 10),
-                    FilledButton(
-                      onPressed: () => context.push('/accounts/new'),
-                      child: const Text('Create Account'),
-                    ),
-                  ],
-                ),
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  const Icon(Icons.account_balance_wallet_outlined, size: 34),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Create an Account before adding a transaction.',
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 14),
+                  FilledButton(
+                    onPressed: () => context.push('/accounts/new'),
+                    child: const Text('Create Account'),
+                  ),
+                ]),
               ),
             );
           }
@@ -148,112 +184,147 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
           return Form(
             key: _formKey,
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
               children: [
-                SegmentedButton<TransactionKind>(
-                  segments: const [
-                    ButtonSegment(
-                      value: TransactionKind.expense,
-                      label: Text('Expense'),
-                      icon: Icon(Icons.arrow_upward_rounded),
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: scheme.surfaceContainerHighest.withValues(alpha: 0.65),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: SegmentedButton<TransactionKind>(
+                    showSelectedIcon: false,
+                    style: ButtonStyle(
+                      minimumSize: const WidgetStatePropertyAll(Size(0, 42)),
+                      textStyle: const WidgetStatePropertyAll(AppTypography.button),
+                      shape: WidgetStatePropertyAll(RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(11),
+                      )),
                     ),
-                    ButtonSegment(
-                      value: TransactionKind.income,
-                      label: Text('Income'),
-                      icon: Icon(Icons.arrow_downward_rounded),
-                    ),
-                  ],
-                  selected: {_kind},
-                  onSelectionChanged: (selection) => setState(() {
-                    _kind = selection.first;
-                    _categoryId = null;
-                  }),
+                    segments: const [
+                      ButtonSegment(
+                        value: TransactionKind.expense,
+                        label: Text('Expense'),
+                        icon: Icon(Icons.arrow_upward_rounded, size: 16),
+                      ),
+                      ButtonSegment(
+                        value: TransactionKind.income,
+                        label: Text('Income'),
+                        icon: Icon(Icons.arrow_downward_rounded, size: 16),
+                      ),
+                    ],
+                    selected: {_kind},
+                    onSelectionChanged: (selection) => setState(() {
+                      _kind = selection.first;
+                      _categoryId = null;
+                    }),
+                  ),
                 ),
-                const SizedBox(height: 14),
-                DropdownButtonFormField<String>(
+                const SizedBox(height: 18),
+                _label(context, 'Account'),
+                _surface(context, DropdownButtonFormField<String>(
                   initialValue: _accountId,
                   isExpanded: true,
+                  icon: const Icon(Icons.keyboard_arrow_down_rounded),
                   decoration: const InputDecoration(
-                    labelText: 'Account',
-                    border: OutlineInputBorder(),
+                    hintText: 'Choose an account',
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.zero,
                     isDense: true,
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 14,
-                    ),
                   ),
                   menuMaxHeight: 320,
                   items: [
                     for (final account in accountRows)
                       DropdownMenuItem(
                         value: account.id,
-                        child: Text(
-                          account.name,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        child: Text(account.name, overflow: TextOverflow.ellipsis),
                       ),
                   ],
                   onChanged: (value) => setState(() => _accountId = value),
                   validator: (value) =>
                       value == null ? 'Select an Account.' : null,
-                ),
-                const SizedBox(height: 12),
-                ListTile(
-                  dense: true,
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.calendar_today_outlined),
-                  title: const Text('Transaction date'),
-                  subtitle: Text(
-                    _isToday(_date)
-                        ? 'Today'
-                        : DateOnly.format(
-                            DateOnly.toUtcEpochMilliseconds(_date),
-                          ),
-                  ),
-                  trailing: const Icon(Icons.chevron_right_rounded),
+                )),
+                const SizedBox(height: 15),
+                _label(context, 'Transaction date'),
+                _surface(context, InkWell(
+                  borderRadius: BorderRadius.circular(10),
                   onTap: _pickDate,
-                ),
-                const SizedBox(height: 6),
+                  child: Row(children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: scheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(Icons.calendar_today_outlined,
+                          size: 17, color: scheme.primary),
+                    ),
+                    const SizedBox(width: 11),
+                    Expanded(child: Text(
+                      _isToday(_date)
+                          ? 'Today'
+                          : DateOnly.format(DateOnly.toUtcEpochMilliseconds(_date)),
+                      style: AppTypography.supporting.copyWith(
+                        color: scheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    )),
+                    Icon(Icons.chevron_right_rounded,
+                        color: scheme.onSurfaceVariant),
+                  ]),
+                )),
+                const SizedBox(height: 15),
+                _label(context, 'Note', hint: 'Optional'),
                 TextFormField(
                   controller: _noteController,
                   maxLength: 500,
                   maxLines: 2,
                   textCapitalization: TextCapitalization.sentences,
+                  style: AppTypography.supporting.copyWith(color: scheme.onSurface),
                   decoration: const InputDecoration(
-                    labelText: 'Note (optional)',
                     hintText: 'What was this transaction for?',
-                    border: OutlineInputBorder(),
-                    isDense: true,
+                    counterStyle: AppTypography.supporting,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 14),
+                _label(context, 'Amount'),
+                _surface(context, Row(children: [
+                  Text('₹', style: TextStyle(
+                    fontSize: 22, fontWeight: FontWeight.w600, color: accent,
+                  )),
+                  const SizedBox(width: 10),
+                  Expanded(child: TextFormField(
+                    controller: _amountController,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    style: AppTypography.transactionAmount.copyWith(
+                      fontSize: 22, color: scheme.onSurface,
+                    ),
+                    decoration: const InputDecoration(
+                      hintText: '0.00',
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.zero,
+                      isDense: true,
+                    ),
+                    validator: (value) {
+                      final paise = _parsePaise(value ?? '');
+                      return paise == null || paise <= 0
+                          ? 'Enter an amount greater than ₹0 (up to 2 decimal places).'
+                          : null;
+                    },
+                  )),
+                ])),
+                const SizedBox(height: 6),
                 Text(
                   _kind == TransactionKind.expense
                       ? 'How much did you spend?'
                       : 'How much did you receive?',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _amountController,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
+                  style: AppTypography.supporting.copyWith(
+                    color: scheme.onSurfaceVariant,
                   ),
-                  decoration: const InputDecoration(
-                    prefixText: '₹ ',
-                    hintText: '0.00',
-                    labelText: 'Amount',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                  validator: (value) {
-                    final paise = _parsePaise(value ?? '');
-                    return paise == null || paise <= 0
-                        ? 'Enter an amount greater than ₹0 (up to 2 decimal places).'
-                        : null;
-                  },
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 15),
+                _label(context, 'Category'),
                 categories.when(
                   loading: () => const LinearProgressIndicator(),
                   error: (error, stack) => TextButton(
@@ -264,62 +335,56 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                   ),
                   data: (categoryRows) {
                     if (categoryRows.isEmpty) {
-                      return const Text(
+                      return _surface(context, const Text(
                         'No active categories for this transaction type.',
-                      );
+                        style: AppTypography.supporting,
+                      ));
                     }
                     if (_categoryId != null &&
                         !categoryRows.any((c) => c.id == _categoryId)) {
                       _categoryId = null;
                     }
-                    return DropdownButtonFormField<String>(
+                    return _surface(context, DropdownButtonFormField<String>(
                       initialValue: _categoryId,
                       isExpanded: true,
+                      icon: const Icon(Icons.keyboard_arrow_down_rounded),
                       decoration: const InputDecoration(
-                        labelText: 'Category',
-                        border: OutlineInputBorder(),
+                        hintText: 'Choose a category',
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.zero,
                         isDense: true,
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 14,
-                        ),
                       ),
                       menuMaxHeight: 320,
                       items: [
                         for (final category in categoryRows)
                           DropdownMenuItem(
                             value: category.id,
-                            child: Text(
-                              category.name,
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                            child: Text(category.name,
+                                overflow: TextOverflow.ellipsis),
                           ),
                       ],
                       onChanged: (value) => setState(() => _categoryId = value),
                       validator: (value) =>
                           value == null ? 'Select a category.' : null,
-                    );
+                    ));
                   },
                 ),
                 if (_error != null) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    _error!,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                  ),
+                  const SizedBox(height: 12),
+                  Text(_error!, style: TextStyle(color: scheme.error)),
                 ],
-                const SizedBox(height: 20),
-                FilledButton(
-                  onPressed: _saving ? null : _save,
-                  child: _saving
-                      ? const SizedBox(
-                          height: 18,
-                          width: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Save transaction'),
+                const SizedBox(height: 22),
+                SizedBox(
+                  height: 40,
+                  child: FilledButton(
+                    onPressed: _saving ? null : _save,
+                    child: _saving
+                        ? const SizedBox(
+                            height: 18, width: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('Save transaction'),
+                  ),
                 ),
               ],
             ),

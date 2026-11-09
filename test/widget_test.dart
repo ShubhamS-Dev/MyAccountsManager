@@ -210,4 +210,28 @@ void main() {
 
     expect(find.text('How much did you receive?'), findsOneWidget);
   });
+  testWidgets('transaction form follows approved field order and date label', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+    await tester.tap(find.byTooltip('Add transaction'));
+    await pumpUntilFound(tester, find.text('How much did you spend?'));
+    await pumpUntilFound(tester, find.text('Category'));
+
+    final accountY = tester.getTopLeft(find.text('Account').first).dy;
+    final dateY = tester.getTopLeft(find.text('Transaction date').first).dy;
+    final noteY = tester.getTopLeft(find.text('Note').first).dy;
+    final amountY = tester.getTopLeft(find.text('Amount').first).dy;
+    final categoryY = tester.getTopLeft(find.text('Category').first).dy;
+
+    expect(accountY, lessThan(dateY));
+    expect(dateY, lessThan(noteY));
+    expect(noteY, lessThan(amountY));
+    expect(amountY, lessThan(categoryY));
+    expect(find.text('Today'), findsOneWidget);
+    expect(find.text('Choose an account'), findsOneWidget);
+    expect(find.text('What was this transaction for?'), findsOneWidget);
+    expect(find.text('Save transaction'), findsOneWidget);
+  });
+
 }
