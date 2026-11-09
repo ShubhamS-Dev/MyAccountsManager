@@ -109,8 +109,8 @@ jobs:
             test/app/design_system_test.dart
             test/widget_test.dart
           )
-          dart format "\u001b[${files[@]}"\u001b]"
-          for file in "\u001b[${files[@]}"\u001b]"; do
+          dart format "${files[@]}"
+          for file in "${files[@]}"; do
             echo "FORMAT_CAPTURE_BEGIN:$file"
             base64 -w 0 "$file"
             echo
