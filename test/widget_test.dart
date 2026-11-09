@@ -230,6 +230,12 @@ void main() {
     expect(amountY, lessThan(categoryY));
     expect(find.text('Today'), findsOneWidget);
     expect(find.text('What was this transaction for?'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Save transaction'),
+      250,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.pumpAndSettle();
     expect(find.text('Save transaction'), findsOneWidget);
   });
 
