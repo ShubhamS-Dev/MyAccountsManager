@@ -49,7 +49,7 @@ class _AppShellState extends State<AppShell> {
         children: [
           _HomeDashboardPage(onNavigate: (index) => setState(() => _selectedIndex = index)),
           const AccountsPage(),
-          HistoryPage(),
+          const HistoryPage(),
           const _PlaceholderPage(
             title: 'MyKhata',
             description: 'Track money lent and borrowed independently from your Accounts.',
