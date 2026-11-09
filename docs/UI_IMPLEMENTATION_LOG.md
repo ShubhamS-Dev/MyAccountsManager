@@ -172,3 +172,14 @@ User approval: implement Phases 1–3 first; stop for user review before beginni
 - Tests, Android debug APK build, and artifact upload were skipped because the analyze step failed.
 - Corrective action: wrap both conditional return statements in braces. No behavior change intended.
 - Next gate: rerun the full validation workflow and confirm analyze, tests, and APK build all pass.
+
+
+## Run #242 RCA — ambiguous widget finder in transaction test
+
+- Run: [#242](https://github.com/ShubhamS-Dev/MyAccountsManager/actions/runs/42579884890)
+- Flutter formatting and `flutter analyze` passed with no issues.
+- Test failure: `switches the transaction form from expense to income` at `test/widget_test.dart:142`.
+- Root cause: `find.text('Income')` matched both the Home dashboard monthly Income metric and the Income label in the Add Transaction `SegmentedButton`. The widget test attempted to tap a finder with two matches.
+- Corrective action: scope the finder to the `SegmentedButton` using `find.byWidgetPredicate`, assert exactly one matching Income segment, then tap it.
+- This changes only the test target selection; transaction form behavior is unchanged.
+- Android debug APK build was skipped in Run #242 because the test step failed. Re-run full validation after this fix.
