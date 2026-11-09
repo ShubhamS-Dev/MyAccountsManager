@@ -59,7 +59,7 @@ jobs:
               if line.startswith("distributionUrl="):
                   raw_url = line.split("=", 1)[1].replace(chr(92) + ":", ":")
                   filename = raw_url.rsplit("/", 1)[-1]
-                  if not re.fullmatch(r"gradle-[0-9]+(?:\\.[0-9]+)*-(?:all|bin)\\.zip", filename):
+                  if not re.fullmatch(r"gradle-[0-9]+(?:\.[0-9]+)*-(?:all|bin)\.zip", filename):
                       raise SystemExit(f"Unexpected Gradle distribution filename: {filename}")
                   lines[index] = "distributionUrl=https" + chr(92) + "://downloads.gradle.org/distributions/" + filename
                   updated = True
@@ -71,7 +71,7 @@ jobs:
           if not any(line.startswith("networkTimeout=") for line in lines):
               lines.append("networkTimeout=120000")
 
-          wrapper.write_text("\\n".join(lines) + "\\n")
+          wrapper.write_text("\n".join(lines) + "\n")
           print(f"Configured Gradle wrapper to use downloads.gradle.org: {filename}")
           PY
           grep -E '^(distributionUrl|networkTimeout)=' android/gradle/wrapper/gradle-wrapper.properties
