@@ -431,4 +431,16 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Save transaction'), findsOneWidget);
   });
+  testWidgets('Home income shortcut opens a preselected income form', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+
+    await tester.tap(find.text('Income').last);
+    await pumpUntilFound(tester, find.text('How much did you receive?'));
+
+    expect(find.text('How much did you receive?'), findsOneWidget);
+    expect(find.text('How much did you spend?'), findsNothing);
+  });
+
 }
