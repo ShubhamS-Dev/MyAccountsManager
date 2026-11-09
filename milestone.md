@@ -228,3 +228,13 @@ The source changes are committed, but the new workflow must pass before this sli
 - Root cause: the widget test already replaced the account/category/history streams with deterministic streams, but the new Home dashboard also watches `totalActiveBalancePaiseProvider`. That provider was not overridden, so the test unexpectedly opened a real Drift SQL stream. Its deferred close timer remained in the widget-test fake-async zone. The subsequent widget tests then timed out after the first test failed and left the binding in a failed state.
 - Corrective change: override both reactive balance providers in navigation/form widget tests with deterministic in-memory streams. These tests validate navigation and form rendering; the real Drift stream behavior remains covered by repository-level stream tests. Teardown continues to unmount the widget tree before closing the test database.
 - This is a test-isolation correction; production reactive balance providers and application behavior are unchanged. Run #201 must verify tests and the Android debug APK before this fix is considered validated.
+
+## UI refresh implementation update — 2026-11-09
+
+- User confirmed the proposed screen inventory for implementation; see the approved screen scope in `docs/UI_UX_REQUIREMENTS.md`. Approval records design scope, not completed application behavior.
+- Created `feature/20261109/ui-refresh` from the existing `feature/20261108/project-foundation` branch as explicitly requested.
+- Read README.md, agent.md, milestone.md, docs/UI_UX_REQUIREMENTS.md, docs/ARCHITECTURE.md, and docs/DATABASE_SCHEMA_V1.md before source changes.
+- Added `lib/app/app_theme.dart` with shared premium-minimal color and typography tokens, light/dark theme construction, compact input styling, card styling, and standard action-button styles constrained to 40 logical pixels high.
+- Updated `lib/app/my_accounts_manager_app.dart` to use the shared theme, retaining Light as the default and Dark as the supported alternate.
+- This is the first shared-theme implementation slice only. Existing screen layouts still need migration to shared components/tokens; unimplemented modules remain unimplemented. Flutter formatting, analysis, tests, visual review, and Android build have not yet been run on this branch.
+
