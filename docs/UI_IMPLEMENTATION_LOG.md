@@ -374,3 +374,7 @@ User approval: implement Phases 1–3 first; stop for user review before beginni
 - Drift generation, generated-file verification, and formatting passed. `flutter analyze --no-pub` failed on one warning promoted to a CI failure: `invalid_null_aware_operator` at `test/widget_test.dart:560:9` — `SnackBarAction.onPressed` is non-nullable, so `?.call()` is unnecessary.
 - Corrective change: invoke the rendered action's non-null callback with `.call()`. This is a test-only analyzer correction; production History behavior is unchanged. Tests were skipped because Analyze failed.
 - The History swipe/Undo test has still not completed successfully in CI. Do not mark this work complete until Format, Analyze, and the full Tests step all pass.
+
+
+## Run #365 validation trigger
+- Validation is being run against the branch after commit `312d5ff`, which contains both the History Undo analyzer correction and its Run #364 RCA documentation. This entry ensures the latest branch head receives a normal push-triggered Flutter validation; no force push or overlapping CI run is used.
