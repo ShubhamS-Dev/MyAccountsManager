@@ -215,3 +215,12 @@ User approval: implement Phases 1–3 first; stop for user review before beginni
 - Reviewed all files under `test/` for stale Accounts presentation assertions. The obsolete count label and old balance tooltip names were the only stale Accounts UI expectations found; Dashboard privacy assertions already used the current shared tooltip labels. No test was removed or skipped.
 - Updated `docs/SCREENS/ACCOUNTS.md` to document the count-label behavior.
 - Validation: local Dart/Flutter commands were not run in this environment. CI is the agreed validation gate for this correction; record the new run result after it completes.
+
+
+## Run #340 RCA — Accounts empty-state CTA visibility in widget test
+
+- Run: [Flutter validation #340](https://github.com/ShubhamS-Dev/MyAccountsManager/actions/runs/42785859897)
+- Drift generation, generated-file verification, Dart formatting, and `flutter analyze` passed. The test suite failed in `shows and filters the refreshed Accounts overview` at `test/widget_test.dart:307`.
+- Exact failure: `Expected: exactly one matching candidate; Actual: Found 0 widgets with text "Widget test Account".` The preceding tap on the `Clear search` EmptyState action produced a hit-test warning: its center was outside the visible area and the hit test landed on the bottom-navigation `History` item. Therefore the search was not cleared and the Account remained filtered out.
+- Corrective test change: explicitly call `tester.ensureVisible(clearSearchAction)` and settle before tapping the existing CTA. The test and UI behavior remain intact; no test was removed or skipped.
+- Local Dart/Flutter validation was not run; CI remains the agreed validation gate.

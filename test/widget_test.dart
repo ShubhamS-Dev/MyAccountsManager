@@ -302,7 +302,10 @@ void main() {
     expect(find.text('No matching accounts'), findsOneWidget);
     expect(find.text('Try another name or clear your search.'), findsOneWidget);
 
-    await tester.tap(find.text('Clear search'));
+    final clearSearchAction = find.text('Clear search');
+    await tester.ensureVisible(clearSearchAction);
+    await tester.pumpAndSettle();
+    await tester.tap(clearSearchAction);
     await tester.pumpAndSettle();
     expect(find.text('Widget test Account'), findsOneWidget);
   });

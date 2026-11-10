@@ -118,7 +118,7 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
               )
             else ...[
               Text(
-                '${items.length} active ${items.length == 1 ? 'account' : 'accounts'}',
+                '${items.length} active accounts',
                 style: AppTypography.supporting.copyWith(
                   color: scheme.onSurfaceVariant,
                 ),

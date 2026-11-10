@@ -5,7 +5,7 @@
 2. Summary amount uses `AmountText` and the shared Dashboard privacy preference.
 3. `SectionHeader` provides the Accounts title and Add action.
 4. Search uses the app-wide themed input decoration.
-5. Active Accounts remain in the existing pinned-first, two-column grid. The summary count uses singular/plural wording (`1 active account` / `2 active accounts`).
+5. Active Accounts remain in the existing pinned-first, two-column grid.
 6. Each Account card uses `GradientCard`, shared typography/radius/spacing, and a metadata-driven icon/color with Dashboard palette fallback.
 7. Add Account uses a shared `AppCard` surface.
 8. Empty and load-error states use `EmptyState` with a retry or add/clear CTA.
