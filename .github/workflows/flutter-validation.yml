@@ -83,7 +83,7 @@ jobs:
             build-runner-${{ runner.os }}-${{ hashFiles('pubspec.yaml', 'pubspec.lock') }}-
 
       - name: Generate Drift code
-        run: dart run build_runner build --delete-conflicting-outputs
+        run: dart run build_runner build
 
       - name: Verify generated Drift files are committed and up to date
         shell: bash
@@ -95,27 +95,6 @@ jobs:
             git status --short --untracked-files=all -- lib
             exit 1
           fi
-
-      - name: Apply formatter in CI workspace for exact source capture
-        shell: bash
-        run: |
-          set -euo pipefail
-          files=(
-            lib/app/app_router.dart
-            lib/app/app_theme.dart
-            lib/app/app_widgets.dart
-            lib/app/design_tokens.dart
-            lib/features/shell/presentation/app_shell.dart
-            test/app/design_system_test.dart
-            test/widget_test.dart
-          )
-          dart format "${files[@]}"
-          for file in "${files[@]}"; do
-            echo "FORMAT_CAPTURE_BEGIN:$file"
-            base64 -w 0 "$file"
-            echo
-            echo "FORMAT_CAPTURE_END:$file"
-          done
 
       - name: Check Dart formatting
         run: dart format --output=none --set-exit-if-changed .
