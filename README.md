@@ -57,6 +57,8 @@ Feature work is implemented on feature branches, reviewed into the matching deve
 
 ## Development workflow
 
+Commit se pehle chalao: `dart format . && flutter analyze && flutter test`
+
 Implementation must follow the approved requirements and architecture. Do not silently assume behavior where a requirement is unclear. Clarify material decisions before changing product behavior, data models, security, or deployment.
 
 ## License
