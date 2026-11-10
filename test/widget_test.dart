@@ -545,14 +545,12 @@ void main() {
       transactionId,
     );
 
-    // Invoke the rendered SnackBarAction callback directly. WidgetTester.tap
-    // calls ensureVisible/tapAt for overlay actions; in this test that gesture
-    // remained guarded and timed out after the Dismissible animation.
-    final undoAction = tester.widget<SnackBarAction>(
-      find.byType(SnackBarAction),
-    );
-    expect(undoAction.label, 'Undo');
-    undoAction.onPressed();
+    // Let the snackbar finish entering before interacting with its overlay
+    // action. Tap the real action so the widget test awaits the gesture rather
+    // than starting its async restore callback as an unawaited void function.
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('Undo'), findsOneWidget);
+    await tester.tap(find.text('Undo'));
     await tester.pump(const Duration(milliseconds: 300));
     await tester.pump(const Duration(milliseconds: 300));
 
