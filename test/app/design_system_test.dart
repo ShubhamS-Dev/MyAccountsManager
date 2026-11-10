@@ -30,24 +30,25 @@ void main() {
     expect(dark.scaffoldBackgroundColor, AppColors.darkBackground);
   });
 
-  testWidgets('reusable primary button preserves a 48px hit area and 40px face', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: buildAppTheme(brightness: Brightness.light),
-        home: const Scaffold(
-          body: Padding(
-            padding: EdgeInsets.all(16),
-            child: PrimaryButton(label: 'Continue', onPressed: _noop),
+  testWidgets(
+    'reusable primary button preserves a 48px hit area and 40px face',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(brightness: Brightness.light),
+          home: const Scaffold(
+            body: Padding(
+              padding: EdgeInsets.all(16),
+              child: PrimaryButton(label: 'Continue', onPressed: _noop),
+            ),
           ),
         ),
-      ),
-    );
+      );
 
-    expect(tester.getSize(find.byType(PrimaryButton)).height, 48);
-    expect(tester.getSize(find.byType(FilledButton)).height, 40);
-  });
+      expect(tester.getSize(find.byType(PrimaryButton)).height, 48);
+      expect(tester.getSize(find.byType(FilledButton)).height, 40);
+    },
+  );
 }
 
 void _noop() {}
