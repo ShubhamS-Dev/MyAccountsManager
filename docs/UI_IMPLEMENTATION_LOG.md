@@ -253,3 +253,12 @@ User approval: implement Phases 1–3 first; stop for user review before beginni
 - Root-cause refinement: after bringing the Accounts ListView into position, the test asserted the count immediately after `pumpAndSettle`. The test supplies an asynchronous `Stream.value` override for `activeAccountsProvider`; the assertion must wait for that stream-backed UI text rather than assume it has emitted by the time the animation settles.
 - Corrective test change: after scrolling the Accounts ListView, use the existing `pumpUntilFound` helper to wait for the singular count label before asserting it. No production behavior or test coverage is removed.
 - Local Dart/Flutter validation was not run; CI remains the agreed validation gate.
+
+
+## Run #344 RCA — production count-label change was missing from the committed tree
+
+- Run: [Flutter validation #344](https://github.com/ShubhamS-Dev/MyAccountsManager/actions/runs/42787239566)
+- Formatting and `flutter analyze` passed; the widget test failed at `test/widget_test.dart:298` with: `Expected: exactly one matching candidate; Actual: Found 0 widgets with text "1 active account".`
+- Exact source inspection after the run showed `accounts_page.dart` still contained `'${items.length} active accounts'`. The earlier corrective commit updated the test and docs but did not retain the production source change in its Git tree. Therefore the test was asserting the new label while the UI still rendered the old plural-only label. This was a commit-tree construction issue, not a Flutter/runtime issue.
+- Corrective action: now update the production Accounts count label and Accounts screen documentation in the current branch tree, preserving the already committed widget-test fixes and CI RCA history.
+- Local Dart/Flutter validation was not run; CI remains the agreed validation gate.
