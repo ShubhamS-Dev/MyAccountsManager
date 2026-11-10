@@ -522,15 +522,16 @@ void main() {
 
     final row = find.byKey(ValueKey('dismiss-$transactionId'));
     expect(row, findsOneWidget);
-    await tester.drag(row, const Offset(-500, 0));
+    // Use a high-velocity left fling, matching endToStart and exceeding the
+    // Dismissible threshold without depending on a long pointer drag.
+    await tester.fling(row, const Offset(-1000, 0), 2000);
 
-    // Pump the Dismissible and Drift stream updates deterministically. Avoid
-    // pumpAndSettle here: History's loading shimmer intentionally repeats
-    // while its stream is loading, so settling the whole tree is not reliable.
-    await tester.pump(const Duration(milliseconds: 300));
-    await tester.pump(const Duration(milliseconds: 300));
-
-    expect(find.text('Transaction moved to Trash'), findsOneWidget);
+    // confirmDismiss awaits the real Drift soft-delete future before allowing
+    // the row to leave. Pump the dismissal and snackbar animations explicitly;
+    // avoid pumpAndSettle because History's shimmer repeats while loading.
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.pump(const Duration(milliseconds: 250));
+    await pumpUntilFound(tester, find.text('Transaction moved to Trash'));
     expect(find.text('Swipe test transaction'), findsNothing);
     expect(
       row,
