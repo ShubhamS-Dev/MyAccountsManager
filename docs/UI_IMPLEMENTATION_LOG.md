@@ -316,3 +316,12 @@ User approval: implement Phases 1–3 first; stop for user review before beginni
 - Kept summary progress proportional and bounded: zero total is empty; Expense is full only when expenses equal the combined income-plus-expense total.
 - Added a live-provider widget test for swipe-to-Trash and Undo. Existing bottom-sheet, removable-chip, and both empty-state tests remain in place.
 - Light-theme implementation/verification remains intentionally out of scope per user instruction; no Light-theme validation claim is made.
+
+
+## CI RCA — run #356 (2026-11-10)
+- Format and Analyze passed; the widget-test job failed in the History swipe/Undo test at `test/widget_test.dart:537` while calling `tester.tap(find.text('Undo'))`.
+- Exact failure: `TimeoutException after 0:10:00.000000: Test timed out after 10 minutes. Guarded function conflict. The guarded method "tapAt" from class "WidgetController" was called from .../test/widget_test.dart on line 537. Then, the "pumpWidget" method from class "WidgetTester" was called from .../test/widget_test.dart on line 55. The first method (WidgetController.tapAt) had not yet finished executing at the time the second method (WidgetTester.pumpWidget) was called.`
+- The test used `pumpAndSettle` around a screen that contains an intentionally repeating shimmer while its provider is loading. The swipe test also relied on an asynchronous live Drift stream to remove the dismissed row. The row removal and Trash persistence are now asserted explicitly; animation pumping is bounded rather than relying on global settling.
+- Undo verification now invokes the rendered `SnackBarAction` callback after asserting its visible label, avoiding the overlay `tapAt/ensureVisible` guarded timeout while still exercising the production restore callback and verifying the row returns to History.
+- The three other widget-test failures from run #356 are not changed in this fix; rerun the suite first and investigate them only if they still fail.
+- Light-theme verification remains out of scope because Light theme is not implemented.

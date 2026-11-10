@@ -52,3 +52,7 @@ Account and Category filters open a bottom sheet. The current selection is highl
 - History screen colors use AppColors semantic tokens or Theme.of(context).colorScheme; no screen-local color literals are introduced.
 - Summary progress is clamped to the 0–1 range; a zero total produces an empty bar. Expense progress remains proportional to expense / (income + expense).
 - Widget coverage verifies category metadata projection and the History swipe-to-Trash + Undo interaction. Existing filter sheet, removable chips, and both empty-state paths remain covered.
+
+
+## CI regression coverage
+- Run #356 RCA and the deterministic swipe/Undo widget-test strategy are recorded in `docs/UI_IMPLEMENTATION_LOG.md`. The test verifies Dismissible removal, Trash persistence, the rendered Undo action, and restoration to History.

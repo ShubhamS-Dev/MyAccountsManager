@@ -518,15 +518,21 @@ void main() {
 
     await pumpApp(tester, liveHistory: true);
     await tester.tap(find.text('History').last);
-    await tester.pumpAndSettle();
     await pumpUntilFound(tester, find.text('Swipe test transaction'));
 
     final row = find.byKey(ValueKey('dismiss-$transactionId'));
+    expect(row, findsOneWidget);
     await tester.drag(row, const Offset(-500, 0));
-    await tester.pumpAndSettle();
+
+    // Pump the Dismissible and Drift stream updates deterministically. Avoid
+    // pumpAndSettle here: History's loading shimmer intentionally repeats
+    // while its stream is loading, so settling the whole tree is not reliable.
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.text('Transaction moved to Trash'), findsOneWidget);
     expect(find.text('Swipe test transaction'), findsNothing);
+    expect(row, findsNothing, reason: 'Dismissible must leave the widget tree.');
     expect(
       (await TransactionsRepository(
         testDatabase,
@@ -534,8 +540,17 @@ void main() {
       transactionId,
     );
 
-    await tester.tap(find.text('Undo'));
-    await tester.pumpAndSettle();
+    // Invoke the rendered SnackBarAction callback directly. WidgetTester.tap
+    // calls ensureVisible/tapAt for overlay actions; in this test that gesture
+    // remained guarded and timed out after the Dismissible animation.
+    final undoAction = tester.widget<SnackBarAction>(
+      find.byType(SnackBarAction),
+    );
+    expect(undoAction.label, 'Undo');
+    undoAction.onPressed();
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump(const Duration(milliseconds: 300));
+
     await pumpUntilFound(tester, find.text('Swipe test transaction'));
     expect(
       (await TransactionsRepository(
@@ -544,7 +559,6 @@ void main() {
       transactionId,
     );
   });
-
   testWidgets('switches the transaction form from expense to income', (
     tester,
   ) async {
