@@ -262,3 +262,13 @@ User approval: implement Phases 1–3 first; stop for user review before beginni
 - Exact source inspection after the run showed `accounts_page.dart` still contained `'${items.length} active accounts'`. The earlier corrective commit updated the test and docs but did not retain the production source change in its Git tree. Therefore the test was asserting the new label while the UI still rendered the old plural-only label. This was a commit-tree construction issue, not a Flutter/runtime issue.
 - Corrective action: now update the production Accounts count label and Accounts screen documentation in the current branch tree, preserving the already committed widget-test fixes and CI RCA history.
 - Local Dart/Flutter validation was not run; CI remains the agreed validation gate.
+
+
+## Run #345 RCA — header action assertion occurred after scrolling header off-screen
+
+- Run: [Flutter validation #345](https://github.com/ShubhamS-Dev/MyAccountsManager/actions/runs/42787614030)
+- The production singular/plural count change is now present in the committed Accounts source. Formatting and `flutter analyze` passed. Tests advanced past the count and Account assertions, then failed at `test/widget_test.dart:301`.
+- Exact failure: `Expected: exactly one matching candidate; Actual: Found 0 widgets with widget matching predicate` for `find.byTooltip('Archived accounts')`.
+- Root cause: the test scrolled the Accounts list before checking an icon tooltip located in the hero header, which had moved off-screen. This is a test ordering issue, not missing production UI.
+- Corrective test change: assert the Archived Accounts action and exercise the shared hide/show amount control while the hero header is visible, then scroll down to assert the active count and Account card.
+- Local Dart/Flutter validation was not run; CI remains the agreed validation gate.

@@ -289,6 +289,11 @@ void main() {
 
     expect(find.text('TOTAL ACCOUNT BALANCE'), findsOneWidget);
     expect(find.text('Your accounts'), findsOneWidget);
+    expect(find.byTooltip('Archived accounts'), findsOneWidget);
+    await tester.tap(find.byTooltip('Hide amounts'));
+    await tester.pump();
+    expect(find.byTooltip('Show amounts'), findsOneWidget);
+
     final accountsList = find.ancestor(
       of: find.text('Your accounts'),
       matching: find.byType(ListView),
@@ -298,13 +303,6 @@ void main() {
     await pumpUntilFound(tester, find.text('1 active account'));
     expect(find.text('1 active account'), findsOneWidget);
     expect(find.text('Widget test Account'), findsOneWidget);
-    expect(find.byTooltip('Archived accounts'), findsOneWidget);
-
-    final hideAmountsAction = find.byTooltip('Hide amounts');
-    await tester.ensureVisible(hideAmountsAction);
-    await tester.tap(hideAmountsAction);
-    await tester.pump();
-    expect(find.byTooltip('Show amounts'), findsOneWidget);
 
     final accountSearchField = find.byType(TextField);
     await tester.ensureVisible(accountSearchField);
