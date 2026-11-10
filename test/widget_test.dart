@@ -264,7 +264,7 @@ void main() {
 
     // Home retains its scroll position when switching destinations. Return
     // to the top before interacting with the header privacy control.
-    await tester.drag(find.byType(ListView).first, const Offset(0, 1000));
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, 1000));
     await tester.pumpAndSettle();
 
     // The balance privacy control must remain interactive.
