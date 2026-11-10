@@ -99,8 +99,9 @@ class AccountDetailsPage extends ConsumerWidget {
                       children: [
                         const Text('Could not load history.'),
                         TextButton(
-                          onPressed: () =>
-                              ref.invalidate(transactionHistoryProvider(filter)),
+                          onPressed: () => ref.invalidate(
+                            transactionHistoryProvider(filter),
+                          ),
                           child: const Text('Retry'),
                         ),
                       ],
@@ -115,7 +116,11 @@ class AccountDetailsPage extends ConsumerWidget {
                     clipBehavior: Clip.antiAlias,
                     child: Column(
                       children: [
-                        for (var index = 0; index < items.take(30).length; index++) ...[
+                        for (
+                          var index = 0;
+                          index < items.take(30).length;
+                          index++
+                        ) ...[
                           _TransactionTile(
                             item: items[index],
                             hidden: hideAmounts,
@@ -124,7 +129,9 @@ class AccountDetailsPage extends ConsumerWidget {
                             Divider(
                               height: 1,
                               indent: 56,
-                              color: Theme.of(context).colorScheme.outlineVariant,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.outlineVariant,
                             ),
                         ],
                       ],
