@@ -32,15 +32,23 @@ ThemeData buildAppTheme({required Brightness brightness}) {
     primary: AppColors.primary,
     onPrimary: Colors.white,
     primaryContainer: dark ? const Color(0xFF30256D) : const Color(0xFFE9E7FF),
-    onPrimaryContainer: dark ? const Color(0xFFE9E7FF) : const Color(0xFF27205D),
+    onPrimaryContainer: dark
+        ? const Color(0xFFE9E7FF)
+        : const Color(0xFF27205D),
     secondary: AppColors.violet,
     onSecondary: Colors.white,
-    secondaryContainer: dark ? const Color(0xFF39245F) : const Color(0xFFF0E8FF),
-    onSecondaryContainer: dark ? const Color(0xFFEEDFFF) : const Color(0xFF342052),
+    secondaryContainer: dark
+        ? const Color(0xFF39245F)
+        : const Color(0xFFF0E8FF),
+    onSecondaryContainer: dark
+        ? const Color(0xFFEEDFFF)
+        : const Color(0xFF342052),
     tertiary: AppColors.positive,
     onTertiary: Colors.white,
     tertiaryContainer: dark ? const Color(0xFF123D32) : const Color(0xFFD8F7EA),
-    onTertiaryContainer: dark ? const Color(0xFFB9F3DC) : const Color(0xFF064E3B),
+    onTertiaryContainer: dark
+        ? const Color(0xFFB9F3DC)
+        : const Color(0xFF064E3B),
     error: AppColors.negative,
     onError: Colors.white,
     errorContainer: dark ? const Color(0xFF5B1E2B) : const Color(0xFFFFE4E8),
@@ -84,15 +92,17 @@ ThemeData buildAppTheme({required Brightness brightness}) {
     useMaterial3: true,
     brightness: brightness,
     colorScheme: scheme,
-    scaffoldBackgroundColor:
-        dark ? AppColors.darkBackground : AppColors.lightBackground,
+    scaffoldBackgroundColor: dark
+        ? AppColors.darkBackground
+        : AppColors.lightBackground,
     canvasColor: dark ? AppColors.darkBackground : AppColors.lightBackground,
     appBarTheme: AppBarTheme(
       centerTitle: false,
       elevation: 0,
       scrolledUnderElevation: 0,
-      backgroundColor:
-          dark ? AppColors.darkBackground : AppColors.lightBackground,
+      backgroundColor: dark
+          ? AppColors.darkBackground
+          : AppColors.lightBackground,
       surfaceTintColor: Colors.transparent,
       titleTextStyle: AppTypography.screenTitle.copyWith(
         color: scheme.onSurface,
