@@ -203,7 +203,9 @@ void main() {
     await pumpApp(tester);
     // Dashboard summaries are stream-backed; wait for the monthly metrics
     // instead of asserting before their first values have rendered.
-    await pumpUntilFound(tester, find.text('Income'));
+    // Wait for a metric unique to the async monthly summary. 'Income' also
+    // appears in the immediately rendered Quick actions row.
+    await pumpUntilFound(tester, find.text('Net cash flow'));
 
     // Verify the refreshed dashboard hierarchy and approved content.
     expect(find.text('OVERVIEW'), findsOneWidget);
