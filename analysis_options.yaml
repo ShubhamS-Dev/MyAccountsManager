@@ -1,0 +1,14 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  errors:
+    avoid_print: warning
+    missing_return: error
+
+linter:
+  rules:
+    avoid_print: true
+    directives_ordering: true
+    prefer_const_constructors: true
+    prefer_const_declarations: true
+    sort_child_properties_last: true

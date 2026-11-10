@@ -1,0 +1,131 @@
+name: Flutter validation
+
+on:
+  push:
+    branches:
+      - "feature/**"
+      - "development/**"
+      - master
+    paths-ignore:
+      - "**/*.g.dart"
+      - "**.md"
+      - "docs/**"
+  pull_request:
+    branches:
+      - "development/**"
+      - master
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+  workflow_dispatch:
+
+concurrency:
+  group: flutter-validation-${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Code generation, format, analyze, and tests
+    timeout-minutes: 20
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.9"
+          channel: stable
+          cache: true
+
+      - name: Verify committed Android scaffold
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          required_files=(
+            android/settings.gradle.kts
+            android/build.gradle.kts
+            android/app/build.gradle.kts
+            android/gradle/wrapper/gradle-wrapper.properties
+            android/app/src/main/AndroidManifest.xml
+          )
+
+          for file in "${required_files[@]}"; do
+            if [[ ! -f "$file" ]]; then
+              echo "::error::Required Android project file is missing: $file"
+              exit 1
+            fi
+          done
+
+          if ! grep -Fq 'applicationId = "com.shubhams.myaccountsmanager"' android/app/build.gradle.kts; then
+            echo "::error::Android applicationId must be com.shubhams.myaccountsmanager."
+            exit 1
+          fi
+
+      - name: Install Linux SQLite development library
+        run: |
+          if ! dpkg -s libsqlite3-dev >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y libsqlite3-dev
+          fi
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Cache build_runner output
+        uses: actions/cache@v4
+        with:
+          path: .dart_tool/build
+          key: build-runner-${{ runner.os }}-${{ hashFiles('pubspec.yaml', 'pubspec.lock') }}-${{ github.sha }}
+          restore-keys: |
+            build-runner-${{ runner.os }}-${{ hashFiles('pubspec.yaml', 'pubspec.lock') }}-
+
+      - name: Generate Drift code
+        run: dart run build_runner build
+
+      - name: Verify generated Drift files are committed and up to date
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ -n "$(git status --porcelain --untracked-files=all -- lib)" ]]; then
+            echo "::error::Generated or modified files exist under lib/. Run Drift code generation locally and commit the resulting files."
+            git status --short --untracked-files=all -- lib
+            exit 1
+          fi
+
+      - name: Format Dart source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          dart format .
+          if git diff --quiet -- '*.dart'; then
+            echo "Formatting OK"
+            exit 0
+          fi
+
+          if [ "${{ github.event_name }}" = "push" ] && [[ "${{ github.ref_name }}" == feature/* ]]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -- '*.dart'
+            git commit -m "Auto-format Dart source"
+            git push
+            gh workflow run flutter-validation.yml --ref "${{ github.ref_name }}"
+            echo "::notice::Auto-formatted and pushed. A fresh validation run was started on the formatted commit."
+            exit 1
+          fi
+
+          git diff -- '*.dart'
+          echo "::error::Dart formatting differs. Apply the diff shown above."
+          exit 1
+
+      - name: Analyze
+        run: flutter analyze --no-pub
+
+      - name: Run tests
+        run: flutter test --no-pub --reporter expanded --timeout 2m
