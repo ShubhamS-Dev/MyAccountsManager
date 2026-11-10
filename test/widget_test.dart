@@ -307,6 +307,40 @@ void main() {
     expect(find.text('Widget test Account'), findsOneWidget);
   });
 
+  testWidgets('shares the dashboard privacy toggle with Account Details', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+
+    await tester.pumpAndSettle();
+    final dashboardHideToggle = find.byTooltip('Hide amounts');
+    expect(dashboardHideToggle, findsOneWidget);
+    await tester.tap(dashboardHideToggle);
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Show amounts'), findsOneWidget);
+
+    await tester.tap(find.text('Accounts').last);
+    await tester.pumpAndSettle();
+    await pumpUntilFound(tester, find.text('Widget test Account'));
+
+    await tester.tap(find.text('Widget test Account'));
+    await pumpUntilFound(tester, find.text('Balance breakdown'));
+    await tester.pumpAndSettle();
+
+    final detailsShowToggle = find.byTooltip('Show amounts');
+    expect(detailsShowToggle, findsOneWidget);
+    expect(find.text('₹ ••••••'), findsOneWidget);
+    expect(find.text('₹ •••'), findsNWidgets(4));
+
+    await tester.tap(detailsShowToggle);
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip('Hide amounts'), findsOneWidget);
+    expect(find.text('₹0'), findsNWidgets(5));
+    expect(find.text('₹ ••••••'), findsNothing);
+    expect(find.text('₹ •••'), findsNothing);
+  });
+
   testWidgets('opens Account Details from the Accounts grid', (tester) async {
     await pumpApp(tester);
 
