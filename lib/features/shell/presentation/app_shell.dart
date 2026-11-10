@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/app_theme.dart';
 import '../../../app/app_widgets.dart';
+import '../../../app/privacy_state.dart';
 import '../../../core/formatting/money_formatter.dart';
 import '../../accounts/accounts_providers.dart';
 import '../../accounts/presentation/account_balance_label.dart';
@@ -111,8 +112,6 @@ class _HomeDashboardPage extends ConsumerStatefulWidget {
 }
 
 class _HomeDashboardPageState extends ConsumerState<_HomeDashboardPage> {
-  bool _hideAmounts = false;
-
   String get _greeting {
     final hour = DateTime.now().hour;
     if (hour < 12) return 'Good morning';
@@ -122,6 +121,7 @@ class _HomeDashboardPageState extends ConsumerState<_HomeDashboardPage> {
 
   @override
   Widget build(BuildContext context) {
+    final hideAmounts = ref.watch(amountsHiddenProvider);
     final now = DateTime.now();
     final monthStart = DateTime.utc(
       now.year,
@@ -187,10 +187,10 @@ class _HomeDashboardPageState extends ConsumerState<_HomeDashboardPage> {
               ),
             ),
             IconButton(
-              tooltip: _hideAmounts ? 'Show amounts' : 'Hide amounts',
-              onPressed: () => setState(() => _hideAmounts = !_hideAmounts),
+              tooltip: hideAmounts ? 'Show amounts' : 'Hide amounts',
+              onPressed: () => ref.read(amountsHiddenProvider.notifier).state = !hideAmounts,
               icon: Icon(
-                _hideAmounts
+                hideAmounts
                     ? Icons.visibility_off_rounded
                     : Icons.visibility_rounded,
               ),
@@ -260,10 +260,10 @@ class _HomeDashboardPageState extends ConsumerState<_HomeDashboardPage> {
                     data: (value) => AnimatedSwitcher(
                       duration: const Duration(milliseconds: 250),
                       child: Text(
-                        _hideAmounts
+                        hideAmounts
                             ? '₹ ••••••'
                             : MoneyFormatter.formatPaise(value),
-                        key: ValueKey('$_hideAmounts-$value'),
+                        key: ValueKey('$hideAmounts-$value'),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: AppTypography.balance.copyWith(
@@ -327,7 +327,7 @@ class _HomeDashboardPageState extends ConsumerState<_HomeDashboardPage> {
                     amount: income,
                     color: AppColors.positive,
                     icon: Icons.south_west_rounded,
-                    hidden: _hideAmounts,
+                    hidden: hideAmounts,
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
@@ -337,7 +337,7 @@ class _HomeDashboardPageState extends ConsumerState<_HomeDashboardPage> {
                     amount: expense,
                     color: AppColors.negative,
                     icon: Icons.north_east_rounded,
-                    hidden: _hideAmounts,
+                    hidden: hideAmounts,
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
@@ -347,7 +347,7 @@ class _HomeDashboardPageState extends ConsumerState<_HomeDashboardPage> {
                     amount: net,
                     color: net < 0 ? AppColors.negative : AppColors.positive,
                     icon: Icons.swap_vert_rounded,
-                    hidden: _hideAmounts,
+                    hidden: hideAmounts,
                   ),
                 ),
               ],
@@ -459,7 +459,7 @@ class _HomeDashboardPageState extends ConsumerState<_HomeDashboardPage> {
                               ),
                             ),
                             const SizedBox(height: AppSpacing.xs),
-                            if (_hideAmounts)
+                            if (hideAmounts)
                               Text(
                                 '₹ ••••••',
                                 style: AppTypography.transactionAmount.copyWith(
@@ -543,7 +543,7 @@ class _HomeDashboardPageState extends ConsumerState<_HomeDashboardPage> {
                       ),
                       child: Center(
                         child: Text(
-                          _hideAmounts
+                          hideAmounts
                               ? '•••'
                               : MoneyFormatter.formatPaise(total),
                           textAlign: TextAlign.center,
@@ -581,7 +581,7 @@ class _HomeDashboardPageState extends ConsumerState<_HomeDashboardPage> {
                                   ),
                                 ),
                                 Text(
-                                  _hideAmounts
+                                  hideAmounts
                                       ? '•••'
                                       : MoneyFormatter.formatPaise(
                                           entries[i].value,
@@ -632,7 +632,7 @@ class _HomeDashboardPageState extends ConsumerState<_HomeDashboardPage> {
               child: Column(
                 children: [
                   for (var i = 0; i < recent.length; i++) ...[
-                    _RecentTransaction(item: recent[i], hidden: _hideAmounts),
+                    _RecentTransaction(item: recent[i], hidden: hideAmounts),
                     if (i != recent.length - 1)
                       Divider(height: 1, color: scheme.outlineVariant),
                   ],
