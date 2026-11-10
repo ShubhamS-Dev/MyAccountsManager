@@ -56,3 +56,12 @@ Account and Category filters open a bottom sheet. The current selection is highl
 
 ## CI regression coverage
 - Run #356 RCA and the deterministic swipe/Undo widget-test strategy are recorded in `docs/UI_IMPLEMENTATION_LOG.md`. The test verifies Dismissible removal, Trash persistence, the rendered Undo action, and restoration to History.
+
+
+## Run #358 RCA — swipe confirmation and asynchronous deletion
+- Run: [Flutter validation #358](https://github.com/ShubhamS-Dev/MyAccountsManager/actions/runs/42831800087)
+- Drift generation, generated-file verification, Dart formatting, and `flutter analyze` passed. The widget suite failed in `swiping a History row moves it to Trash and Undo restores it` at `test/widget_test.dart:533`: the expected `Transaction moved to Trash` snackbar was not found after the test's leftward 500px drag and two 300ms pumps.
+- Production-flow inspection: the History row uses `DismissDirection.endToStart`. Previously, `onDismissed` invoked the page-level `_moveToTrash` callback without awaiting its Future. The snackbar used the `HistoryPage` State's context (not the row's BuildContext), so row unmount alone was not the direct context bug. However, deletion and feedback were detached from the Dismissible lifecycle, making the interaction harder to sequence and verify.
+- Corrective production change: move the asynchronous soft-delete into `confirmDismiss`. The callback now returns `Future<bool>`, awaits `softDeleteTransaction`, and only permits dismissal after success. It captures the page-level `ScaffoldMessengerState` before the await and uses that captured messenger for success/error feedback. A failed delete returns false, keeping the row visible.
+- Corrective test change: use a high-velocity left fling in the configured `endToStart` direction, then explicitly pump the dismissal and snackbar animations and wait for the snackbar. The test still verifies row removal, Trash persistence, Undo, and restoration to History. No test was skipped, deleted, or weakened.
+- Local Flutter/Dart commands were not run; CI remains the validation gate.
