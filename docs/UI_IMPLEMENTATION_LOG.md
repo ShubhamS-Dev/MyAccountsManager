@@ -206,3 +206,12 @@ User approval: implement Phases 1–3 first; stop for user review before beginni
 - No Delete action, Account type field, schema/model change, provider/repository change, or route change.
 - Search, pinned-first ordering, balance sources, and archive confirmation remain as before.
 - Validation for this slice: pending CI run; do not claim analyzer/tests passed until the run is inspected.
+
+
+## Accounts count-label and widget-test correction — Run #339 follow-up
+
+- Updated the Accounts summary count to use singular/plural wording: `1 active account` and `2 active accounts`.
+- Updated the Accounts overview widget test to assert the singular label and use the shared privacy tooltips (`Hide amounts` / `Show amounts`).
+- Reviewed all files under `test/` for stale Accounts presentation assertions. The obsolete count label and old balance tooltip names were the only stale Accounts UI expectations found; Dashboard privacy assertions already used the current shared tooltip labels. No test was removed or skipped.
+- Updated `docs/SCREENS/ACCOUNTS.md` to document the count-label behavior.
+- Validation: local Dart/Flutter commands were not run in this environment. CI is the agreed validation gate for this correction; record the new run result after it completes.

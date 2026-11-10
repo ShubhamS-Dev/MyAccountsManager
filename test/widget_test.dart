@@ -289,13 +289,13 @@ void main() {
 
     expect(find.text('TOTAL ACCOUNT BALANCE'), findsOneWidget);
     expect(find.text('Your accounts'), findsOneWidget);
-    expect(find.text('1 active'), findsOneWidget);
+    expect(find.text('1 active account'), findsOneWidget);
     expect(find.text('Widget test Account'), findsOneWidget);
     expect(find.byTooltip('Archived accounts'), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Hide balance'));
+    await tester.tap(find.byTooltip('Hide amounts'));
     await tester.pump();
-    expect(find.byTooltip('Show balance'), findsOneWidget);
+    expect(find.byTooltip('Show amounts'), findsOneWidget);
 
     await tester.enterText(find.byType(TextField), 'no matching account');
     await tester.pumpAndSettle();
