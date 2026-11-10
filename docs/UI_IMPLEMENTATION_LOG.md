@@ -310,7 +310,7 @@ User approval: implement Phases 1–3 first; stop for user review before beginni
 
 ## History visual refinement — category metadata, contrast, and FAB
 - Confirmed the History projection is wired: watchHistory joins Categories and copies iconKey/colorValue into TransactionHistoryItem. Added a repository assertion proving both values reach the projection.
-- Expanded History category icon-key aliases; known categories render their category glyph inside the existing coloured circle. Directional arrows remain the fallback for missing/unknown keys. Missing color metadata falls back to the semantic income/expense color.
+- Expanded History category icon-key aliases and added a display fallback for legacy built-in categories whose seeded iconKey is null. Known category names render their glyph inside the existing coloured circle; directional arrows are reserved for unknown categories/keys. Missing color metadata falls back to the semantic income/expense color.
 - Increased selected segmented-control contrast using theme primary/onPrimary colors. No literal color values are added to History screen code.
 - Updated the shared shell FAB to use the hero gradient and onPrimary foreground, so Dashboard, Accounts, and History remain visually consistent.
 - Kept summary progress proportional and bounded: zero total is empty; Expense is full only when expenses equal the combined income-plus-expense total.

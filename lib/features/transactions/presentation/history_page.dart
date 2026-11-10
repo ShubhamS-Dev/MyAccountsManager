@@ -792,7 +792,10 @@ class _HistoryTile extends StatelessWidget {
     final categoryColor = item.categoryColorValue == null
         ? fallbackColor
         : Color(item.categoryColorValue!);
-    final categoryIcon = _categoryIcon(item.categoryIconKey, income);
+    final categoryIcon = _categoryIcon(
+      item.categoryIconKey ?? item.categoryName,
+      income,
+    );
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: Dismissible(
@@ -894,16 +897,19 @@ class _HistoryTile extends StatelessWidget {
       case 'transport':
       case 'transportation':
       case 'vehicle':
+      case 'vehicle maintenance':
         return Icons.directions_car_rounded;
       case 'home':
       case 'housing':
       case 'housing_utilities':
+      case 'housing & utilities':
         return Icons.home_rounded;
       case 'household':
         return Icons.chair_alt_rounded;
       case 'health':
       case 'medical':
       case 'health_medical':
+      case 'health & medical':
         return Icons.medical_services_rounded;
       case 'salary':
       case 'business':
@@ -911,18 +917,23 @@ class _HistoryTile extends StatelessWidget {
         return Icons.work_rounded;
       case 'gift':
       case 'family_gifts':
+      case 'family & gifts':
       case 'gifts_rewards':
+      case 'gifts & rewards':
         return Icons.card_giftcard_rounded;
       case 'education':
         return Icons.school_rounded;
       case 'travel':
       case 'travel_stay':
+      case 'travel & stay':
         return Icons.flight_rounded;
       case 'entertainment':
         return Icons.movie_rounded;
       case 'personal_care':
+      case 'personal care':
         return Icons.spa_rounded;
       case 'financial_payments':
+      case 'financial payments':
       case 'payments':
         return Icons.account_balance_wallet_rounded;
       case 'donations':

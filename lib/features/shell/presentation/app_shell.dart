@@ -72,7 +72,7 @@ class _AppShellState extends State<AppShell> {
       ),
       floatingActionButton: _selectedIndex < 3
           ? Container(
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: LinearGradient(colors: AppColors.heroGradient),
                 boxShadow: AppShadows.card,

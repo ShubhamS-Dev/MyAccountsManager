@@ -46,7 +46,7 @@ Account and Category filters open a bottom sheet. The current selection is highl
 
 
 ## Theme-aware visual refinements
-- Category metadata is read from the joined Category row and displayed as a coloured circular icon. Known built-in icon keys/category aliases map to category glyphs; the income/expense arrow is reserved for an unknown or missing icon key. A missing category colour uses the semantic income/expense fallback colour.
+- Category metadata is read from the joined Category row and displayed as a coloured circular icon. Known icon keys are preferred; when legacy built-in records have no iconKey, their known category names map to the matching glyph. The income/expense arrow is reserved for an unknown category/key. A missing category colour uses the semantic income/expense fallback colour.
 - Selected All / Expense / Income segment uses the theme primary fill and onPrimary foreground for high contrast; unselected items use theme surface and onSurfaceVariant.
 - The shared Dashboard / Accounts / History FAB uses the shared hero gradient and theme onPrimary white foreground.
 - History screen colors use AppColors semantic tokens or Theme.of(context).colorScheme; no screen-local color literals are introduced.
