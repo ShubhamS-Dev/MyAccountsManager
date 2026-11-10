@@ -116,14 +116,8 @@ class SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Row(
     children: [
-      Expanded(
-        child: Text(title, style: AppTypography.sectionTitle),
-      ),
-      if (action != null)
-        TextButton(
-          onPressed: onAction,
-          child: Text(action!),
-        ),
+      Expanded(child: Text(title, style: AppTypography.sectionTitle)),
+      if (action != null) TextButton(onPressed: onAction, child: Text(action!)),
     ],
   );
 }
@@ -204,7 +198,9 @@ class CategoryChip extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(AppRadius.md),
           child: Container(
-            constraints: const BoxConstraints(minHeight: AppSpacing.touchTarget),
+            constraints: const BoxConstraints(
+              minHeight: AppSpacing.touchTarget,
+            ),
             padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.md,
               vertical: AppSpacing.sm,
@@ -218,7 +214,11 @@ class CategoryChip extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(icon, size: 17, color: selected ? accent : scheme.onSurfaceVariant),
+                Icon(
+                  icon,
+                  size: 17,
+                  color: selected ? accent : scheme.onSurfaceVariant,
+                ),
                 const SizedBox(width: AppSpacing.sm),
                 Text(label, style: AppTypography.fieldValue),
               ],
