@@ -495,74 +495,72 @@ void main() {
     expect(find.text('No transactions yet'), findsOneWidget);
   });
 
-  testWidgets(
-    'swiping a History row moves it to Trash and Undo restores it',
-    (tester) async {
-      final category =
-          await (testDatabase.select(testDatabase.categories)
-                ..where((row) => row.type.equals('expense'))
-                ..where((row) => row.name.equals('Food & Dining')))
-              .getSingle();
-      final transactionId = await TransactionsRepository(testDatabase)
-          .createTransaction(
-            accountId: testAccount.id,
-            categoryId: category.id,
-            type: 'expense',
-            amountPaise: 12500,
-            transactionDate: DateTime.now().millisecondsSinceEpoch,
-            note: 'Swipe test transaction',
-          );
-
-      await pumpApp(tester, liveHistory: true);
-      await tester.tap(find.text('History').last);
-      await pumpUntilFound(tester, find.text('Swipe test transaction'));
-
-      final row = find.byKey(ValueKey('dismiss-$transactionId'));
-      expect(row, findsOneWidget);
-      // Use a high-velocity left fling, matching endToStart and exceeding the
-      // Dismissible threshold without depending on a long pointer drag.
-      await tester.fling(row, const Offset(-1000, 0), 2000);
-
-      // confirmDismiss awaits the real Drift soft-delete future before allowing
-      // the row to leave. Pump the dismissal and snackbar animations explicitly;
-      // avoid pumpAndSettle because History's shimmer repeats while loading.
-      await tester.pump(const Duration(milliseconds: 250));
-      await tester.pump(const Duration(milliseconds: 250));
-      await pumpUntilFound(tester, find.text('Transaction moved to Trash'));
-      expect(find.text('Swipe test transaction'), findsNothing);
-      expect(
-        row,
-        findsNothing,
-        reason: 'Dismissible must leave the widget tree.',
-      );
-
-      // Native Drift work must run outside the widget test's FakeAsync zone.
-      await tester.runAsync(() async {
-        final trashItems = await TransactionsRepository(
-          testDatabase,
-        ).watchTrash().first;
-        expect(trashItems, hasLength(1));
-        expect(trashItems.single.transaction.id, transactionId);
-        expect(trashItems.single.transaction.deletedAt, isNotNull);
-      });
-
-      // Exercise Undo through the rendered action, not its void callback.
-      expect(find.text('Undo'), findsOneWidget);
-      await tester.tap(find.text('Undo'));
-      await pumpUntilFound(tester, find.text('Swipe test transaction'));
-      expect(find.text('Swipe test transaction'), findsOneWidget);
-
-      // The live History stream proves the row returned; also verify the
-      // persisted soft-delete flag was cleared using real async Drift work.
-      await tester.runAsync(() async {
-        final restored = await (testDatabase.select(testDatabase.transactions)
-              ..where((row) => row.id.equals(transactionId)))
+  testWidgets('swiping a History row moves it to Trash and Undo restores it', (
+    tester,
+  ) async {
+    final category =
+        await (testDatabase.select(testDatabase.categories)
+              ..where((row) => row.type.equals('expense'))
+              ..where((row) => row.name.equals('Food & Dining')))
             .getSingle();
-        expect(restored.deletedAt, isNull);
-      });
-    },
-    timeout: const Timeout(Duration(seconds: 30)),
-  );
+    final transactionId = await TransactionsRepository(testDatabase)
+        .createTransaction(
+          accountId: testAccount.id,
+          categoryId: category.id,
+          type: 'expense',
+          amountPaise: 12500,
+          transactionDate: DateTime.now().millisecondsSinceEpoch,
+          note: 'Swipe test transaction',
+        );
+
+    await pumpApp(tester, liveHistory: true);
+    await tester.tap(find.text('History').last);
+    await pumpUntilFound(tester, find.text('Swipe test transaction'));
+
+    final row = find.byKey(ValueKey('dismiss-$transactionId'));
+    expect(row, findsOneWidget);
+    // Use a high-velocity left fling, matching endToStart and exceeding the
+    // Dismissible threshold without depending on a long pointer drag.
+    await tester.fling(row, const Offset(-1000, 0), 2000);
+
+    // confirmDismiss awaits the real Drift soft-delete future before allowing
+    // the row to leave. Pump the dismissal and snackbar animations explicitly;
+    // avoid pumpAndSettle because History's shimmer repeats while loading.
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.pump(const Duration(milliseconds: 250));
+    await pumpUntilFound(tester, find.text('Transaction moved to Trash'));
+    expect(find.text('Swipe test transaction'), findsNothing);
+    expect(
+      row,
+      findsNothing,
+      reason: 'Dismissible must leave the widget tree.',
+    );
+
+    // Native Drift work must run outside the widget test's FakeAsync zone.
+    await tester.runAsync(() async {
+      final trashItems = await TransactionsRepository(
+        testDatabase,
+      ).watchTrash().first;
+      expect(trashItems, hasLength(1));
+      expect(trashItems.single.transaction.id, transactionId);
+      expect(trashItems.single.transaction.deletedAt, isNotNull);
+    });
+
+    // Exercise Undo through the rendered action, not its void callback.
+    expect(find.text('Undo'), findsOneWidget);
+    await tester.tap(find.text('Undo'));
+    await pumpUntilFound(tester, find.text('Swipe test transaction'));
+    expect(find.text('Swipe test transaction'), findsOneWidget);
+
+    // The live History stream proves the row returned; also verify the
+    // persisted soft-delete flag was cleared using real async Drift work.
+    await tester.runAsync(() async {
+      final restored = await (testDatabase.select(
+        testDatabase.transactions,
+      )..where((row) => row.id.equals(transactionId))).getSingle();
+      expect(restored.deletedAt, isNull);
+    });
+  }, timeout: const Timeout(Duration(seconds: 30)));
 
   testWidgets('switches the transaction form from expense to income', (
     tester,
