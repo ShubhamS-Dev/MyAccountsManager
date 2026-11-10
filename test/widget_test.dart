@@ -557,7 +557,7 @@ void main() {
     tester
         .widget<SnackBarAction>(find.byType(SnackBarAction))
         .onPressed
-        ?.call();
+        .call();
     final restoredItems = await restoredHistory.timeout(
       const Duration(seconds: 5),
       onTimeout: () => throw TestFailure(
