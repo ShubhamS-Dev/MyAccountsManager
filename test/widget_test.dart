@@ -545,22 +545,33 @@ void main() {
       transactionId,
     );
 
-    // Let the snackbar finish entering before interacting with its overlay
-    // action. Tap the real action so the widget test awaits the gesture rather
-    // than starting its async restore callback as an unawaited void function.
-    await tester.pump(const Duration(milliseconds: 500));
+    // The snackbar is already visible; do not advance its animation clock
+    // with a long pump here. The SnackBarAction callback has a void signature,
+    // so observe the repository stream to await its async restore operation.
     expect(find.text('Undo'), findsOneWidget);
-    await tester.tap(find.text('Undo'));
-    await tester.pump(const Duration(milliseconds: 300));
-    await tester.pump(const Duration(milliseconds: 300));
-
-    await pumpUntilFound(tester, find.text('Swipe test transaction'));
+    final restoredHistory = TransactionsRepository(
+      testDatabase,
+    ).watchHistory().firstWhere(
+      (items) => items.any(
+        (item) => item.transaction.id == transactionId,
+      ),
+    );
+    tester
+        .widget<SnackBarAction>(find.byType(SnackBarAction))
+        .onPressed
+        ?.call();
+    final restoredItems = await restoredHistory.timeout(
+      const Duration(seconds: 5),
+      onTimeout: () => throw TestFailure(
+        'Undo did not restore the transaction to History within 5 seconds.',
+      ),
+    );
     expect(
-      (await TransactionsRepository(
-        testDatabase,
-      ).watchHistory().first).single.transaction.id,
+      restoredItems.single.transaction.id,
       transactionId,
     );
+    await tester.pump();
+    expect(find.text('Swipe test transaction'), findsOneWidget);
   });
   testWidgets('switches the transaction form from expense to income', (
     tester,
