@@ -277,7 +277,6 @@ void main() {
         reason: 'Selecting $destination should update the app bar title.',
       );
     }
-
   });
 
   testWidgets('shows and filters the refreshed Accounts overview', (
