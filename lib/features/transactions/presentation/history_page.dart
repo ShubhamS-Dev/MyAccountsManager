@@ -141,7 +141,10 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Filter transactions', style: AppTypography.screenTitle),
+                const Text(
+                  'Filter transactions',
+                  style: AppTypography.screenTitle,
+                ),
                 const SizedBox(height: AppSpacing.md),
                 const Text('Account', style: AppTypography.sectionTitle),
                 const SizedBox(height: AppSpacing.sm),
