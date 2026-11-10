@@ -341,3 +341,13 @@ User approval: implement Phases 1–3 first; stop for user review before beginni
 - Corrected the test to allow the snackbar entrance animation to finish, assert the visible Undo action, and use an awaited `tester.tap(find.text('Undo'))` instead of directly invoking the void callback. The test still verifies the transaction is restored to History; it does not weaken the swipe direction, fling, deletion, or persistence assertions.
 - No tests were skipped or deleted. The CI run also reported three unrelated widget-test failures (Home income shortcut, expense-to-income switch, and transaction form field order); they are outside this focused change and were not edited.
 - This fix is not complete until CI validates the new commit. Do not mark Run #360 done until the full workflow is green.
+
+## Run #361 RCA — History snackbar animation pump timeout (2026-11-10)
+- Run: [Flutter validation #361](https://github.com/ShubhamS-Dev/MyAccountsManager/actions/runs/42837539444)
+- Code generation, generated-file verification, formatting, and Analyze passed. The widget suite timed out after 10 minutes in the History swipe/Undo test.
+- Exact failing location: `test/widget_test.dart:551`, the fixed `tester.pump(const Duration(milliseconds: 500))` immediately before tapping Undo. The log shows that this pump never completed; Flutter then reported a guarded-function conflict during test teardown. The later guarded-pump errors in the other widget tests occurred after this timeout and are treated as cascading test-binding failures, not independent product regressions.
+- The snackbar was already found and visible before line 551, so the extra 500ms animation pump was unnecessary. Removed that pump and the subsequent duration-based pumps.
+- Undo now invokes the rendered `SnackBarAction` callback and awaits a `watchHistory().firstWhere(...)` future for the exact transaction ID, with a 5-second timeout and explicit failure message. Only after the repository confirms restoration does the test pump one frame and assert that the row is visible again. This waits for the async restore side effect without leaving a WidgetTester animation pump pending.
+- Swipe direction (`endToStart`), high-velocity left fling, awaited soft-delete behavior, row removal, Trash persistence, and History restoration assertions remain. No tests were skipped or deleted.
+- Production code remains unchanged: `_moveToTrash` captures the page-level ScaffoldMessenger before awaiting soft delete, and `confirmDismiss` awaits that operation. The failure was in test synchronization, not row-context snackbar lifecycle.
+- Do not mark complete until the full CI workflow is green.
