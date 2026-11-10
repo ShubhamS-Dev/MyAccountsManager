@@ -386,3 +386,18 @@ User approval: implement Phases 1–3 first; stop for user review before beginni
 - The formatter's auto-format push was rejected because the remote branch had advanced to `b254989` while this run was active. That docs-only commit was pushed before the active run was noticed; this was a sequencing mistake. Going forward, no branch updates will be pushed while any validation run is active.
 - The exact remaining formatting difference was in the nested `watchHistory().firstWhere(...)` predicate and the `SnackBarAction.onPressed.call()` method chain. Both are now written in the formatter's canonical multi-line layout in the same commit as this RCA update.
 - The analyzer correction from Run #364 remains: use non-nullable `.onPressed.call()`, not `?.call()`. No production code changed. Run #365 did not execute Analyze or Tests.
+
+
+## Run #367 Attempt 2 RCA — FakeAsync and real Drift synchronization (2026-11-10)
+
+- Run: [Flutter validation #367, Attempt 2](https://github.com/ShubhamS-Dev/MyAccountsManager/actions/runs/42842728518)
+- Attempt 2 was cancelled by the user while the Tests step was running. Code generation, generated-file verification, formatting, and Analyze had passed; the cancelled test step provides no pass/fail result for the swipe/Undo test.
+- Root cause of the prior widget-test hang: the test awaited real Drift query-stream futures inside the widget test's FakeAsync zone. In particular, `watchTrash().first` depends on native asynchronous database work, while `Future.timeout(Duration(seconds: 5))` schedules its timer on the fake clock. The fake clock is advanced by widget pumps rather than wall-clock time, so the timeout was not a reliable deadlock guard. The resulting prolonged wait could cascade into a teardown `Guarded function conflict`; that secondary error is not the primary defect.
+- Test correction in `test/widget_test.dart`:
+  - The bounded `pumpUntilFound` helper now throws an explicit `TestFailure` after its finite 40-pump limit.
+  - The Trash query and the post-Undo persisted-row query run inside `tester.runAsync`, outside FakeAsync.
+  - Undo is activated through `await tester.tap(find.text('Undo'))`; the test no longer calls the void `SnackBarAction.onPressed` callback directly.
+  - The live History stream is used as the UI synchronization point: after Undo, the test waits for the transaction note to reappear. It also verifies that the database row's `deletedAt` is cleared.
+  - A 30-second per-test timeout bounds the swipe/Undo test without changing the workflow job timeout.
+- Coverage remains explicit for all three states: the row is removed from History after swipe, the transaction is present in Trash with a non-null `deletedAt`, and Undo restores the row to History and clears the persisted `deletedAt` value.
+- No production repository or History UI code was changed. This is a test synchronization correction; it is not validation evidence until a subsequent complete CI run passes Format, Analyze, Tests, and the Android debug build.
