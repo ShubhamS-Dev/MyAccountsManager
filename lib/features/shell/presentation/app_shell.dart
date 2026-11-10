@@ -203,8 +203,16 @@ class _HomeDashboardPageState extends ConsumerState<_HomeDashboardPage> {
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: Stack(
             children: [
-              const Positioned(right: -28, top: -36, child: _GlowOrb(size: 150)),
-              const Positioned(right: 48, bottom: -66, child: _GlowOrb(size: 112)),
+              const Positioned(
+                right: -28,
+                top: -36,
+                child: _GlowOrb(size: 150),
+              ),
+              const Positioned(
+                right: 48,
+                bottom: -66,
+                child: _GlowOrb(size: 112),
+              ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
