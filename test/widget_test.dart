@@ -295,6 +295,7 @@ void main() {
     );
     await tester.drag(accountsList, const Offset(0, -300));
     await tester.pumpAndSettle();
+    await pumpUntilFound(tester, find.text('1 active account'));
     expect(find.text('1 active account'), findsOneWidget);
     expect(find.text('Widget test Account'), findsOneWidget);
     expect(find.byTooltip('Archived accounts'), findsOneWidget);

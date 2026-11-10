@@ -243,3 +243,13 @@ User approval: implement Phases 1–3 first; stop for user review before beginni
 - Exact error: `StateError: Bad state: No element`, originating from `WidgetController.dragUntilVisible` / `scrollUntilVisible` while resolving the supplied `find.byType(Scrollable).first` finder.
 - Corrective test change: target the Accounts page's own `ListView` by locating the ancestor of its unique `Your accounts` heading, then drag that list into the needed scroll position. This avoids selecting a non-existent/ambiguous generic Scrollable and retains the UI assertions.
 - Local Dart/Flutter validation was not run; CI remains the agreed validation gate.
+
+
+## Run #343 RCA — wait for active Accounts stream before count assertion
+
+- Run: [Flutter validation #343](https://github.com/ShubhamS-Dev/MyAccountsManager/actions/runs/42786847210)
+- Drift generation, generated-file verification, Dart formatting, and `flutter analyze` passed. The test failed at `test/widget_test.dart:298`.
+- Exact failure: `Expected: exactly one matching candidate; Actual: Found 0 widgets with text "1 active account".`
+- Root-cause refinement: after bringing the Accounts ListView into position, the test asserted the count immediately after `pumpAndSettle`. The test supplies an asynchronous `Stream.value` override for `activeAccountsProvider`; the assertion must wait for that stream-backed UI text rather than assume it has emitted by the time the animation settles.
+- Corrective test change: after scrolling the Accounts ListView, use the existing `pumpUntilFound` helper to wait for the singular count label before asserting it. No production behavior or test coverage is removed.
+- Local Dart/Flutter validation was not run; CI remains the agreed validation gate.
