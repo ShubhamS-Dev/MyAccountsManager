@@ -221,6 +221,22 @@ void main() {
     expect(find.text('Expenses'), findsOneWidget);
     expect(find.text('Net cash flow'), findsOneWidget);
 
+    // Verify the dashboard privacy control while the page is still at the top.
+    // Later account and transaction assertions scroll the dashboard downward.
+    final privacyToggle = find.byTooltip('Hide amounts');
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(privacyToggle);
+    expect(privacyToggle, findsOneWidget);
+    await tester.tap(privacyToggle);
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Show amounts'), findsOneWidget);
+
+    final showAmountsToggle = find.byTooltip('Show amounts');
+    await tester.ensureVisible(showAmountsToggle);
+    await tester.tap(showAmountsToggle);
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Hide amounts'), findsOneWidget);
+
     // The account section is below the monthly summary and quick actions.
     // Scroll the dashboard's vertical ListView before asserting its heading.
     await tester.scrollUntilVisible(
@@ -262,19 +278,6 @@ void main() {
       );
     }
 
-    // Home retains its scroll position when switching destinations. Return
-    // to the top before interacting with the header privacy control.
-    await tester.drag(find.byType(Scrollable).first, const Offset(0, 1000));
-    await tester.pumpAndSettle();
-
-    // The balance privacy control must remain interactive.
-    expect(find.byTooltip('Hide amounts'), findsOneWidget);
-    await tester.tap(find.byTooltip('Hide amounts'));
-    await tester.pump();
-    expect(find.byTooltip('Show amounts'), findsOneWidget);
-    await tester.tap(find.byTooltip('Show amounts'));
-    await tester.pump();
-    expect(find.byTooltip('Hide amounts'), findsOneWidget);
   });
 
   testWidgets('shows and filters the refreshed Accounts overview', (
