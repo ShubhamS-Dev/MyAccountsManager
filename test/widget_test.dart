@@ -49,7 +49,10 @@ void main() {
     );
   }
 
-  Future<void> pumpApp(WidgetTester tester) async {
+  Future<void> pumpApp(
+    WidgetTester tester, {
+    bool liveHistory = false,
+  }) async {
     addTearDown(() async {
       // Unmount consumers before closing the in-memory database.
       await tester.pumpWidget(const SizedBox.shrink());
@@ -83,9 +86,17 @@ void main() {
           activeCategoriesByTypeProvider.overrideWith(
             (ref, type) => Stream.value(<CategoryRow>[]),
           ),
-          transactionHistoryProvider.overrideWith(
-            (ref, filter) => Stream.value(<TransactionHistoryItem>[]),
-          ),
+          transactionHistoryProvider.overrideWith((ref, filter) {
+            if (liveHistory) {
+              return TransactionsRepository(testDatabase).watchHistory(
+                accountId: filter.accountId,
+                fromDate: filter.fromDate,
+                throughDate: filter.throughDate,
+                type: filter.type,
+              );
+            }
+            return Stream.value(<TransactionHistoryItem>[]);
+          }),
         ],
         child: const MyAccountsManagerApp(),
       ),
@@ -488,6 +499,51 @@ void main() {
     await tester.tap(find.text('Apply'));
     await tester.pumpAndSettle();
     expect(find.text('No transactions yet'), findsOneWidget);
+  });
+
+  testWidgets('swiping a History row moves it to Trash and Undo restores it', (
+    tester,
+  ) async {
+    final category = await (testDatabase.select(testDatabase.categories)
+          ..where((row) => row.type.equals('expense'))
+          ..where((row) => row.name.equals('Food & Dining')))
+        .getSingle();
+    final transactionId = await TransactionsRepository(
+      testDatabase,
+    ).createTransaction(
+      accountId: testAccount.id,
+      categoryId: category.id,
+      type: 'expense',
+      amountPaise: 12500,
+      transactionDate: DateTime.now().millisecondsSinceEpoch,
+      note: 'Swipe test transaction',
+    );
+
+    await pumpApp(tester, liveHistory: true);
+    await tester.tap(find.text('History').last);
+    await tester.pumpAndSettle();
+    await pumpUntilFound(tester, find.text('Swipe test transaction'));
+
+    final row = find.byKey(ValueKey('dismiss-$transactionId'));
+    await tester.drag(row, const Offset(-500, 0));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Transaction moved to Trash'), findsOneWidget);
+    expect(find.text('Swipe test transaction'), findsNothing);
+    expect(
+      (await TransactionsRepository(testDatabase).watchTrash().first)
+          .single.transaction.id,
+      transactionId,
+    );
+
+    await tester.tap(find.text('Undo'));
+    await tester.pumpAndSettle();
+    await pumpUntilFound(tester, find.text('Swipe test transaction'));
+    expect(
+      (await TransactionsRepository(testDatabase).watchHistory().first)
+          .single.transaction.id,
+      transactionId,
+    );
   });
 
   testWidgets('switches the transaction form from expense to income', (

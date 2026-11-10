@@ -306,3 +306,13 @@ User approval: implement Phases 1–3 first; stop for user review before beginni
 - Root cause: implementation bug (b). The History empty-state branch selected `No transactions yet` solely from `items.isEmpty`, ignoring an active search/filter. With the test's empty underlying stream and an entered search term, the page incorrectly showed the first-run empty state instead of the no-results state.
 - Production fix: show the first-run state only when `items.isEmpty && !_hasFilters`; active search or filters now show `No matching transactions` and `Clear filters`, even if the underlying list is empty. The widget assertion is retained; no test was weakened or removed.
 - Run #351's formatter auto-commit is `4678a7f`; this fix is based on that latest branch head. Local Flutter/Dart commands were not run; CI is the validation gate.
+
+
+## History visual refinement — category metadata, contrast, and FAB
+- Confirmed the History projection is wired: watchHistory joins Categories and copies iconKey/colorValue into TransactionHistoryItem. Added a repository assertion proving both values reach the projection.
+- Expanded History category icon-key aliases; known categories render their category glyph inside the existing coloured circle. Directional arrows remain the fallback for missing/unknown keys. Missing color metadata falls back to the semantic income/expense color.
+- Increased selected segmented-control contrast using theme primary/onPrimary colors. No literal color values are added to History screen code.
+- Updated the shared shell FAB to use the hero gradient and onPrimary foreground, so Dashboard, Accounts, and History remain visually consistent.
+- Kept summary progress proportional and bounded: zero total is empty; Expense is full only when expenses equal the combined income-plus-expense total.
+- Added a live-provider widget test for swipe-to-Trash and Undo. Existing bottom-sheet, removable-chip, and both empty-state tests remain in place.
+- Light-theme implementation/verification remains intentionally out of scope per user instruction; no Light-theme validation claim is made.

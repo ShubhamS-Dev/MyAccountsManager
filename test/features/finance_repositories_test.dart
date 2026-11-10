@@ -260,6 +260,14 @@ void main() {
                 ..where((row) => row.type.equals('income'))
                 ..where((row) => row.name.equals('Salary')))
               .getSingle();
+      await (database.update(database.categories)
+            ..where((row) => row.id.equals(expense.id)))
+          .write(
+            const CategoriesCompanion(
+              iconKey: Value('food'),
+              colorValue: Value(0xFF008577),
+            ),
+          );
       final date = DateTime.utc(2026, 11, 8).millisecondsSinceEpoch;
       await transactions.createTransaction(
         accountId: accountId,
@@ -282,6 +290,11 @@ void main() {
       expect(all.first.accountName, 'Office');
       expect(all.first.categoryName, 'Salary');
       expect(all.first.transaction.type, 'income');
+      final foodItem = all.singleWhere(
+        (item) => item.categoryName == 'Food & Dining',
+      );
+      expect(foodItem.categoryIconKey, 'food');
+      expect(foodItem.categoryColorValue, 0xFF008577);
 
       final expenses = await transactions
           .watchHistory(

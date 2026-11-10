@@ -51,3 +51,9 @@ GradientCard(
 - Category icon/color may be projected from existing category metadata for History only. Fall back to the semantic income/expense arrow when no icon mapping exists.
 - Use built-in animation for shimmer placeholders; do not add a shimmer package.
 - Swipe-to-delete must use the repository's soft-delete operation and offer Undo through its existing restore operation. The Trash destination remains available.
+
+
+## History theme compatibility
+- History-specific selection, transaction, date-header, empty-state, and swipe surfaces must use AppColors semantic tokens or Theme.of(context).colorScheme; do not add literal colors or screen-local color constants.
+- Selected History type segments use colorScheme.primary with colorScheme.onPrimary text to preserve high contrast. Unselected segments use themed surface and onSurfaceVariant.
+- The shared Dashboard, Accounts, and History FAB uses AppColors.heroGradient with colorScheme.onPrimary foreground.

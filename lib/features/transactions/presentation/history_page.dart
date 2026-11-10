@@ -592,7 +592,7 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final progress = total == 0 ? 0.0 : amount / total;
+    final progress = total == 0 ? 0.0 : (amount / total).clamp(0.0, 1.0);
     return AppCard(
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
@@ -675,8 +675,8 @@ class _SegmentOption extends StatelessWidget {
     duration: const Duration(milliseconds: 180),
     decoration: BoxDecoration(
       color: selected
-          ? Theme.of(context).colorScheme.surface
-          : Colors.transparent,
+          ? Theme.of(context).colorScheme.primary
+          : Theme.of(context).colorScheme.surfaceContainerHighest,
       borderRadius: BorderRadius.circular(AppRadius.sm),
       boxShadow: selected ? AppShadows.card : null,
     ),
@@ -691,7 +691,7 @@ class _SegmentOption extends StatelessWidget {
           style: AppTypography.fieldValue.copyWith(
             fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
             color: selected
-                ? Theme.of(context).colorScheme.primary
+                ? Theme.of(context).colorScheme.onPrimary
                 : Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
@@ -880,24 +880,60 @@ class _HistoryTile extends StatelessWidget {
   }
 
   IconData _categoryIcon(String? key, bool income) {
-    switch (key) {
+    switch (key?.trim().toLowerCase()) {
       case 'food':
       case 'restaurant':
+      case 'food_dining':
+      case 'food & dining':
         return Icons.restaurant_rounded;
+      case 'groceries':
+      case 'grocery':
+        return Icons.shopping_basket_rounded;
       case 'shopping':
         return Icons.shopping_bag_rounded;
       case 'transport':
+      case 'transportation':
+      case 'vehicle':
         return Icons.directions_car_rounded;
       case 'home':
+      case 'housing':
+      case 'housing_utilities':
         return Icons.home_rounded;
+      case 'household':
+        return Icons.chair_alt_rounded;
       case 'health':
+      case 'medical':
+      case 'health_medical':
         return Icons.medical_services_rounded;
       case 'salary':
+      case 'business':
+      case 'freelancing':
         return Icons.work_rounded;
       case 'gift':
+      case 'family_gifts':
+      case 'gifts_rewards':
         return Icons.card_giftcard_rounded;
       case 'education':
         return Icons.school_rounded;
+      case 'travel':
+      case 'travel_stay':
+        return Icons.flight_rounded;
+      case 'entertainment':
+        return Icons.movie_rounded;
+      case 'personal_care':
+        return Icons.spa_rounded;
+      case 'financial_payments':
+      case 'payments':
+        return Icons.account_balance_wallet_rounded;
+      case 'donations':
+        return Icons.volunteer_activism_rounded;
+      case 'investments':
+      case 'investment':
+        return Icons.trending_up_rounded;
+      case 'rental_income':
+        return Icons.key_rounded;
+      case 'refunds':
+        return Icons.currency_exchange_rounded;
       default:
         return income ? Icons.south_west_rounded : Icons.north_east_rounded;
     }

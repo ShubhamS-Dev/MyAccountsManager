@@ -43,3 +43,12 @@ Account and Category filters open a bottom sheet. The current selection is highl
 - Bottom-sheet transitions are settled with `pumpAndSettle()`; the animated type selector uses its 220ms animation duration.
 
 - If a search or filter is active, an empty result always uses the `No matching transactions` state with `Clear filters`, even when the underlying History list itself is empty. The first-run `No transactions yet` state is reserved for an unfiltered empty list.
+
+
+## Theme-aware visual refinements
+- Category metadata is read from the joined Category row and displayed as a coloured circular icon. Known built-in icon keys/category aliases map to category glyphs; the income/expense arrow is reserved for an unknown or missing icon key. A missing category colour uses the semantic income/expense fallback colour.
+- Selected All / Expense / Income segment uses the theme primary fill and onPrimary foreground for high contrast; unselected items use theme surface and onSurfaceVariant.
+- The shared Dashboard / Accounts / History FAB uses the shared hero gradient and theme onPrimary white foreground.
+- History screen colors use AppColors semantic tokens or Theme.of(context).colorScheme; no screen-local color literals are introduced.
+- Summary progress is clamped to the 0–1 range; a zero total produces an empty bar. Expense progress remains proportional to expense / (income + expense).
+- Widget coverage verifies category metadata projection and the History swipe-to-Trash + Undo interaction. Existing filter sheet, removable chips, and both empty-state paths remain covered.

@@ -17,3 +17,5 @@
 - Expanded History widget coverage for month navigation, search, type selection, Account/Category filters, removable chips, Trash access, and empty state.
 - Corrected empty-state selection so active search/filters show the no-results state even when there are no stored transactions.
 - Reused shared design tokens/widgets; no new package, schema migration, or navigation change.
+
+- Refined History category icon mapping, selected-segment contrast, and shared gradient FAB; added metadata-projection and swipe/Undo regression coverage. History color usage remains token/theme-driven for future Light-theme support.

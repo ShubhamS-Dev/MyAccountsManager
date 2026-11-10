@@ -71,12 +71,23 @@ class _AppShellState extends State<AppShell> {
         ],
       ),
       floatingActionButton: _selectedIndex < 3
-          ? FloatingActionButton(
-              onPressed: () => context.push('/transaction/new'),
-              tooltip: 'Add transaction',
-              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-              foregroundColor: Theme.of(context).colorScheme.primary,
-              child: const Icon(Icons.add_rounded, size: 28),
+          ? Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: AppColors.heroGradient,
+                ),
+                boxShadow: AppShadows.card,
+              ),
+              child: FloatingActionButton(
+                onPressed: () => context.push('/transaction/new'),
+                tooltip: 'Add transaction',
+                backgroundColor: Colors.transparent,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                elevation: 0,
+                highlightElevation: 0,
+                child: const Icon(Icons.add_rounded, size: 28),
+              ),
             )
           : null,
       bottomNavigationBar: NavigationBar(
