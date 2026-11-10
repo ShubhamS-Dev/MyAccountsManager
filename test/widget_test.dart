@@ -226,7 +226,7 @@ void main() {
     await tester.scrollUntilVisible(
       find.text('Your Accounts'),
       300,
-      scrollable: find.byType(ListView).first,
+      scrollable: find.byType(Scrollable).first,
     );
     await tester.pumpAndSettle();
     expect(find.text('Your Accounts'), findsOneWidget);
