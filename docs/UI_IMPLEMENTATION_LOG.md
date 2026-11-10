@@ -234,3 +234,12 @@ User approval: implement Phases 1–3 first; stop for user review before beginni
 - Root cause: the Accounts screen is a scrollable list. Its summary count and Account card are below the initial viewport and are lazily built; the test queried them before scrolling them into view. The previous run also showed a CTA hit-test issue, which was separately fixed by ensuring the EmptyState action is visible before tapping.
 - Corrective test change: scroll the Accounts list until the count and Account card are visible before asserting them, and explicitly ensure the shared privacy control and search field are visible before interaction. This preserves all test coverage and does not alter screen behavior.
 - Local Dart/Flutter validation was not run; CI remains the agreed validation gate.
+
+
+## Run #342 RCA — scroll helper could not resolve the Accounts scrollable
+
+- Run: [Flutter validation #342](https://github.com/ShubhamS-Dev/MyAccountsManager/actions/runs/42786543124)
+- Drift generation, generated-file verification, Dart formatting, and `flutter analyze` passed. The test failed at `test/widget_test.dart:292` before reaching the count assertion.
+- Exact error: `StateError: Bad state: No element`, originating from `WidgetController.dragUntilVisible` / `scrollUntilVisible` while resolving the supplied `find.byType(Scrollable).first` finder.
+- Corrective test change: target the Accounts page's own `ListView` by locating the ancestor of its unique `Your accounts` heading, then drag that list into the needed scroll position. This avoids selecting a non-existent/ambiguous generic Scrollable and retains the UI assertions.
+- Local Dart/Flutter validation was not run; CI remains the agreed validation gate.

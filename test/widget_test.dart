@@ -289,17 +289,13 @@ void main() {
 
     expect(find.text('TOTAL ACCOUNT BALANCE'), findsOneWidget);
     expect(find.text('Your accounts'), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.text('1 active account'),
-      180,
-      scrollable: find.byType(Scrollable).first,
+    final accountsList = find.ancestor(
+      of: find.text('Your accounts'),
+      matching: find.byType(ListView),
     );
+    await tester.drag(accountsList, const Offset(0, -300));
+    await tester.pumpAndSettle();
     expect(find.text('1 active account'), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.text('Widget test Account'),
-      180,
-      scrollable: find.byType(Scrollable).first,
-    );
     expect(find.text('Widget test Account'), findsOneWidget);
     expect(find.byTooltip('Archived accounts'), findsOneWidget);
 
