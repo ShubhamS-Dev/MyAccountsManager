@@ -70,7 +70,9 @@ class TransactionsRepository {
               accountName: row.readTable(_database.accounts).name,
               categoryName: row.readTable(_database.categories).name,
               categoryIconKey: row.readTable(_database.categories).iconKey,
-              categoryColorValue: row.readTable(_database.categories).colorValue,
+              categoryColorValue: row
+                  .readTable(_database.categories)
+                  .colorValue,
             ),
           )
           .toList(),
@@ -97,7 +99,9 @@ class TransactionsRepository {
               accountName: row.readTable(_database.accounts).name,
               categoryName: row.readTable(_database.categories).name,
               categoryIconKey: row.readTable(_database.categories).iconKey,
-              categoryColorValue: row.readTable(_database.categories).colorValue,
+              categoryColorValue: row
+                  .readTable(_database.categories)
+                  .colorValue,
             ),
           )
           .toList(),

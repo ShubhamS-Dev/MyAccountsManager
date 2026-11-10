@@ -26,8 +26,18 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
   DateTime _month = DateTime(DateTime.now().year, DateTime.now().month);
 
   static const _months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December',
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ];
 
   @override
@@ -40,12 +50,15 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
       DateTime.utc(date.year, date.month, date.day).millisecondsSinceEpoch;
 
   bool get _hasFilters =>
-      _accountId != null || _category != null || _type != null ||
+      _accountId != null ||
+      _category != null ||
+      _type != null ||
       _search.text.trim().isNotEmpty;
 
   Future<void> _moveToTrash(TransactionHistoryItem item) async {
     try {
-      await ref.read(transactionsRepositoryProvider)
+      await ref
+          .read(transactionsRepositoryProvider)
           .softDeleteTransaction(item.transaction.id);
       ref.invalidate(accountBalancePaiseProvider(item.transaction.accountId));
       if (!mounted) return;
@@ -57,7 +70,8 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
             label: 'Undo',
             onPressed: () async {
               try {
-                await ref.read(transactionsRepositoryProvider)
+                await ref
+                    .read(transactionsRepositoryProvider)
                     .restoreTransaction(item.transaction.id);
                 ref.invalidate(
                   accountBalancePaiseProvider(item.transaction.accountId),
@@ -65,7 +79,9 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
               } catch (_) {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Could not restore transaction.')),
+                    const SnackBar(
+                      content: Text('Could not restore transaction.'),
+                    ),
                   );
                 }
               }
@@ -125,8 +141,7 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Filter transactions',
-                    style: AppTypography.screenTitle),
+                Text('Filter transactions', style: AppTypography.screenTitle),
                 const SizedBox(height: AppSpacing.md),
                 Text('Account', style: AppTypography.sectionTitle),
                 const SizedBox(height: AppSpacing.sm),
@@ -140,7 +155,8 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                         _FilterOption(
                           label: 'All Accounts',
                           selected: selectedAccount == null,
-                          onTap: () => setSheetState(() => selectedAccount = null),
+                          onTap: () =>
+                              setSheetState(() => selectedAccount = null),
                         ),
                         for (final account in accounts)
                           _FilterOption(
@@ -167,7 +183,8 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                         _FilterOption(
                           label: 'All Categories',
                           selected: selectedCategory == null,
-                          onTap: () => setSheetState(() => selectedCategory = null),
+                          onTap: () =>
+                              setSheetState(() => selectedCategory = null),
                         ),
                         for (final category in categories)
                           _FilterOption(
@@ -196,10 +213,10 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                     const SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: FilledButton(
-                        onPressed: () => Navigator.pop(
-                          sheetContext,
-                          (selectedAccount, selectedCategory),
-                        ),
+                        onPressed: () => Navigator.pop(sheetContext, (
+                          selectedAccount,
+                          selectedCategory,
+                        )),
                         child: const Text('Apply'),
                       ),
                     ),
@@ -227,8 +244,7 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
     final colors = Theme.of(context).colorScheme;
     final from = _day(DateTime(_month.year, _month.month));
     final through = _day(
-      DateTime(_month.year, _month.month + 1)
-          .subtract(const Duration(days: 1)),
+      DateTime(_month.year, _month.month + 1).subtract(const Duration(days: 1)),
     );
     final monthLabel = '${_months[_month.month - 1]} ${_month.year}';
 
@@ -243,9 +259,11 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
         ),
       ),
       data: (items) {
-        final monthItems = items.where((item) =>
-            item.transaction.transactionDate >= from &&
-            item.transaction.transactionDate <= through);
+        final monthItems = items.where(
+          (item) =>
+              item.transaction.transactionDate >= from &&
+              item.transaction.transactionDate <= through,
+        );
         var income = 0;
         var expense = 0;
         for (final item in monthItems) {
@@ -260,7 +278,8 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
         final filtered = items.where((item) {
           final transaction = item.transaction;
           if (transaction.transactionDate < from ||
-              transaction.transactionDate > through) return false;
+              transaction.transactionDate > through)
+            return false;
           if (_accountId != null && transaction.accountId != _accountId) {
             return false;
           }
@@ -271,9 +290,10 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
           if (query.isNotEmpty) {
             final searchable =
                 '${transaction.note ?? ''} ${item.accountName} '
-                '${item.categoryName} '
-                '${MoneyFormatter.formatPaise(transaction.amountPaise)} '
-                '${transaction.amountPaise}'.toLowerCase();
+                        '${item.categoryName} '
+                        '${MoneyFormatter.formatPaise(transaction.amountPaise)} '
+                        '${transaction.amountPaise}'
+                    .toLowerCase();
             if (!searchable.contains(query)) return false;
           }
           return true;
@@ -281,13 +301,15 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
 
         final groups = <String, List<TransactionHistoryItem>>{};
         for (final item in filtered) {
-          groups.putIfAbsent(
-            DateOnly.format(item.transaction.transactionDate),
-            () => [],
-          ).add(item);
+          groups
+              .putIfAbsent(
+                DateOnly.format(item.transaction.transactionDate),
+                () => [],
+              )
+              .add(item);
         }
-        final categories = items.map((item) => item.categoryName).toSet().toList()
-          ..sort();
+        final categories =
+            items.map((item) => item.categoryName).toSet().toList()..sort();
         final accountRows = accountsAsync.valueOrNull ?? const <AccountRow>[];
         final selectedAccountName = accountRows
             .where((account) => account.id == _accountId)
@@ -299,7 +321,10 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.sm,
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                  AppSpacing.md,
+                  AppSpacing.sm,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -307,18 +332,29 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                     Row(
                       children: [
                         const Expanded(
-                          child: Text('Monthly overview',
-                              style: AppTypography.sectionTitle),
+                          child: Text(
+                            'Monthly overview',
+                            style: AppTypography.sectionTitle,
+                          ),
                         ),
                         _MonthPill(
                           label: monthLabel,
-                          onPrevious: () => setState(() =>
-                              _month = DateTime(_month.year, _month.month - 1)),
-                          onNext: _month.year == DateTime.now().year &&
+                          onPrevious: () => setState(
+                            () => _month = DateTime(
+                              _month.year,
+                              _month.month - 1,
+                            ),
+                          ),
+                          onNext:
+                              _month.year == DateTime.now().year &&
                                   _month.month == DateTime.now().month
                               ? null
-                              : () => setState(() => _month =
-                                  DateTime(_month.year, _month.month + 1)),
+                              : () => setState(
+                                  () => _month = DateTime(
+                                    _month.year,
+                                    _month.month + 1,
+                                  ),
+                                ),
                         ),
                       ],
                     ),
@@ -351,14 +387,16 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                       decoration: InputDecoration(
                         hintText: 'Search note, Account or amount',
                         prefixIcon: const Icon(Icons.search_rounded, size: 19),
-                        suffixIcon: query.isEmpty ? null : IconButton(
-                          tooltip: 'Clear search',
-                          onPressed: () {
-                            _search.clear();
-                            setState(() {});
-                          },
-                          icon: const Icon(Icons.close_rounded, size: 18),
-                        ),
+                        suffixIcon: query.isEmpty
+                            ? null
+                            : IconButton(
+                                tooltip: 'Clear search',
+                                onPressed: () {
+                                  _search.clear();
+                                  setState(() {});
+                                },
+                                icon: const Icon(Icons.close_rounded, size: 18),
+                              ),
                       ),
                     ),
                     const SizedBox(height: AppSpacing.sm),
@@ -381,17 +419,20 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                     const SizedBox(height: AppSpacing.sm),
                     OutlinedButton.icon(
                       onPressed: accountsAsync.when(
-                        data: (rows) => () => _openFilters(
-                          accounts: rows,
-                          categories: categories,
-                        ),
+                        data: (rows) =>
+                            () => _openFilters(
+                              accounts: rows,
+                              categories: categories,
+                            ),
                         loading: () => null,
                         error: (error, stack) => null,
                       ),
                       icon: const Icon(Icons.tune_rounded, size: 17),
                       label: const Text('Account & Category filters'),
                     ),
-                    if (_accountId != null || _category != null || _type != null) ...[
+                    if (_accountId != null ||
+                        _category != null ||
+                        _type != null) ...[
                       const SizedBox(height: AppSpacing.xs),
                       Wrap(
                         spacing: AppSpacing.sm,
@@ -418,9 +459,7 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                     if (_hasFilters) ...[
                       const SizedBox(height: AppSpacing.sm),
                       Text(
-                        'Showing ${filtered.length} of ${items.where((item) =>
-                          item.transaction.transactionDate >= from &&
-                          item.transaction.transactionDate <= through).length} transactions',
+                        'Showing ${filtered.length} of ${items.where((item) => item.transaction.transactionDate >= from && item.transaction.transactionDate <= through).length} transactions',
                         style: AppTypography.metadata.copyWith(
                           color: colors.onSurfaceVariant,
                         ),
@@ -463,27 +502,26 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                 ),
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.md, AppSpacing.xs, AppSpacing.md, 0,
+                    AppSpacing.md,
+                    AppSpacing.xs,
+                    AppSpacing.md,
+                    0,
                   ),
                   sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final item = group.value[index];
-                        return _HistoryTile(
-                          key: ValueKey(item.transaction.id),
-                          item: item,
-                          onTap: () => context.push(
-                            '/transaction/${item.transaction.id}',
-                          ),
-                          onEdit: () => context.push(
-                            '/transaction/${item.transaction.id}/edit',
-                          ),
-                          onTrash: () => _confirmTrash(item),
-                          onSwipeDelete: () => _moveToTrash(item),
-                        );
-                      },
-                      childCount: group.value.length,
-                    ),
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final item = group.value[index];
+                      return _HistoryTile(
+                        key: ValueKey(item.transaction.id),
+                        item: item,
+                        onTap: () =>
+                            context.push('/transaction/${item.transaction.id}'),
+                        onEdit: () => context.push(
+                          '/transaction/${item.transaction.id}/edit',
+                        ),
+                        onTrash: () => _confirmTrash(item),
+                        onSwipeDelete: () => _moveToTrash(item),
+                      );
+                    }, childCount: group.value.length),
                   ),
                 ),
               ],
@@ -508,27 +546,31 @@ class _MonthPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(AppRadius.pill),
-          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+    decoration: BoxDecoration(
+      color: Theme.of(context).colorScheme.surface,
+      borderRadius: BorderRadius.circular(AppRadius.pill),
+      border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          tooltip: 'Previous month',
+          onPressed: onPrevious,
+          icon: const Icon(Icons.chevron_left_rounded, size: 19),
         ),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          IconButton(
-            tooltip: 'Previous month',
-            onPressed: onPrevious,
-            icon: const Icon(Icons.chevron_left_rounded, size: 19),
-          ),
-          Text(label, style: AppTypography.fieldValue.copyWith(
-            fontWeight: FontWeight.w700,
-          )),
-          IconButton(
-            tooltip: 'Next month',
-            onPressed: onNext,
-            icon: const Icon(Icons.chevron_right_rounded, size: 19),
-          ),
-        ]),
-      );
+        Text(
+          label,
+          style: AppTypography.fieldValue.copyWith(fontWeight: FontWeight.w700),
+        ),
+        IconButton(
+          tooltip: 'Next month',
+          onPressed: onNext,
+          icon: const Icon(Icons.chevron_right_rounded, size: 19),
+        ),
+      ],
+    ),
+  );
 }
 
 class _SummaryCard extends StatelessWidget {
@@ -552,9 +594,12 @@ class _SummaryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label.toUpperCase(), style: AppTypography.metadata.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          )),
+          Text(
+            label.toUpperCase(),
+            style: AppTypography.metadata.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
           const SizedBox(height: AppSpacing.xs),
           AmountText(MoneyFormatter.formatPaise(amount), color: color),
           const SizedBox(height: AppSpacing.sm),
@@ -564,7 +609,9 @@ class _SummaryCard extends StatelessWidget {
               value: progress,
               minHeight: 5,
               color: color,
-              backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+              backgroundColor: Theme.of(
+                context,
+              ).colorScheme.surfaceContainerHighest,
             ),
           ),
         ],
@@ -588,16 +635,22 @@ class _TypeSegment extends StatelessWidget {
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(AppRadius.md),
       ),
-      child: Row(children: [
-        for (final option in labels)
-          Expanded(
-            child: _SegmentOption(
-              label: option == null ? 'All' : option == 'expense' ? 'Expense' : 'Income',
-              selected: value == option,
-              onTap: () => onChanged(option),
+      child: Row(
+        children: [
+          for (final option in labels)
+            Expanded(
+              child: _SegmentOption(
+                label: option == null
+                    ? 'All'
+                    : option == 'expense'
+                    ? 'Expense'
+                    : 'Income',
+                selected: value == option,
+                onTap: () => onChanged(option),
+              ),
             ),
-          ),
-      ]),
+        ],
+      ),
     );
   }
 }
@@ -615,27 +668,32 @@ class _SegmentOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        decoration: BoxDecoration(
-          color: selected ? Theme.of(context).colorScheme.surface : Colors.transparent,
-          borderRadius: BorderRadius.circular(AppRadius.sm),
-          boxShadow: selected ? AppShadows.card : null,
-        ),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(AppRadius.sm),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-            child: Text(label, textAlign: TextAlign.center,
-                style: AppTypography.fieldValue.copyWith(
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  color: selected
-                      ? Theme.of(context).colorScheme.primary
-                      : Theme.of(context).colorScheme.onSurfaceVariant,
-                )),
+    duration: const Duration(milliseconds: 180),
+    decoration: BoxDecoration(
+      color: selected
+          ? Theme.of(context).colorScheme.surface
+          : Colors.transparent,
+      borderRadius: BorderRadius.circular(AppRadius.sm),
+      boxShadow: selected ? AppShadows.card : null,
+    ),
+    child: InkWell(
+      borderRadius: BorderRadius.circular(AppRadius.sm),
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          style: AppTypography.fieldValue.copyWith(
+            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+            color: selected
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
-      );
+      ),
+    ),
+  );
 }
 
 class _FilterOption extends StatelessWidget {
@@ -651,11 +709,11 @@ class _FilterOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ChoiceChip(
-        label: Text(label, style: AppTypography.fieldValue),
-        selected: selected,
-        onSelected: (_) => onTap(),
-        showCheckmark: true,
-      );
+    label: Text(label, style: AppTypography.fieldValue),
+    selected: selected,
+    onSelected: (_) => onTap(),
+    showCheckmark: true,
+  );
 }
 
 class _SelectedFilterChip extends StatelessWidget {
@@ -666,10 +724,10 @@ class _SelectedFilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => InputChip(
-        label: Text(label, style: AppTypography.metadata),
-        onDeleted: onRemove,
-        deleteIcon: const Icon(Icons.close_rounded, size: 15),
-      );
+    label: Text(label, style: AppTypography.metadata),
+    onDeleted: onRemove,
+    deleteIcon: const Icon(Icons.close_rounded, size: 15),
+  );
 }
 
 class _DateHeaderDelegate extends SliverPersistentHeaderDelegate {
@@ -684,15 +742,20 @@ class _DateHeaderDelegate extends SliverPersistentHeaderDelegate {
   double get maxExtent => 42;
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
     final scheme = Theme.of(context).colorScheme;
     return Container(
       alignment: Alignment.centerLeft,
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
       color: scheme.surfaceContainer,
-      child: Text(label, style: AppTypography.sectionTitle.copyWith(
-        color: scheme.onSurface,
-      )),
+      child: Text(
+        label,
+        style: AppTypography.sectionTitle.copyWith(color: scheme.onSurface),
+      ),
     );
   }
 
@@ -738,70 +801,75 @@ class _HistoryTile extends StatelessWidget {
             color: Theme.of(context).colorScheme.errorContainer,
             borderRadius: BorderRadius.circular(AppRadius.card),
           ),
-          child: Icon(Icons.delete_outline_rounded,
-              color: Theme.of(context).colorScheme.onErrorContainer),
+          child: Icon(
+            Icons.delete_outline_rounded,
+            color: Theme.of(context).colorScheme.onErrorContainer,
+          ),
         ),
         onDismissed: (_) => onSwipeDelete(),
         child: AppCard(
           padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md, vertical: AppSpacing.sm,
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
           ),
           onTap: onTap,
-          child: Row(children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: categoryColor.withValues(alpha: .12),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: categoryColor.withValues(alpha: .12),
+                ),
+                child: Icon(categoryIcon, size: 19, color: categoryColor),
               ),
-              child: Icon(categoryIcon, size: 19, color: categoryColor),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    transaction.note?.isNotEmpty == true
-                        ? transaction.note!
-                        : item.categoryName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTypography.fieldValue.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontWeight: FontWeight.w700,
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      transaction.note?.isNotEmpty == true
+                          ? transaction.note!
+                          : item.categoryName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.fieldValue.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${item.categoryName} · ${item.accountName}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTypography.metadata.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    const SizedBox(height: 2),
+                    Text(
+                      '${item.categoryName} · ${item.accountName}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.metadata.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
-                  ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              AmountText(
+                '${income ? '+' : '-'}${MoneyFormatter.formatPaise(transaction.amountPaise)}',
+                color: income ? AppColors.positive : AppColors.negative,
+              ),
+              PopupMenuButton<String>(
+                tooltip: 'Transaction actions',
+                onSelected: (action) {
+                  if (action == 'edit') onEdit();
+                  if (action == 'trash') onTrash();
+                },
+                itemBuilder: (_) => const [
+                  PopupMenuItem(value: 'edit', child: Text('Edit')),
+                  PopupMenuItem(value: 'trash', child: Text('Move to Trash')),
                 ],
               ),
-            ),
-            const SizedBox(width: AppSpacing.xs),
-            AmountText(
-              '${income ? '+' : '-'}${MoneyFormatter.formatPaise(transaction.amountPaise)}',
-              color: income ? AppColors.positive : AppColors.negative,
-            ),
-            PopupMenuButton<String>(
-              tooltip: 'Transaction actions',
-              onSelected: (action) {
-                if (action == 'edit') onEdit();
-                if (action == 'trash') onTrash();
-              },
-              itemBuilder: (_) => const [
-                PopupMenuItem(value: 'edit', child: Text('Edit')),
-                PopupMenuItem(value: 'trash', child: Text('Move to Trash')),
-              ],
-            ),
-          ]),
+            ],
+          ),
         ),
       ),
     );
@@ -857,30 +925,45 @@ class _HistoryShimmerState extends State<_HistoryShimmer>
     final base = Theme.of(context).colorScheme.surfaceContainerHighest;
     return AnimatedBuilder(
       animation: _controller,
-      builder: (context, child) => Opacity(
-        opacity: .45 + (_controller.value * .35),
-        child: child,
-      ),
+      builder: (context, child) =>
+          Opacity(opacity: .45 + (_controller.value * .35), child: child),
       child: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [
-          Container(height: 38, width: 150, decoration: BoxDecoration(
-            color: base, borderRadius: BorderRadius.circular(AppRadius.pill),
-          )),
+          Container(
+            height: 38,
+            width: 150,
+            decoration: BoxDecoration(
+              color: base,
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+            ),
+          ),
           const SizedBox(height: AppSpacing.md),
-          Row(children: [
-            for (var i = 0; i < 2; i++) ...[
-              Expanded(child: Container(height: 88, decoration: BoxDecoration(
-                color: base, borderRadius: BorderRadius.circular(AppRadius.card),
-              ))),
-              if (i == 0) const SizedBox(width: AppSpacing.sm),
+          Row(
+            children: [
+              for (var i = 0; i < 2; i++) ...[
+                Expanded(
+                  child: Container(
+                    height: 88,
+                    decoration: BoxDecoration(
+                      color: base,
+                      borderRadius: BorderRadius.circular(AppRadius.card),
+                    ),
+                  ),
+                ),
+                if (i == 0) const SizedBox(width: AppSpacing.sm),
+              ],
             ],
-          ]),
+          ),
           const SizedBox(height: AppSpacing.lg),
           for (var i = 0; i < 6; i++) ...[
-            Container(height: 66, decoration: BoxDecoration(
-              color: base, borderRadius: BorderRadius.circular(AppRadius.card),
-            )),
+            Container(
+              height: 66,
+              decoration: BoxDecoration(
+                color: base,
+                borderRadius: BorderRadius.circular(AppRadius.card),
+              ),
+            ),
             const SizedBox(height: AppSpacing.sm),
           ],
         ],
