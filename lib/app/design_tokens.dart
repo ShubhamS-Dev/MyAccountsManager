@@ -68,6 +68,15 @@ abstract final class AppTypography {
     letterSpacing: -1.1,
     fontFeatures: [FontFeature.tabularFigures()],
   );
+
+  /// Dedicated 28px style used only by Add Transaction's amount input.
+  static const amountInput = TextStyle(
+    fontSize: 28,
+    height: 1.2,
+    fontWeight: FontWeight.w700,
+    letterSpacing: -0.6,
+    fontFeatures: [FontFeature.tabularFigures()],
+  );
   static const transactionAmount = TextStyle(
     fontSize: 16,
     height: 1.25,

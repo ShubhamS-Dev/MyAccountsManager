@@ -31,3 +31,7 @@ Archive still uses the existing confirmation dialog and repository method. There
 
 ## Validation
 CI is the Flutter validation authority for this branch (Flutter 3.47.9). Record the exact workflow run and result in the implementation log after the change.
+
+
+## Shared icon resolver
+- Account icon rendering uses resolveAccountIcon from lib/app/icon_resolvers.dart. The mapping and fallback icon are unchanged; this is a shared-code extraction for Add Transaction reuse.

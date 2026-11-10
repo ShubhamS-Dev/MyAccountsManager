@@ -129,43 +129,77 @@ class PrimaryButton extends StatelessWidget {
     super.key,
     this.icon,
     this.loading = false,
+    this.gradient,
+    this.leading,
   });
 
   final String label;
   final VoidCallback? onPressed;
   final IconData? icon;
   final bool loading;
+  final List<Color>? gradient;
+  final Widget? leading;
 
   @override
-  Widget build(BuildContext context) => SizedBox(
-    height: AppSpacing.touchTarget,
-    child: Center(
-      child: SizedBox(
-        height: AppSpacing.buttonHeight,
-        width: double.infinity,
-        child: FilledButton(
-          onPressed: loading ? null : onPressed,
-          child: loading
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (icon != null) ...[
-                      Icon(icon, size: 17),
-                      const SizedBox(width: AppSpacing.sm),
-                    ],
-                    Text(label),
-                  ],
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final face = SizedBox(
+      height: AppSpacing.buttonHeight,
+      width: double.infinity,
+      child: FilledButton(
+        onPressed: loading ? null : onPressed,
+        style: gradient == null
+            ? null
+            : FilledButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                disabledBackgroundColor: scheme.onSurface.withValues(
+                  alpha: .12,
                 ),
-        ),
+                foregroundColor: scheme.onPrimary,
+                disabledForegroundColor: scheme.onSurfaceVariant,
+                shadowColor: Colors.transparent,
+              ),
+        child: loading
+            ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (leading != null) ...[
+                    leading!,
+                    const SizedBox(width: AppSpacing.sm),
+                  ] else if (icon != null) ...[
+                    Icon(icon, size: 17),
+                    const SizedBox(width: AppSpacing.sm),
+                  ],
+                  Text(label),
+                ],
+              ),
       ),
-    ),
-  );
+    );
+    return SizedBox(
+      height: AppSpacing.touchTarget,
+      child: Center(
+        child: gradient == null
+            ? face
+            : DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: gradient!,
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
+                  borderRadius: BorderRadius.circular(AppRadius.button),
+                ),
+                child: face,
+              ),
+      ),
+    );
+  }
 }
 
 class CategoryChip extends StatelessWidget {

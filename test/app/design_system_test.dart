@@ -2,8 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:my_accounts_manager/app/app_theme.dart';
 import 'package:my_accounts_manager/app/app_widgets.dart';
+import 'package:my_accounts_manager/app/icon_resolvers.dart';
 
 void main() {
+  test(
+    'shared icon resolvers preserve existing Account and History mappings',
+    () {
+      expect(resolveAccountIcon('bank'), Icons.account_balance_rounded);
+      expect(
+        resolveAccountIcon('unknown'),
+        Icons.account_balance_wallet_rounded,
+      );
+      expect(
+        resolveCategoryIcon('food', income: false),
+        Icons.restaurant_rounded,
+      );
+      expect(resolveCategoryIcon('Salary', income: true), Icons.work_rounded);
+      expect(
+        resolveCategoryIcon('unknown', income: true),
+        Icons.south_west_rounded,
+      );
+    },
+  );
+
   test('design tokens keep the approved visual and touch dimensions', () {
     expect(AppSpacing.buttonHeight, 40);
     expect(AppSpacing.touchTarget, 48);

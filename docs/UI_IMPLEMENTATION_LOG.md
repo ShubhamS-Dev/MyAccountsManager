@@ -9,7 +9,7 @@ This document records actual UI implementation work, decisions, files changed, a
 - Base: `feature/20261108/project-foundation`
 - Product/architecture baseline: `README.md`, `agent.md`, `milestone.md`, `docs/ARCHITECTURE.md`, `docs/DATABASE_SCHEMA_V1.md`, and `docs/UI_UX_REQUIREMENTS.md`.
 - The user's confirmed screen inventory is recorded in `docs/UI_UX_REQUIREMENTS.md`.
-- All standard action buttons are 40 logical pixels high. Screen titles are at most 16px, section headings 14px, amounts 16px, and supporting/label text 11px.
+- All standard action buttons are 40 logical pixels high. Screen titles are at most 16px, section headings 14px, standard transaction amounts 16px (Add Transaction input exception 28px), and supporting/label text 11px.
 - Light mode is the default; Dark mode is supported. Currency is INR only. Date-only business values use UTC-midnight storage and display as `DD MMM YYYY`.
 
 ## Implemented in this branch

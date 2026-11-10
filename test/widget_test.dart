@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:my_accounts_manager/app/app_router.dart';
 import 'package:my_accounts_manager/app/app_theme.dart';
+import 'package:my_accounts_manager/app/app_widgets.dart';
 import 'package:my_accounts_manager/app/my_accounts_manager_app.dart';
 import 'package:my_accounts_manager/core/database/app_database.dart';
 import 'package:my_accounts_manager/core/database/database_provider.dart';
@@ -46,7 +49,19 @@ void main() {
     );
   }
 
-  Future<void> pumpApp(WidgetTester tester, {bool liveHistory = false}) async {
+  Future<void> pumpApp(
+    WidgetTester tester, {
+    bool liveHistory = false,
+    bool includeCategories = false,
+    List<AccountRow>? accountRows,
+    TransactionsRepository? repository,
+  }) async {
+    final categoryRows = includeCategories
+        ? await tester.runAsync(
+                () => testDatabase.select(testDatabase.categories).get(),
+              ) ??
+              <CategoryRow>[]
+        : <CategoryRow>[];
     addTearDown(() async {
       // Unmount consumers before closing the in-memory database.
       await tester.pumpWidget(const SizedBox.shrink());
@@ -63,7 +78,7 @@ void main() {
           // covered separately, so use deterministic streams here and avoid
           // opening Drift query subscriptions from the widget tree.
           activeAccountsProvider.overrideWith(
-            (ref) => Stream.value([testAccount]),
+            (ref) => Stream.value(accountRows ?? [testAccount]),
           ),
           allAccountsProvider.overrideWith(
             (ref) => Stream.value([testAccount]),
@@ -78,8 +93,16 @@ void main() {
             (ref, accountId) => Stream.value(<BalanceAdjustmentRow>[]),
           ),
           activeCategoriesByTypeProvider.overrideWith(
-            (ref, type) => Stream.value(<CategoryRow>[]),
+            (ref, type) => Stream.value(
+              categoryRows
+                  .where(
+                    (category) => category.type == type && category.isActive,
+                  )
+                  .toList(),
+            ),
           ),
+          if (repository != null)
+            transactionsRepositoryProvider.overrideWithValue(repository),
           transactionHistoryProvider.overrideWith((ref, filter) {
             if (liveHistory) {
               return TransactionsRepository(testDatabase).watchHistory(
@@ -129,7 +152,7 @@ void main() {
         reason: '${buttonType.toString()} should render at exactly 40px high.',
       );
     }
-  });
+  }, timeout: const Timeout(Duration(seconds: 30)));
 
   testWidgets('shows the empty Archived Accounts state', (tester) async {
     addTearDown(() async {
@@ -157,7 +180,7 @@ void main() {
       find.textContaining('Accounts you archive will appear here'),
       findsOneWidget,
     );
-  });
+  }, timeout: const Timeout(Duration(seconds: 30)));
 
   testWidgets(
     'restores an archived Account from the Archived Accounts screen',
@@ -200,6 +223,7 @@ void main() {
       expect(restored, isNotNull);
       expect(restored!.archivedAt, isNull);
     },
+    timeout: const Timeout(Duration(seconds: 30)),
   );
 
   testWidgets('launches the home dashboard with primary navigation', (
@@ -282,7 +306,7 @@ void main() {
         reason: 'Selecting $destination should update the app bar title.',
       );
     }
-  });
+  }, timeout: const Timeout(Duration(seconds: 30)));
 
   testWidgets('shows and filters the refreshed Accounts overview', (
     tester,
@@ -301,7 +325,10 @@ void main() {
 
     final accountsList = find.ancestor(
       of: find.text('Your accounts'),
-      matching: find.byType(ListView),
+      matching: find.byWidgetPredicate(
+        (widget) =>
+            widget is ListView && widget.scrollDirection == Axis.vertical,
+      ),
     );
     await tester.drag(accountsList, const Offset(0, -300));
     await tester.pumpAndSettle();
@@ -322,7 +349,7 @@ void main() {
     await tester.tap(clearSearchAction);
     await tester.pumpAndSettle();
     expect(find.text('Widget test Account'), findsOneWidget);
-  });
+  }, timeout: const Timeout(Duration(seconds: 30)));
 
   testWidgets('shares the dashboard privacy toggle with Account Details', (
     tester,
@@ -356,7 +383,7 @@ void main() {
     expect(find.text('₹0'), findsNWidgets(5));
     expect(find.text('₹ ••••••'), findsNothing);
     expect(find.text('₹ •••'), findsNothing);
-  });
+  }, timeout: const Timeout(Duration(seconds: 30)));
 
   testWidgets('opens Account Details from the Accounts grid', (tester) async {
     await pumpApp(tester);
@@ -393,7 +420,7 @@ void main() {
     );
     expect(adjustmentsAction, findsOneWidget);
     expect(tester.getSize(adjustmentsAction).height, 40);
-  });
+  }, timeout: const Timeout(Duration(seconds: 30)));
 
   testWidgets(
     'opens the add transaction form from the floating action button',
@@ -406,6 +433,7 @@ void main() {
       expect(find.text('Add transaction'), findsOneWidget);
       expect(find.text('How much did you spend?'), findsOneWidget);
     },
+    timeout: const Timeout(Duration(seconds: 30)),
   );
 
   testWidgets('shows and interacts with the approved History controls', (
@@ -493,7 +521,7 @@ void main() {
     await tester.tap(find.text('Apply'));
     await tester.pumpAndSettle();
     expect(find.text('No transactions yet'), findsOneWidget);
-  });
+  }, timeout: const Timeout(Duration(seconds: 30)));
 
   testWidgets('swiping a History row moves it to Trash and Undo restores it', (
     tester,
@@ -584,66 +612,51 @@ void main() {
     await tester.tap(find.byTooltip('Add transaction'));
     await pumpUntilFound(tester, find.text('How much did you spend?'));
 
-    final incomeSegment = find.descendant(
-      of: find.byWidgetPredicate((widget) => widget is SegmentedButton),
-      matching: find.text('Income'),
+    final incomeSegment = find.byKey(
+      const ValueKey('transaction-kind-income-unselected'),
     );
     expect(incomeSegment, findsOneWidget);
     await tester.tap(incomeSegment);
     await pumpUntilFound(tester, find.text('How much did you receive?'));
 
     expect(find.text('How much did you receive?'), findsOneWidget);
-  });
+  }, timeout: const Timeout(Duration(seconds: 30)));
   testWidgets('transaction form follows approved field order and date label', (
     tester,
   ) async {
     await pumpApp(tester);
     await tester.tap(find.byTooltip('Add transaction'));
     await pumpUntilFound(tester, find.text('How much did you spend?'));
-    await pumpUntilFound(tester, find.text('Category'));
-
-    final accountY = tester.getTopLeft(find.text('Account').first).dy;
-    final dateY = tester.getTopLeft(find.text('Transaction date').first).dy;
-    final noteY = tester.getTopLeft(find.text('Note').first).dy;
-    final amountY = tester.getTopLeft(find.text('Amount').first).dy;
-    final categoryY = tester.getTopLeft(find.text('Category').first).dy;
-
-    expect(accountY, lessThan(dateY));
-    expect(dateY, lessThan(noteY));
-    expect(noteY, lessThan(amountY));
-    expect(amountY, lessThan(categoryY));
-    expect(find.text('Today'), findsOneWidget);
-    expect(find.text('What was this transaction for?'), findsOneWidget);
-    // Find the Scrollable owned by this Form's ListView. Other
-    // Scrollables under Form can belong to dropdown controls.
-    final formListView = find.descendant(
+    final formListViewFinder = find.descendant(
       of: find.byType(Form),
-      matching: find.byType(ListView),
-    );
-    expect(formListView, findsOneWidget);
-    // The form contains nested TextFormFields. Flutter gives each editable
-    // field its own Scrollable (for caret/selection handling), so matching
-    // every Scrollable below the Form is ambiguous. The outer ListView's
-    // Scrollable has no restorationId; editable field scrollables use
-    // restorationId "editable". Match the actual form viewport explicitly.
-    final formScrollable = find.descendant(
-      of: formListView,
       matching: find.byWidgetPredicate(
         (widget) =>
-            widget is Scrollable &&
-            widget.restorationId == null &&
-            widget.axisDirection == AxisDirection.down,
+            widget is ListView && widget.scrollDirection == Axis.vertical,
       ),
     );
-    expect(formScrollable, findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.text('Save transaction'),
-      250,
-      scrollable: formScrollable,
-    );
-    await tester.pumpAndSettle();
+    expect(formListViewFinder, findsOneWidget);
+    final formListView = tester.widget<ListView>(formListViewFinder);
+    final children =
+        (formListView.childrenDelegate as SliverChildListDelegate).children;
+    final fieldOrder = <String>[
+      'add-transaction-account',
+      'add-transaction-date',
+      'add-transaction-note',
+      'add-transaction-amount',
+      'add-transaction-category',
+    ];
+    final fieldIndexes = fieldOrder.map((key) {
+      return children.indexWhere((child) => child.key == ValueKey(key));
+    }).toList();
+    expect(fieldIndexes.every((index) => index >= 0), isTrue);
+    for (var index = 0; index < fieldIndexes.length - 1; index++) {
+      expect(fieldIndexes[index], lessThan(fieldIndexes[index + 1]));
+    }
+
+    expect(find.text('Today'), findsOneWidget);
+    expect(find.text('What was this transaction for?'), findsOneWidget);
     expect(find.text('Save transaction'), findsOneWidget);
-  });
+  }, timeout: const Timeout(Duration(seconds: 30)));
   testWidgets('Home income shortcut opens a preselected income form', (
     tester,
   ) async {
@@ -652,7 +665,318 @@ void main() {
     await tester.tap(find.text('Income').last);
     await pumpUntilFound(tester, find.text('How much did you receive?'));
 
-    expect(find.text('How much did you receive?'), findsOneWidget);
-    expect(find.text('How much did you spend?'), findsNothing);
-  });
+    expect(
+      find.byKey(const ValueKey('transaction-kind-income-selected')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('transaction-kind-expense-unselected')),
+      findsOneWidget,
+    );
+  }, timeout: const Timeout(Duration(seconds: 30)));
+
+  testWidgets('Add Transaction quick-add preserves paise and Indian grouping', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+
+    await tester.tap(find.byTooltip('Add transaction'));
+    await pumpUntilFound(tester, find.text('How much did you spend?'));
+
+    final amountField = find.byType(TextFormField);
+    await tester.enterText(amountField, '10.50');
+    await tester.pump();
+    await tester.tap(find.text('+100'));
+    await tester.pump();
+
+    expect(
+      tester.widget<TextFormField>(amountField).controller!.text,
+      '110.50',
+    );
+
+    await tester.enterText(amountField, '100000');
+    await tester.pump();
+    expect(
+      tester.widget<TextFormField>(amountField).controller!.text,
+      '1,00,000',
+    );
+  }, timeout: const Timeout(Duration(seconds: 30)));
+
+  testWidgets('Add Transaction amount input enforces the 12-digit limit', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+
+    await tester.tap(find.byTooltip('Add transaction'));
+    await pumpUntilFound(tester, find.text('How much did you spend?'));
+
+    final amountField = find.byType(TextFormField);
+    await tester.enterText(amountField, '999999999999');
+    await tester.pump();
+    final before = tester.widget<TextFormField>(amountField).controller!.text;
+
+    await tester.tap(find.text('+100'));
+    await tester.pump();
+
+    expect(tester.widget<TextFormField>(amountField).controller!.text, before);
+    expect(find.textContaining('Maximum amount is'), findsOneWidget);
+
+    await tester.enterText(amountField, '1000000000000');
+    await tester.pump();
+    expect(tester.widget<TextFormField>(amountField).controller!.text, before);
+  }, timeout: const Timeout(Duration(seconds: 30)));
+
+  testWidgets(
+    'Add Transaction has no-active-Account empty state and Add account CTA',
+    (tester) async {
+      await pumpApp(tester, accountRows: <AccountRow>[]);
+
+      await tester.tap(find.byTooltip('Add transaction'));
+      await pumpUntilFound(tester, find.text('No active accounts'));
+
+      expect(find.text('Add account'), findsOneWidget);
+      expect(find.text('Save transaction'), findsNothing);
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
+
+  testWidgets(
+    'Add Transaction Account chips scroll and keep the selected chip visible',
+    (tester) async {
+      final rows = <AccountRow>[testAccount];
+      await tester.runAsync(() async {
+        for (var index = 2; index <= 7; index++) {
+          final id = await AccountsRepository(
+            testDatabase,
+          ).createAccount(name: 'Account $index');
+          rows.add((await AccountsRepository(testDatabase).getAccount(id))!);
+        }
+      });
+
+      await pumpApp(tester, accountRows: rows);
+      await tester.tap(find.byTooltip('Add transaction'));
+      await pumpUntilFound(tester, find.text('Account'));
+      final accountList = find.byType(ListView).last;
+      await tester.drag(accountList, const Offset(-1200, 0));
+      await tester.pumpAndSettle();
+      await pumpUntilFound(tester, find.text('Account 7'));
+
+      await tester.ensureVisible(find.text('Account 7'));
+      await tester.pump();
+      await tester.tap(find.text('Account 7'));
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(find.text('Account 7'), findsOneWidget);
+      expect(
+        tester
+            .getRect(find.text('Account 7'))
+            .overlaps(tester.getRect(find.byType(ListView).last)),
+        isTrue,
+      );
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
+
+  testWidgets(
+    'Add Transaction saves integer paise with the selected transaction type',
+    (tester) async {
+      final completion = Completer<String>();
+      final repository = _RecordingTransactionsRepository(
+        testDatabase,
+        completion: completion,
+      );
+      await pumpApp(tester, includeCategories: true, repository: repository);
+
+      await tester.tap(find.byTooltip('Add transaction'));
+      await pumpUntilFound(tester, find.text('How much did you spend?'));
+      await tester.tap(
+        find.byKey(const ValueKey('transaction-kind-income-unselected')),
+      );
+      await tester.pump(const Duration(milliseconds: 200));
+      await scrollFormToBottom(tester);
+      await pumpUntilFound(tester, find.text('Salary'));
+      await tester.ensureVisible(find.text('Salary'));
+      await tester.pump();
+      await tester.tap(find.text('Salary'));
+      await scrollFormToTop(tester);
+      await tester.enterText(find.byType(TextFormField), '1,250.50');
+      await tester.pump();
+      await tester.tap(find.text('Save transaction'));
+      await tester.pump();
+      expect(repository.saveCalls, 1);
+      await tester.tap(find.byType(PrimaryButton));
+      await tester.pump();
+      expect(repository.saveCalls, 1);
+      completion.complete('recorded-transaction');
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 220));
+
+      expect(repository.savedType, 'income');
+      expect(repository.savedAmountPaise, 125050);
+      expect(repository.savedAccountId, testAccount.id);
+      final storedDate = DateTime.fromMillisecondsSinceEpoch(
+        repository.savedTransactionDate!,
+        isUtc: true,
+      );
+      expect(storedDate.hour, 0);
+      expect(storedDate.minute, 0);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 1));
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
+
+  testWidgets(
+    'Add Transaction Yesterday displays DD MMM YYYY rather than Yesterday',
+    (tester) async {
+      await pumpApp(tester);
+
+      await tester.tap(find.byTooltip('Add transaction'));
+      await pumpUntilFound(tester, find.text('Today'));
+      await tester.tap(find.text('Yesterday'));
+      await tester.pump();
+
+      expect(find.text('Today'), findsOneWidget);
+      expect(find.text('Yesterday'), findsOneWidget);
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Text &&
+              RegExp(
+                r'^\d{2} [A-Z][a-z]{2} \d{4}$',
+              ).hasMatch(widget.data ?? ''),
+        ),
+        findsOneWidget,
+      );
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
+
+  testWidgets(
+    'Add Transaction categories follow the selected Expense or Income type',
+    (tester) async {
+      await pumpApp(tester, includeCategories: true);
+
+      await tester.tap(find.byTooltip('Add transaction'));
+      await pumpUntilFound(tester, find.text('How much did you spend?'));
+      await scrollFormToBottom(tester);
+      await pumpUntilFound(tester, find.text('Food & Dining'));
+      expect(find.text('Salary'), findsNothing);
+
+      await scrollFormToTop(tester);
+      await tester.tap(
+        find.byKey(const ValueKey('transaction-kind-income-unselected')),
+      );
+      await tester.pump(const Duration(milliseconds: 200));
+      await scrollFormToBottom(tester);
+      await pumpUntilFound(tester, find.text('Salary'));
+
+      expect(find.text('Food & Dining'), findsNothing);
+      expect(find.text('Salary'), findsOneWidget);
+
+      await scrollFormToTop(tester);
+      await tester.tap(
+        find.byKey(const ValueKey('transaction-kind-expense-unselected')),
+      );
+      await tester.pump(const Duration(milliseconds: 200));
+      await scrollFormToBottom(tester);
+      await pumpUntilFound(tester, find.text('Food & Dining'));
+      expect(find.text('Salary'), findsNothing);
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
+
+  testWidgets(
+    'Add Transaction note counter appears only after 400 characters',
+    (tester) async {
+      await pumpApp(tester);
+
+      await tester.tap(find.byTooltip('Add transaction'));
+      await pumpUntilFound(tester, find.text('What was this transaction for?'));
+
+      final noteField = find.byWidgetPredicate(
+        (widget) =>
+            widget is TextField &&
+            widget.decoration?.hintText == 'What was this transaction for?',
+      );
+      await tester.enterText(noteField, 'a' * 400);
+      await tester.pump();
+      expect(find.text('400/500'), findsNothing);
+
+      await tester.enterText(noteField, 'a' * 401);
+      await tester.pump();
+      expect(find.text('401/500'), findsOneWidget);
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
+}
+
+Future<void> scrollFormToTop(WidgetTester tester) async {
+  final formListView = find.descendant(
+    of: find.byType(Form),
+    matching: find.byWidgetPredicate(
+      (widget) => widget is ListView && widget.scrollDirection == Axis.vertical,
+    ),
+  );
+  final formScrollable = find.descendant(
+    of: formListView,
+    matching: find.byWidgetPredicate(
+      (widget) =>
+          widget is Scrollable &&
+          widget.restorationId == null &&
+          widget.axisDirection == AxisDirection.down,
+    ),
+  );
+  await tester.drag(formScrollable, const Offset(0, 700));
+  await tester.pumpAndSettle();
+}
+
+Future<void> scrollFormToBottom(WidgetTester tester) async {
+  final formListView = find.descendant(
+    of: find.byType(Form),
+    matching: find.byWidgetPredicate(
+      (widget) => widget is ListView && widget.scrollDirection == Axis.vertical,
+    ),
+  );
+  final formScrollable = find.descendant(
+    of: formListView,
+    matching: find.byWidgetPredicate(
+      (widget) =>
+          widget is Scrollable &&
+          widget.restorationId == null &&
+          widget.axisDirection == AxisDirection.down,
+    ),
+  );
+  await tester.drag(formScrollable, const Offset(0, -700));
+  await tester.pumpAndSettle();
+}
+
+class _RecordingTransactionsRepository extends TransactionsRepository {
+  _RecordingTransactionsRepository(super.database, {this.completion});
+
+  final Completer<String>? completion;
+  int saveCalls = 0;
+
+  String? savedType;
+  int? savedAmountPaise;
+  String? savedAccountId;
+  int? savedTransactionDate;
+
+  @override
+  Future<String> createTransaction({
+    required String accountId,
+    required String categoryId,
+    required String type,
+    required int amountPaise,
+    required int transactionDate,
+    String? note,
+  }) {
+    saveCalls++;
+    savedAccountId = accountId;
+    savedType = type;
+    savedAmountPaise = amountPaise;
+    savedTransactionDate = transactionDate;
+    return completion?.future ?? Future.value('recorded-transaction');
+  }
 }

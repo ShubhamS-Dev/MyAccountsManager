@@ -65,3 +65,7 @@ Account and Category filters open a bottom sheet. The current selection is highl
 - Corrective production change: move the asynchronous soft-delete into `confirmDismiss`. The callback now returns `Future<bool>`, awaits `softDeleteTransaction`, and only permits dismissal after success. It captures the page-level `ScaffoldMessengerState` before the await and uses that captured messenger for success/error feedback. A failed delete returns false, keeping the row visible.
 - Corrective test change: use a high-velocity left fling in the configured `endToStart` direction, then explicitly pump the dismissal and snackbar animations and wait for the snackbar. The test still verifies row removal, Trash persistence, Undo, and restoration to History. No test was skipped, deleted, or weakened.
 - Local Flutter/Dart commands were not run; CI remains the validation gate.
+
+
+## Shared icon resolver
+- Category icon rendering uses resolveCategoryIcon from lib/app/icon_resolvers.dart. The mapping, category metadata preference, and income/expense fallback glyph are unchanged; only the resolver location is shared with Add Transaction.

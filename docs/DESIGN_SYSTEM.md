@@ -10,7 +10,7 @@ This document describes the shared UI foundation used by Home and feature screen
 - Theme surfaces, foregrounds, outlines, and containers must come from `Theme.of(context).colorScheme`.
 
 ## Typography
-Use `AppTypography`: screen title 16px, section title 14px, balance 38px, transaction amount 16px, and supporting/field/metadata text 11px. Amounts use tabular figures. Do not introduce local font families or arbitrary font sizes for standard content.
+Use `AppTypography`: screen title 16px, section title 14px, balance 38px, transaction amount 16px, Add Transaction amount input 28px (the only approved exception), and supporting/field/metadata text 11px. Amounts use tabular figures. Do not introduce local font families or arbitrary font sizes for standard content.
 
 ## Spacing, radius, and elevation
 - Spacing: `AppSpacing.xs/sm/md/lg/xl/xxl` (4/8/16/24/32/40).
@@ -23,7 +23,7 @@ Use `AppTypography`: screen title 16px, section title 14px, balance 38px, transa
 - `GradientCard`: branded hero/account card. Pass a shared gradient token or a data-driven account gradient.
 - `AmountText`: monetary text with tabular figures and consistent overflow handling.
 - `SectionHeader`: section title and optional action.
-- `PrimaryButton`: standard 40px action button with a 48px touch area.
+- `PrimaryButton`: standard 40px action button with a 48px touch area. Optional `gradient` is opt-in; omitted gradient retains the default solid style.
 - `CategoryChip`: accessible selectable chip.
 - `EmptyState`: icon-led empty/error illustration, supporting copy, and optional CTA.
 
@@ -57,3 +57,10 @@ GradientCard(
 - History-specific selection, transaction, date-header, empty-state, and swipe surfaces must use AppColors semantic tokens or Theme.of(context).colorScheme; do not add literal colors or screen-local color constants.
 - Selected History type segments use colorScheme.primary with colorScheme.onPrimary text to preserve high contrast. Unselected segments use themed surface and onSurfaceVariant.
 - The shared Dashboard, Accounts, and History FAB uses AppColors.heroGradient with colorScheme.onPrimary foreground.
+
+
+## Add Transaction amount-input exception
+- `AppTypography.amountInput` is 28px and is reserved exclusively for the prominent Add Transaction amount input.
+- The standard `AppTypography.transactionAmount` remains 16px everywhere else, including History, Account Details, summaries, and Edit Transaction.
+- The Add Transaction Save action may opt into `PrimaryButton.gradient` with `AppColors.heroGradient`; all existing PrimaryButton callers remain solid by default.
+- Expense/Income selection, account selection, date shortcuts, amount quick-add controls, and category chips use built-in Flutter animation and shared semantic/theme colors.

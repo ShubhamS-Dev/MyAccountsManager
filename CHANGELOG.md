@@ -19,3 +19,12 @@
 - Reused shared design tokens/widgets; no new package, schema migration, or navigation change.
 
 - Refined History category icon mapping, selected-segment contrast, and shared gradient FAB; added metadata-projection and swipe/Undo regression coverage. History color usage remains token/theme-driven for future Light-theme support.
+
+
+### Add Transaction — premium form refresh
+- Rebuilt the Add Transaction experience with animated Expense/Income selection, pinned-first Account chips, date shortcuts, expandable Note, prominent Indian-formatted paise-safe Amount input, quick-add chips, and Category chips.
+- Added the dedicated 28px `AppTypography.amountInput` exception; all standard transaction amount typography remains 16px.
+- Added opt-in gradient support to `PrimaryButton`; the default appearance for all existing callers remains solid.
+- Added shared Account and Category icon resolvers without changing Accounts or History presentation.
+- Preserved UTC date-only storage, category-type filtering, repository validation/save flow, and Home Income shortcut.
+- No schema migration, package, Edit Transaction change, or shared shadow change.

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/app_theme.dart';
 import '../../../app/app_widgets.dart';
+import '../../../app/icon_resolvers.dart';
 import '../../../app/privacy_state.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/formatting/money_formatter.dart';
@@ -331,7 +332,7 @@ class _AccountCard extends StatelessWidget {
                   radius: 18,
                   backgroundColor: Colors.white.withValues(alpha: .18),
                   child: Icon(
-                    _accountIcon(account.iconKey),
+                    resolveAccountIcon(account.iconKey),
                     size: 19,
                     color: Colors.white,
                   ),
@@ -513,28 +514,6 @@ class _AddAccountCard extends StatelessWidget {
         ],
       ),
     );
-  }
-}
-
-IconData _accountIcon(String? iconKey) {
-  switch (iconKey?.toLowerCase()) {
-    case 'bank':
-    case 'account_balance':
-      return Icons.account_balance_rounded;
-    case 'cash':
-    case 'money':
-      return Icons.payments_rounded;
-    case 'card':
-    case 'credit_card':
-      return Icons.credit_card_rounded;
-    case 'wallet':
-      return Icons.account_balance_wallet_rounded;
-    case 'savings':
-      return Icons.savings_rounded;
-    case 'investment':
-      return Icons.trending_up_rounded;
-    default:
-      return Icons.account_balance_wallet_rounded;
   }
 }
 

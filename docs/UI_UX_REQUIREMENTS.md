@@ -91,6 +91,7 @@ Use the following shared sizes consistently across existing and future screens:
 - Screen/app-bar title: **16 logical pixels maximum**.
 - Section headings: **14 logical pixels**.
 - Transaction amounts and primary balance figures: **16 logical pixels**.
+- **Approved exception:** only the Add Transaction amount-entry field uses the dedicated `AppTypography.amountInput` token at **28 logical pixels**. This does not change the 16px rule for displayed transaction amounts, balances, or Edit Transaction.
 - Labels, values, dates, supporting details, button labels, and bottom-navigation labels: **11 logical pixels**.
 - Use weight, spacing, and semantic color for hierarchy rather than increasing text size beyond these limits.
 
@@ -118,3 +119,18 @@ The user has confirmed the proposed screen inventory for implementation. This ap
 
 Keep the approved product rules and ledger boundaries intact while implementing these screens. Any unresolved behavior affecting stored data, security, financial calculations, or destructive actions remains governed by the open decisions in the PRD/architecture and must not be inferred from a visual mockup.
 
+
+
+## Add Transaction premium form — approved exception and interaction rules
+- Keep Expense/Income above the fixed Account → Date → Note → Amount → Category order, including keyboard focus traversal order.
+- Expense selection uses rose semantic styling; Income uses emerald semantic styling. Selected text must remain high contrast.
+- Account choices are horizontal scrollable chips showing account icon, metadata color, and balance. Respect the shared amount-visibility preference. Default to the first pinned active Account; otherwise use the first active Account in repository order. Do not persist last-used Account in this iteration.
+- If there are no active Accounts, show an empty state and an **Add account** action to `/accounts/new`.
+- Date shortcuts are Today, Yesterday, and Pick date. The visible selected-date label is Today only for the device's current local calendar date; all other dates use DD MMM YYYY. Persist the chosen date at UTC midnight.
+- Note starts as one line and expands as needed. Preserve the existing 500-character limit; show its counter only after 400 characters.
+- Add Transaction amount entry uses `AppTypography.amountInput` (28px) as the sole exception to the standard 16px amount typography rule. Use `MoneyFormatter` for Indian grouping and integer-paise parsing; preserve the existing 1–12 whole-digit, positive amount, and maximum two-decimal-place validation.
+- Quick-add chips add rupees without losing paise precision. For example, ₹10.50 + ₹100 becomes ₹110.50. Do not exceed the 12-digit whole-rupee limit.
+- Category choices are active categories filtered by Expense/Income type and displayed as icon/color chips. Recent categories and persisted last-used Account are deferred; no schema migration.
+- Home's Income shortcut continues to open Add Transaction with Income selected.
+- Save remains sticky above the keyboard, opts into the shared PrimaryButton gradient, disables while saving, and gives short non-blocking haptic/checkmark feedback after successful persistence. The existing repository save/validation flow remains unchanged.
+- No Edit Transaction redesign, shared shadow changes, schema migration, or third-party animation package is included in this slice.
