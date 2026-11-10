@@ -498,9 +498,9 @@ void main() {
     expect(find.text('No transactions yet'), findsOneWidget);
   });
 
-  testWidgets(
-    'swiping a History row moves it to Trash and Undo restores it',
-    (tester) async {
+  testWidgets('swiping a History row moves it to Trash and Undo restores it', (
+    tester,
+  ) async {
     final category =
         await (testDatabase.select(testDatabase.categories)
               ..where((row) => row.type.equals('expense'))
@@ -549,14 +549,10 @@ void main() {
     // with a long pump here. The SnackBarAction callback has a void signature,
     // so observe the repository stream to await its async restore operation.
     expect(find.text('Undo'), findsOneWidget);
-    final restoredHistory = TransactionsRepository(
-      testDatabase,
-    )
+    final restoredHistory = TransactionsRepository(testDatabase)
         .watchHistory()
         .firstWhere(
-          (items) => items.any(
-            (item) => item.transaction.id == transactionId,
-          ),
+          (items) => items.any((item) => item.transaction.id == transactionId),
         );
     tester
         .widget<SnackBarAction>(find.byType(SnackBarAction))
@@ -568,14 +564,10 @@ void main() {
         'Undo did not restore the transaction to History within 5 seconds.',
       ),
     );
-    expect(
-      restoredItems.single.transaction.id,
-      transactionId,
-    );
+    expect(restoredItems.single.transaction.id, transactionId);
     await tester.pump();
     expect(find.text('Swipe test transaction'), findsOneWidget);
-    },
-  );
+  });
   testWidgets('switches the transaction form from expense to income', (
     tester,
   ) async {
