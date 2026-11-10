@@ -194,3 +194,15 @@ User approval: implement Phases 1–3 first; stop for user review before beginni
 - This occurs before application compilation and indicates a corrupted/inconsistent downloaded native asset, not an application source or test failure. Do not bypass checksum validation or alter the expected hash.
 - Corrective action: classify the sqlite3 native asset checksum-mismatch message as a retryable download failure in the Android debug build retry loop. A subsequent attempt reruns Flutter's native asset hook and performs the package's own checksum verification again. The existing three-attempt cap remains in place.
 - APK upload remains gated on a successful debug build.
+
+
+## Accounts screen premium redesign — UI-only
+
+- File: `lib/features/accounts/presentation/accounts_page.dart`.
+- Replaced screen-local balance privacy with shared `amountsHiddenProvider`; Dashboard, Accounts and Account Details now reflect the same presentation preference.
+- Replaced the screen-specific navy summary with `GradientCard` and the shared Dashboard hero gradient.
+- Account cards use `GradientCard`, shared spacing/radius/typography, existing `iconKey` and `colorValue`, with the Dashboard account palette as fallback.
+- Added shared `SectionHeader`, `AmountText`, `AppCard`, and `EmptyState` usage, plus a premium bottom sheet for View details, Edit, Adjust balance, Pin/Unpin and Archive.
+- No Delete action, Account type field, schema/model change, provider/repository change, or route change.
+- Search, pinned-first ordering, balance sources, and archive confirmation remain as before.
+- Validation for this slice: pending CI run; do not claim analyzer/tests passed until the run is inspected.
