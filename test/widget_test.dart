@@ -532,7 +532,11 @@ void main() {
 
     expect(find.text('Transaction moved to Trash'), findsOneWidget);
     expect(find.text('Swipe test transaction'), findsNothing);
-    expect(row, findsNothing, reason: 'Dismissible must leave the widget tree.');
+    expect(
+      row,
+      findsNothing,
+      reason: 'Dismissible must leave the widget tree.',
+    );
     expect(
       (await TransactionsRepository(
         testDatabase,
