@@ -188,7 +188,8 @@ class _HomeDashboardPageState extends ConsumerState<_HomeDashboardPage> {
             ),
             IconButton(
               tooltip: hideAmounts ? 'Show amounts' : 'Hide amounts',
-              onPressed: () => ref.read(amountsHiddenProvider.notifier).state = !hideAmounts,
+              onPressed: () =>
+                  ref.read(amountsHiddenProvider.notifier).state = !hideAmounts,
               icon: Icon(
                 hideAmounts
                     ? Icons.visibility_off_rounded
