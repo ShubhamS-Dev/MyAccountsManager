@@ -465,9 +465,7 @@ void main() {
     expect(find.text('Clear'), findsOneWidget);
     expect(find.text('Apply'), findsOneWidget);
 
-    await tester.tap(
-      find.widgetWithText(ChoiceChip, 'Widget test Account'),
-    );
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Widget test Account'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Apply'));
     await tester.pumpAndSettle();
