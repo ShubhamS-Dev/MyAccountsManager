@@ -351,3 +351,14 @@ User approval: implement Phases 1–3 first; stop for user review before beginni
 - Swipe direction (`endToStart`), high-velocity left fling, awaited soft-delete behavior, row removal, Trash persistence, and History restoration assertions remain. No tests were skipped or deleted.
 - Production code remains unchanged: `_moveToTrash` captures the page-level ScaffoldMessenger before awaiting soft delete, and `confirmDismiss` awaits that operation. The failure was in test synchronization, not row-context snackbar lifecycle.
 - Do not mark complete until the full CI workflow is green.
+
+## Run #359 status — cancelled workflow attempt (2026-11-10)
+- Run: [Flutter validation #359](https://github.com/ShubhamS-Dev/MyAccountsManager/actions/runs/42834210753)
+- GitHub Actions reports the workflow run as `cancelled`; setup and all validation steps were skipped. This run provides no Format, Analyze, or Tests result and is not evidence of a code failure or pass.
+
+## Run #362 RCA — formatter auto-commit push rejected (2026-11-10)
+- Run: [Flutter validation #362](https://github.com/ShubhamS-Dev/MyAccountsManager/actions/runs/42840229188)
+- Drift code generation and generated-file verification passed. `dart format .` reformatted `test/widget_test.dart` (one file; 6 insertions and 11 deletions), then the workflow's auto-format commit push was rejected with `fetch first` because the remote branch had advanced to the Run #361 RCA documentation commit. Analyze and Tests were skipped; the History swipe/Undo test was not executed in this run.
+- This is a branch synchronization / formatting failure, not a production-code failure. The temporary runner-local auto-format commit `7159df8` was not pushed and is not part of the remote history.
+- Recovery: start from the latest remote branch head, apply the formatter's Dart-style layout to the History test, and include the test and this RCA documentation update in one commit. No force push is used. Wait for any active CI run to finish before pushing further commits.
+- Run #358 established the original production defect and fix: the delete Future had been launched from `onDismissed` without being awaited. The current production flow awaits soft-delete in `confirmDismiss` and captures the page-level ScaffoldMessenger before awaiting the repository operation. Runs #360 and #361 then exposed test-side async coordination / pump timeouts. Run #362 did not execute tests, so the current Undo test remains unverified.

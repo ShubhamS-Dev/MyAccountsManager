@@ -498,9 +498,9 @@ void main() {
     expect(find.text('No transactions yet'), findsOneWidget);
   });
 
-  testWidgets('swiping a History row moves it to Trash and Undo restores it', (
-    tester,
-  ) async {
+  testWidgets(
+    'swiping a History row moves it to Trash and Undo restores it',
+    (tester) async {
     final category =
         await (testDatabase.select(testDatabase.categories)
               ..where((row) => row.type.equals('expense'))
@@ -551,11 +551,13 @@ void main() {
     expect(find.text('Undo'), findsOneWidget);
     final restoredHistory = TransactionsRepository(
       testDatabase,
-    ).watchHistory().firstWhere(
-      (items) => items.any(
-        (item) => item.transaction.id == transactionId,
-      ),
-    );
+    )
+        .watchHistory()
+        .firstWhere(
+          (items) => items.any(
+            (item) => item.transaction.id == transactionId,
+          ),
+        );
     tester
         .widget<SnackBarAction>(find.byType(SnackBarAction))
         .onPressed
@@ -572,7 +574,8 @@ void main() {
     );
     await tester.pump();
     expect(find.text('Swipe test transaction'), findsOneWidget);
-  });
+    },
+  );
   testWidgets('switches the transaction form from expense to income', (
     tester,
   ) async {
