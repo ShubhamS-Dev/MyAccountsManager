@@ -477,7 +477,7 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
             if (filtered.isEmpty)
               SliverFillRemaining(
                 hasScrollBody: false,
-                child: items.isEmpty
+                child: items.isEmpty && !_hasFilters
                     ? EmptyState(
                         title: 'No transactions yet',
                         message: 'Start tracking your income and expenses.',

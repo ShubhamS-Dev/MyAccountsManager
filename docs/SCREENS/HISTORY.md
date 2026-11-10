@@ -41,3 +41,5 @@ Account and Category filters open a bottom sheet. The current selection is highl
 - The History summary renders metric captions in uppercase (`INCOME` and `EXPENSES`); widget tests assert the rendered labels rather than title-case source strings.
 - History widget coverage exercises previous/next month controls, monthly summary, search and clear-search, All/Expense/Income selection, Account and Category filter sheet sections, Account selection/removal chip, Clear/Apply, Trash tooltip, and the initial empty state.
 - Bottom-sheet transitions are settled with `pumpAndSettle()`; the animated type selector uses its 220ms animation duration.
+
+- If a search or filter is active, an empty result always uses the `No matching transactions` state with `Clear filters`, even when the underlying History list itself is empty. The first-run `No transactions yet` state is reserved for an unfiltered empty list.

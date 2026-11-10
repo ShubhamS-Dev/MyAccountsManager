@@ -296,3 +296,13 @@ User approval: implement Phases 1–3 first; stop for user review before beginni
 - Corrective test update: assert the actual uppercase `INCOME` and `EXPENSES` captions and expand the same widget test to exercise month navigation, search/clear, All/Expense/Income, Account/Category sheet controls, Account selection/removal chip, Clear/Apply, Trash tooltip, and the empty state. Bottom-sheet transitions use `pumpAndSettle()`; the 180ms segmented animation is pumped for 220ms.
 - Reviewed every Dart file under `test/`: the other `Expenses` assertion belongs to the Home dashboard, and the remaining `Account`, `Category`, and `SegmentedButton` finders cover current Account Details or Add Transaction form UI, not stale History controls. Repository History tests remain unchanged.
 - Local Dart/Flutter commands were not run; CI is the validation gate.
+
+
+## Run #352 RCA — active search rendered the first-run empty state
+
+- Run: [Flutter validation #352](https://github.com/ShubhamS-Dev/MyAccountsManager/actions/runs/42812475640)
+- Drift generation, generated-file verification, formatting, and `flutter analyze` passed. The widget suite failed in `shows and interacts with the approved History controls` at `test/widget_test.dart:435`.
+- Exact failure: `Expected: exactly one matching candidate; Actual: _TextWidgetFinder:<Found 0 widgets with text "No matching transactions": []>`.
+- Root cause: implementation bug (b). The History empty-state branch selected `No transactions yet` solely from `items.isEmpty`, ignoring an active search/filter. With the test's empty underlying stream and an entered search term, the page incorrectly showed the first-run empty state instead of the no-results state.
+- Production fix: show the first-run state only when `items.isEmpty && !_hasFilters`; active search or filters now show `No matching transactions` and `Clear filters`, even if the underlying list is empty. The widget assertion is retained; no test was weakened or removed.
+- Run #351's formatter auto-commit is `4678a7f`; this fix is based on that latest branch head. Local Flutter/Dart commands were not run; CI is the validation gate.
