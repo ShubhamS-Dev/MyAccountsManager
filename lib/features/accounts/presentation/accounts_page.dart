@@ -42,14 +42,14 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
       ),
       data: (items) {
         final query = _searchController.text.trim().toLowerCase();
-        final filtered = items.where((account) {
-          return account.name.toLowerCase().contains(query) ||
-              (account.description ?? '').toLowerCase().contains(query);
-        }).toList()
-          ..sort((a, b) {
-            if (a.isPinned != b.isPinned) return a.isPinned ? -1 : 1;
-            return a.name.toLowerCase().compareTo(b.name.toLowerCase());
-          });
+        final filtered =
+            items.where((account) {
+              return account.name.toLowerCase().contains(query) ||
+                  (account.description ?? '').toLowerCase().contains(query);
+            }).toList()..sort((a, b) {
+              if (a.isPinned != b.isPinned) return a.isPinned ? -1 : 1;
+              return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+            });
 
         return ListView(
           padding: const EdgeInsets.fromLTRB(
@@ -105,7 +105,9 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
                   icon: items.isEmpty
                       ? Icons.account_balance_wallet_outlined
                       : Icons.search_off_rounded,
-                  actionLabel: items.isEmpty ? 'Add new account' : 'Clear search',
+                  actionLabel: items.isEmpty
+                      ? 'Add new account'
+                      : 'Clear search',
                   onAction: items.isEmpty
                       ? () => context.push('/accounts/new')
                       : () {
@@ -145,9 +147,7 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
                 },
               ),
               const SizedBox(height: AppSpacing.md),
-              _AddAccountCard(
-                onTap: () => context.push('/accounts/new'),
-              ),
+              _AddAccountCard(onTap: () => context.push('/accounts/new')),
             ],
           ],
         );
@@ -404,10 +404,7 @@ class _AccountCard extends StatelessWidget {
             children: [
               Align(
                 alignment: Alignment.centerLeft,
-                child: Text(
-                  account.name,
-                  style: AppTypography.sectionTitle,
-                ),
+                child: Text(account.name, style: AppTypography.sectionTitle),
               ),
               const SizedBox(height: AppSpacing.sm),
               _AccountActionTile(
@@ -505,13 +502,14 @@ class _AddAccountCard extends StatelessWidget {
           Expanded(
             child: Text(
               'Add new account',
-              style: AppTypography.sectionTitle.copyWith(
-                color: scheme.primary,
-              ),
+              style: AppTypography.sectionTitle.copyWith(color: scheme.primary),
             ),
           ),
-          Icon(Icons.arrow_forward_ios_rounded,
-              size: 14, color: scheme.onSurfaceVariant),
+          Icon(
+            Icons.arrow_forward_ios_rounded,
+            size: 14,
+            color: scheme.onSurfaceVariant,
+          ),
         ],
       ),
     );
