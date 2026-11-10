@@ -260,14 +260,14 @@ void main() {
                 ..where((row) => row.type.equals('income'))
                 ..where((row) => row.name.equals('Salary')))
               .getSingle();
-      await (database.update(database.categories)
-            ..where((row) => row.id.equals(expense.id)))
-          .write(
-            const CategoriesCompanion(
-              iconKey: Value('food'),
-              colorValue: Value(0xFF008577),
-            ),
-          );
+      await (database.update(
+        database.categories,
+      )..where((row) => row.id.equals(expense.id))).write(
+        const CategoriesCompanion(
+          iconKey: Value('food'),
+          colorValue: Value(0xFF008577),
+        ),
+      );
       final date = DateTime.utc(2026, 11, 8).millisecondsSinceEpoch;
       await transactions.createTransaction(
         accountId: accountId,

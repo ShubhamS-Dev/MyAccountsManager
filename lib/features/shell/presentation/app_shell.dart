@@ -74,9 +74,7 @@ class _AppShellState extends State<AppShell> {
           ? Container(
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: AppColors.heroGradient,
-                ),
+                gradient: LinearGradient(colors: AppColors.heroGradient),
                 boxShadow: AppShadows.card,
               ),
               child: FloatingActionButton(

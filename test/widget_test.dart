@@ -49,10 +49,7 @@ void main() {
     );
   }
 
-  Future<void> pumpApp(
-    WidgetTester tester, {
-    bool liveHistory = false,
-  }) async {
+  Future<void> pumpApp(WidgetTester tester, {bool liveHistory = false}) async {
     addTearDown(() async {
       // Unmount consumers before closing the in-memory database.
       await tester.pumpWidget(const SizedBox.shrink());
@@ -504,20 +501,20 @@ void main() {
   testWidgets('swiping a History row moves it to Trash and Undo restores it', (
     tester,
   ) async {
-    final category = await (testDatabase.select(testDatabase.categories)
-          ..where((row) => row.type.equals('expense'))
-          ..where((row) => row.name.equals('Food & Dining')))
-        .getSingle();
-    final transactionId = await TransactionsRepository(
-      testDatabase,
-    ).createTransaction(
-      accountId: testAccount.id,
-      categoryId: category.id,
-      type: 'expense',
-      amountPaise: 12500,
-      transactionDate: DateTime.now().millisecondsSinceEpoch,
-      note: 'Swipe test transaction',
-    );
+    final category =
+        await (testDatabase.select(testDatabase.categories)
+              ..where((row) => row.type.equals('expense'))
+              ..where((row) => row.name.equals('Food & Dining')))
+            .getSingle();
+    final transactionId = await TransactionsRepository(testDatabase)
+        .createTransaction(
+          accountId: testAccount.id,
+          categoryId: category.id,
+          type: 'expense',
+          amountPaise: 12500,
+          transactionDate: DateTime.now().millisecondsSinceEpoch,
+          note: 'Swipe test transaction',
+        );
 
     await pumpApp(tester, liveHistory: true);
     await tester.tap(find.text('History').last);
@@ -531,8 +528,9 @@ void main() {
     expect(find.text('Transaction moved to Trash'), findsOneWidget);
     expect(find.text('Swipe test transaction'), findsNothing);
     expect(
-      (await TransactionsRepository(testDatabase).watchTrash().first)
-          .single.transaction.id,
+      (await TransactionsRepository(
+        testDatabase,
+      ).watchTrash().first).single.transaction.id,
       transactionId,
     );
 
@@ -540,8 +538,9 @@ void main() {
     await tester.pumpAndSettle();
     await pumpUntilFound(tester, find.text('Swipe test transaction'));
     expect(
-      (await TransactionsRepository(testDatabase).watchHistory().first)
-          .single.transaction.id,
+      (await TransactionsRepository(
+        testDatabase,
+      ).watchHistory().first).single.transaction.id,
       transactionId,
     );
   });
