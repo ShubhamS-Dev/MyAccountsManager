@@ -403,7 +403,7 @@ void main() {
     },
   );
 
-  testWidgets('shows the approved History filters and monthly summary', (
+  testWidgets('shows and interacts with the approved History controls', (
     tester,
   ) async {
     await pumpApp(tester);
@@ -411,11 +411,41 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Monthly overview'), findsOneWidget);
-    expect(find.text('Income'), findsWidgets);
-    expect(find.text('Expenses'), findsOneWidget);
+    expect(find.text('INCOME'), findsOneWidget);
+    expect(find.text('EXPENSES'), findsOneWidget);
+    expect(find.byTooltip('Previous month'), findsOneWidget);
+    expect(find.byTooltip('Next month'), findsOneWidget);
+
+    final monthLabel = find.textContaining(RegExp(r'202[0-9]'));
+    expect(monthLabel, findsOneWidget);
+    final initialMonth = tester.widget<Text>(monthLabel).data;
+    await tester.tap(find.byTooltip('Previous month'));
+    await tester.pumpAndSettle();
+    expect(monthLabel, findsOneWidget);
+    expect(tester.widget<Text>(monthLabel).data, isNot(initialMonth));
+    await tester.tap(find.byTooltip('Next month'));
+    await tester.pumpAndSettle();
+    expect(tester.widget<Text>(monthLabel).data, initialMonth);
+
     expect(find.text('Search note, Account or amount'), findsOneWidget);
+    final searchField = find.byType(TextField);
+    await tester.enterText(searchField, 'no matching search');
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Clear search'), findsOneWidget);
+    expect(find.text('No matching transactions'), findsOneWidget);
+    await tester.tap(find.byTooltip('Clear search'));
+    await tester.pumpAndSettle();
+
     expect(find.text('All'), findsOneWidget);
     expect(find.text('Expense'), findsOneWidget);
+    expect(find.text('Income'), findsWidgets);
+    await tester.tap(find.text('Expense'));
+    await tester.pump(const Duration(milliseconds: 220));
+    await tester.tap(find.text('Income').last);
+    await tester.pump(const Duration(milliseconds: 220));
+    await tester.tap(find.text('All'));
+    await tester.pump(const Duration(milliseconds: 220));
+
     expect(find.text('Account & Category filters'), findsOneWidget);
     expect(find.byTooltip('Open Trash'), findsOneWidget);
     expect(find.text('No transactions yet'), findsOneWidget);
@@ -423,12 +453,43 @@ void main() {
 
     await tester.tap(find.text('Account & Category filters'));
     await tester.pumpAndSettle();
+    expect(find.text('Filter transactions'), findsOneWidget);
     expect(find.text('Account'), findsOneWidget);
     expect(find.text('Category'), findsOneWidget);
+    expect(find.text('All Accounts'), findsOneWidget);
+    expect(find.text('All Categories'), findsOneWidget);
+    expect(
+      find.widgetWithText(ChoiceChip, 'Widget test Account'),
+      findsOneWidget,
+    );
     expect(find.text('Clear'), findsOneWidget);
     expect(find.text('Apply'), findsOneWidget);
+
+    await tester.tap(
+      find.widgetWithText(ChoiceChip, 'Widget test Account'),
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Apply'));
     await tester.pumpAndSettle();
+    final accountChip = find.widgetWithText(InputChip, 'Widget test Account');
+    expect(accountChip, findsOneWidget);
+    expect(find.text('No matching transactions'), findsOneWidget);
+    await tester.tap(
+      find.descendant(
+        of: accountChip,
+        matching: find.byIcon(Icons.close_rounded),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(accountChip, findsNothing);
+
+    await tester.tap(find.text('Account & Category filters'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Clear'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Apply'));
+    await tester.pumpAndSettle();
+    expect(find.text('No transactions yet'), findsOneWidget);
   });
 
   testWidgets('switches the transaction form from expense to income', (

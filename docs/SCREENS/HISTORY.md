@@ -35,3 +35,9 @@ Account and Category filters open a bottom sheet. The current selection is highl
 - No Account type field is assumed.
 - No new dependency is added.
 - Existing search, filters, month navigation, transaction routes, repository financial logic, and Trash workflow are preserved.
+
+
+## Widget-test coverage and label matching
+- The History summary renders metric captions in uppercase (`INCOME` and `EXPENSES`); widget tests assert the rendered labels rather than title-case source strings.
+- History widget coverage exercises previous/next month controls, monthly summary, search and clear-search, All/Expense/Income selection, Account and Category filter sheet sections, Account selection/removal chip, Clear/Apply, Trash tooltip, and the initial empty state.
+- Bottom-sheet transitions are settled with `pumpAndSettle()`; the animated type selector uses its 220ms animation duration.

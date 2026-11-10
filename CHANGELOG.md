@@ -14,4 +14,5 @@
 - Added month pill, monthly summary cards, animated type selector, filter bottom sheet, removable filter chips, and filtered-result count.
 - Added pinned date-group headers, category icon/colour presentation, swipe-to-trash with Undo, shimmer loading, and separate first-run/no-results empty states.
 - Monthly totals continue to represent the full selected month regardless of active filters.
+- Expanded History widget coverage for month navigation, search, type selection, Account/Category filters, removable chips, Trash access, and empty state.
 - Reused shared design tokens/widgets; no new package, schema migration, or navigation change.

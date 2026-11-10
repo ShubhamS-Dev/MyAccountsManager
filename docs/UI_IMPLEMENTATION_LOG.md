@@ -285,3 +285,14 @@ User approval: implement Phases 1–3 first; stop for user review before beginni
 - No dependency or database schema migration added. Account/category/type filtering, search, month selection, transaction details/edit navigation, and repository financial logic remain unchanged.
 - Updated History widget assertions; repository tests for filtering, soft delete, restore, and permanent delete are retained.
 - Local Dart/Flutter validation was not run; CI is the validation gate.
+
+
+## Run #350 RCA — History summary caption assertion
+
+- Run: [Flutter validation #350](https://github.com/ShubhamS-Dev/MyAccountsManager/actions/runs/42809164074)
+- Drift generation, generated-file verification, formatting, and Flutter analysis passed. The widget suite reported 40 passing tests and one failure.
+- Exact failure: `Expected: exactly one matching candidate; Actual: _TextWidgetFinder:<Found 0 widgets with text "Expenses": []>`, at `test/widget_test.dart:415`, in `shows the approved History filters and monthly summary`.
+- Root cause: stale test expectation (a). The History summary's `_SummaryCard` applies `label.toUpperCase()`, so the rendered caption is `EXPENSES`, not `Expenses`. The production History UI was rendering the approved uppercase caption; no UI fix is required.
+- Corrective test update: assert the actual uppercase `INCOME` and `EXPENSES` captions and expand the same widget test to exercise month navigation, search/clear, All/Expense/Income, Account/Category sheet controls, Account selection/removal chip, Clear/Apply, Trash tooltip, and the empty state. Bottom-sheet transitions use `pumpAndSettle()`; the 180ms segmented animation is pumped for 220ms.
+- Reviewed every Dart file under `test/`: the other `Expenses` assertion belongs to the Home dashboard, and the remaining `Account`, `Category`, and `SegmentedButton` finders cover current Account Details or Add Transaction form UI, not stale History controls. Repository History tests remain unchanged.
+- Local Dart/Flutter commands were not run; CI is the validation gate.
