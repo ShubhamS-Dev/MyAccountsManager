@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/app_theme.dart';
+import '../../../app/privacy_state.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/formatting/date_timestamp.dart';
 import '../../../core/formatting/money_formatter.dart';
@@ -16,6 +17,7 @@ class AccountDetailsPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final hideAmounts = ref.watch(amountsHiddenProvider);
     final account = ref.watch(accountByIdProvider(accountId));
     final balance = ref.watch(accountBalancePaiseProvider(accountId));
     final adjustments = ref.watch(balanceAdjustmentsProvider(accountId));
@@ -26,6 +28,16 @@ class AccountDetailsPage extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Account Details'),
         actions: [
+          IconButton(
+            tooltip: hideAmounts ? 'Show amounts' : 'Hide amounts',
+            onPressed: () =>
+                ref.read(amountsHiddenProvider.notifier).state = !hideAmounts,
+            icon: Icon(
+              hideAmounts
+                  ? Icons.visibility_off_rounded
+                  : Icons.visibility_rounded,
+            ),
+          ),
           IconButton(
             tooltip: 'Edit account',
             onPressed: () => context.push('/accounts/$accountId/edit'),
@@ -53,6 +65,7 @@ class AccountDetailsPage extends ConsumerWidget {
                 name: row.name,
                 description: row.description,
                 balance: balance,
+                hidden: hideAmounts,
               ),
               const SizedBox(height: 16),
               const Text(
@@ -64,21 +77,12 @@ class AccountDetailsPage extends ConsumerWidget {
                 openingBalance: row.openingBalancePaise,
                 history: history,
                 adjustments: adjustments,
+                hidden: hideAmounts,
               ),
               const SizedBox(height: 18),
-              Row(
-                children: [
-                  const Expanded(
-                    child: Text(
-                      'Transaction history',
-                      style: AppTypography.sectionTitle,
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () => context.go('/'),
-                    child: const Text('All history'),
-                  ),
-                ],
+              const Text(
+                'Transaction history',
+                style: AppTypography.sectionTitle,
               ),
               history.when(
                 loading: () => const Padding(
@@ -97,7 +101,7 @@ class AccountDetailsPage extends ConsumerWidget {
                   return Column(
                     children: [
                       for (final item in items.take(30))
-                        _TransactionTile(item: item),
+                        _TransactionTile(item: item, hidden: hideAmounts),
                     ],
                   );
                 },
@@ -122,10 +126,12 @@ class _BalanceCard extends StatelessWidget {
     required this.name,
     required this.description,
     required this.balance,
+    required this.hidden,
   });
   final String name;
   final String? description;
   final AsyncValue<int?> balance;
+  final bool hidden;
 
   @override
   Widget build(BuildContext context) {
@@ -197,7 +203,11 @@ class _BalanceCard extends StatelessWidget {
               style: TextStyle(color: Colors.white, fontSize: 12),
             ),
             data: (value) => Text(
-              value == null ? '—' : MoneyFormatter.formatPaise(value),
+              value == null
+                  ? '—'
+                  : hidden
+                  ? '₹ ••••••'
+                  : MoneyFormatter.formatPaise(value),
               style: AppTypography.transactionAmount.copyWith(
                 color: Colors.white,
               ),
@@ -214,10 +224,12 @@ class _BreakdownCard extends StatelessWidget {
     required this.openingBalance,
     required this.history,
     required this.adjustments,
+    required this.hidden,
   });
   final int openingBalance;
   final AsyncValue<List<TransactionHistoryItem>> history;
   final AsyncValue<List<BalanceAdjustmentRow>> adjustments;
+  final bool hidden;
 
   @override
   Widget build(BuildContext context) {
@@ -259,20 +271,24 @@ class _BreakdownCard extends StatelessWidget {
                   _BreakdownRow(
                     label: 'Opening balance',
                     amount: openingBalance,
+                    hidden: hidden,
                   ),
                   _BreakdownRow(
                     label: 'Total income',
                     amount: income,
                     positive: true,
+                    hidden: hidden,
                   ),
                   _BreakdownRow(
                     label: 'Total expenses',
                     amount: -expense,
                     negative: true,
+                    hidden: hidden,
                   ),
                   _BreakdownRow(
                     label: 'Balance adjustments',
                     amount: adjustment,
+                    hidden: hidden,
                   ),
                 ],
               );
@@ -290,11 +306,13 @@ class _BreakdownRow extends StatelessWidget {
     required this.amount,
     this.positive = false,
     this.negative = false,
+    required this.hidden,
   });
   final String label;
   final int amount;
   final bool positive;
   final bool negative;
+  final bool hidden;
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
@@ -317,7 +335,7 @@ class _BreakdownRow extends StatelessWidget {
             ),
           ),
           Text(
-            MoneyFormatter.formatPaise(amount),
+            hidden ? '₹ •••' : MoneyFormatter.formatPaise(amount),
             style: AppTypography.transactionAmount.copyWith(color: color),
           ),
         ],
@@ -327,8 +345,9 @@ class _BreakdownRow extends StatelessWidget {
 }
 
 class _TransactionTile extends StatelessWidget {
-  const _TransactionTile({required this.item});
+  const _TransactionTile({required this.item, required this.hidden});
   final TransactionHistoryItem item;
+  final bool hidden;
   @override
   Widget build(BuildContext context) {
     final transaction = item.transaction;
@@ -361,7 +380,9 @@ class _TransactionTile extends StatelessWidget {
           style: Theme.of(context).textTheme.bodySmall,
         ),
         trailing: Text(
-          '${income ? '+' : '-'}${MoneyFormatter.formatPaise(transaction.amountPaise)}',
+          hidden
+              ? '••••'
+              : '${income ? '+' : '-'}${MoneyFormatter.formatPaise(transaction.amountPaise)}',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,
@@ -377,10 +398,35 @@ class _TransactionTile extends StatelessWidget {
 class _EmptyHistory extends StatelessWidget {
   const _EmptyHistory();
   @override
-  Widget build(BuildContext context) => const Padding(
-    padding: EdgeInsets.symmetric(vertical: 28),
-    child: Center(
-      child: Text('No transactions recorded for this account yet.'),
-    ),
-  );
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      child: Column(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: colors.surfaceContainerHighest,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.receipt_long_outlined,
+              color: colors.onSurfaceVariant,
+              size: 22,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'No transactions recorded for this account yet.',
+            textAlign: TextAlign.center,
+            style: AppTypography.supporting.copyWith(
+              color: colors.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
