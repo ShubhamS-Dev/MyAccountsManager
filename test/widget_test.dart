@@ -220,6 +220,15 @@ void main() {
     expect(find.text('Income'), findsOneWidget);
     expect(find.text('Expenses'), findsOneWidget);
     expect(find.text('Net cash flow'), findsOneWidget);
+
+    // The account section is below the monthly summary and quick actions.
+    // Scroll the dashboard's vertical ListView before asserting its heading.
+    await tester.scrollUntilVisible(
+      find.text('Your Accounts'),
+      300,
+      scrollable: find.byType(ListView).first,
+    );
+    await tester.pumpAndSettle();
     expect(find.text('Your Accounts'), findsOneWidget);
 
     // Recent transactions is below the account grid in the ListView, so
