@@ -224,3 +224,13 @@ User approval: implement Phases 1–3 first; stop for user review before beginni
 - Exact failure: `Expected: exactly one matching candidate; Actual: Found 0 widgets with text "Widget test Account".` The preceding tap on the `Clear search` EmptyState action produced a hit-test warning: its center was outside the visible area and the hit test landed on the bottom-navigation `History` item. Therefore the search was not cleared and the Account remained filtered out.
 - Corrective test change: explicitly call `tester.ensureVisible(clearSearchAction)` and settle before tapping the existing CTA. The test and UI behavior remain intact; no test was removed or skipped.
 - Local Dart/Flutter validation was not run; CI remains the agreed validation gate.
+
+
+## Run #341 RCA — lazy Accounts list items were outside the viewport
+
+- Run: [Flutter validation #341](https://github.com/ShubhamS-Dev/MyAccountsManager/actions/runs/42786176088)
+- Drift generation, generated-file verification, Dart formatting, and `flutter analyze` passed. The test suite failed in `shows and filters the refreshed Accounts overview` at `test/widget_test.dart:292`.
+- Exact failure: `Expected: exactly one matching candidate; Actual: Found 0 widgets with text "1 active account".`
+- Root cause: the Accounts screen is a scrollable list. Its summary count and Account card are below the initial viewport and are lazily built; the test queried them before scrolling them into view. The previous run also showed a CTA hit-test issue, which was separately fixed by ensuring the EmptyState action is visible before tapping.
+- Corrective test change: scroll the Accounts list until the count and Account card are visible before asserting them, and explicitly ensure the shared privacy control and search field are visible before interaction. This preserves all test coverage and does not alter screen behavior.
+- Local Dart/Flutter validation was not run; CI remains the agreed validation gate.
