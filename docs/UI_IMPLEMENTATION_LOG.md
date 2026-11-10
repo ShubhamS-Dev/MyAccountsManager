@@ -325,3 +325,11 @@ User approval: implement Phases 1–3 first; stop for user review before beginni
 - Undo verification now invokes the rendered `SnackBarAction` callback after asserting its visible label, avoiding the overlay `tapAt/ensureVisible` guarded timeout while still exercising the production restore callback and verifying the row returns to History.
 - The three other widget-test failures from run #356 are not changed in this fix; rerun the suite first and investigate them only if they still fail.
 - Light-theme verification remains out of scope because Light theme is not implemented.
+
+
+## Run #358 RCA — History swipe callback lifecycle (2026-11-10)
+- Run #358 failed only at the swipe/Undo test's snackbar assertion; Format and Analyze passed. Exact assertion: `Expected: exactly one matching candidate; Actual: Found 0 widgets with text "Transaction moved to Trash"` at `test/widget_test.dart:533`.
+- The production Dismissible was configured for `endToStart`. Its prior `onDismissed` callback launched an asynchronous soft-delete after the dismissal animation, without making Dismissible wait for the repository Future. The snackbar lookup used the page-level History context, not a row context; therefore the row's unmount was not itself the cause. The test's 500px drag and fixed pumps did not establish a deterministic completion point for the detached async callback.
+- Production now performs the soft-delete in `confirmDismiss`, awaits the repository Future, and returns true only on success. It captures `ScaffoldMessengerState` before awaiting the database operation and uses that messenger for feedback. On failure, it returns false so the row remains in History.
+- The widget test now performs a high-velocity leftward fling and waits through bounded dismissal/snackbar pumps. Existing assertions for row removal, Trash persistence, rendered Undo, and restored History data remain intact. No tests were skipped or removed.
+- Local Flutter/Dart commands were not run. Validate the complete suite in CI before marking this slice complete.
