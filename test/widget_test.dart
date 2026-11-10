@@ -514,14 +514,17 @@ void main() {
         );
 
     await pumpApp(tester, liveHistory: true);
+    printOnFailure('step 1: pumpApp completed and app is mounted');
     await tester.tap(find.text('History').last);
     await pumpUntilFound(tester, find.text('Swipe test transaction'));
+    printOnFailure('step 2: History opened and transaction row appeared');
 
     final row = find.byKey(ValueKey('dismiss-$transactionId'));
     expect(row, findsOneWidget);
     // Use a high-velocity left fling, matching endToStart and exceeding the
     // Dismissible threshold without depending on a long pointer drag.
     await tester.fling(row, const Offset(-1000, 0), 2000);
+    printOnFailure('step 3: left swipe fling completed');
 
     // confirmDismiss awaits the real Drift soft-delete future before allowing
     // the row to leave. Pump the dismissal and snackbar animations explicitly;
@@ -529,6 +532,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 250));
     await tester.pump(const Duration(milliseconds: 250));
     await pumpUntilFound(tester, find.text('Transaction moved to Trash'));
+    printOnFailure('step 4: Trash snackbar appeared');
     expect(find.text('Swipe test transaction'), findsNothing);
     expect(
       row,
@@ -545,12 +549,15 @@ void main() {
       expect(trashItems.single.transaction.id, transactionId);
       expect(trashItems.single.transaction.deletedAt, isNotNull);
     });
+    printOnFailure('step 5: runAsync Trash persistence check completed');
 
     // Exercise Undo through the rendered action, not its void callback.
     expect(find.text('Undo'), findsOneWidget);
     await tester.tap(find.text('Undo'));
+    printOnFailure('step 6: rendered Undo action tap completed');
     await pumpUntilFound(tester, find.text('Swipe test transaction'));
     expect(find.text('Swipe test transaction'), findsOneWidget);
+    printOnFailure('step 7: History row returned after Undo');
 
     // The live History stream proves the row returned; also verify the
     // persisted soft-delete flag was cleared using real async Drift work.
@@ -560,6 +567,13 @@ void main() {
       )..where((row) => row.id.equals(transactionId))).getSingle();
       expect(restored.deletedAt, isNull);
     });
+    printOnFailure('step 8: persisted restore check completed');
+
+    // Dispose the live Drift-backed History subscription before the test
+    // binding performs its pending-timer invariant check.
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 1));
+    printOnFailure('step 9: widget tree unmounted inside the test body');
   }, timeout: const Timeout(Duration(seconds: 30)));
 
   testWidgets('switches the transaction form from expense to income', (

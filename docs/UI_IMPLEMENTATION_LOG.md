@@ -401,3 +401,14 @@ User approval: implement Phases 1–3 first; stop for user review before beginni
   - A 30-second per-test timeout bounds the swipe/Undo test without changing the workflow job timeout.
 - Coverage remains explicit for all three states: the row is removed from History after swipe, the transaction is present in Trash with a non-null `deletedAt`, and Undo restores the row to History and clears the persisted `deletedAt` value.
 - No production repository or History UI code was changed. This is a test synchronization correction; it is not validation evidence until a subsequent complete CI run passes Format, Analyze, Tests, and the Android debug build.
+
+
+## Run #369 RCA follow-up — isolate swipe/Undo test body timeout (2026-11-10)
+
+- Run: [Flutter validation #369](https://github.com/ShubhamS-Dev/MyAccountsManager/actions/runs/42848215693)
+- Primary failure is the 30-second TimeoutException in the swipe/Undo test: the test body did not complete within its limit. The pending-timer assertion from Drift's StreamQueryStore.markAsClosed is treated as secondary because an unfinished body can leave the live History subscription mounted when the framework checks timers. Later !inTest / guarded-function errors are cascading and are not treated as separate failures.
+- Added printOnFailure checkpoints after app/History setup, swipe fling, snackbar appearance, the runAsync Trash check, Undo tap, restored History row, persisted restore check, and body-level unmount. The first checkpoint absent from a failing test log identifies the awaited operation that did not complete.
+- pumpUntilFound is bounded to 40 pumps at 50ms each (2 seconds total) and throws TestFailure when the expected widget does not appear. The only Drift .first in this test is watchTrash().first, executed once inside one tester.runAsync callback; it is a single subscription, not a second listen to the same stream. The live History provider is a separate stream subscription used for UI updates.
+- Added an explicit pumpWidget(SizedBox.shrink()) and a 1ms pump at the end of the test body, after all assertions, so the live History provider is disposed before Flutter's post-body pending-timer invariant check. The existing teardown remains a defensive cleanup and closes the test database.
+- Next failure report must use the first primary error and its complete stack trace, alongside the last emitted printOnFailure checkpoint. Ignore later cascading Guarded function conflict / !inTest diagnostics unless independently reproduced.
+- This is diagnostic/synchronization instrumentation only; no production behavior or assertions for History removal, Trash persistence, Undo restoration, or persisted deletedAt clearing are weakened. Validate with a complete CI run before further changes.
