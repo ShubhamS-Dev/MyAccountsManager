@@ -141,9 +141,9 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Filter transactions', style: AppTypography.screenTitle),
+                const Text('Filter transactions', style: AppTypography.screenTitle),
                 const SizedBox(height: AppSpacing.md),
-                Text('Account', style: AppTypography.sectionTitle),
+                const Text('Account', style: AppTypography.sectionTitle),
                 const SizedBox(height: AppSpacing.sm),
                 ConstrainedBox(
                   constraints: const BoxConstraints(maxHeight: 180),
@@ -171,7 +171,7 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
-                Text('Category', style: AppTypography.sectionTitle),
+                const Text('Category', style: AppTypography.sectionTitle),
                 const SizedBox(height: AppSpacing.sm),
                 ConstrainedBox(
                   constraints: const BoxConstraints(maxHeight: 180),
@@ -278,8 +278,9 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
         final filtered = items.where((item) {
           final transaction = item.transaction;
           if (transaction.transactionDate < from ||
-              transaction.transactionDate > through)
+              transaction.transactionDate > through) {
             return false;
+          }
           if (_accountId != null && transaction.accountId != _accountId) {
             return false;
           }
