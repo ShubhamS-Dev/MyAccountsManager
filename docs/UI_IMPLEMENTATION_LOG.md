@@ -272,3 +272,16 @@ User approval: implement Phases 1–3 first; stop for user review before beginni
 - Root cause: the test scrolled the Accounts list before checking an icon tooltip located in the hero header, which had moved off-screen. This is a test ordering issue, not missing production UI.
 - Corrective test change: assert the Archived Accounts action and exercise the shared hide/show amount control while the hero header is visible, then scroll down to assert the active count and Account card.
 - Local Dart/Flutter validation was not run; CI remains the agreed validation gate.
+
+
+## History screen — approved premium redesign
+
+- File: `lib/features/transactions/presentation/history_page.dart`.
+- Reused shared AppCard, AmountText, EmptyState, typography, colour, spacing, radius, and shadow tokens.
+- Added a month pill, monthly income/expense summary cards with progress bars, animated All/Expense/Income selector, Account/Category filter bottom sheet, removable selected-filter chips, and filtered-result count caption.
+- Monthly summary remains independent of filters and uses the existing selected-month calculation.
+- Added date-grouped slivers with pinned Flutter `SliverPersistentHeader` headings, category metadata in the History projection, fallback income/expense icons, built-in animated shimmer placeholders, and two distinct empty states.
+- Swipe-to-delete calls existing `softDeleteTransaction`; Undo calls existing `restoreTransaction`. Existing Trash navigation and Trash page remain unchanged.
+- No dependency or database schema migration added. Account/category/type filtering, search, month selection, transaction details/edit navigation, and repository financial logic remain unchanged.
+- Updated History widget assertions; repository tests for filtering, soft delete, restore, and permanent delete are retained.
+- Local Dart/Flutter validation was not run; CI is the validation gate.

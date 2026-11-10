@@ -8,10 +8,14 @@ class TransactionHistoryItem {
     required this.transaction,
     required this.accountName,
     required this.categoryName,
+    this.categoryIconKey,
+    this.categoryColorValue,
   });
   final TransactionRow transaction;
   final String accountName;
   final String categoryName;
+  final String? categoryIconKey;
+  final int? categoryColorValue;
 }
 
 class TransactionsRepository {
@@ -65,6 +69,8 @@ class TransactionsRepository {
               transaction: row.readTable(_database.transactions),
               accountName: row.readTable(_database.accounts).name,
               categoryName: row.readTable(_database.categories).name,
+              categoryIconKey: row.readTable(_database.categories).iconKey,
+              categoryColorValue: row.readTable(_database.categories).colorValue,
             ),
           )
           .toList(),
@@ -90,6 +96,8 @@ class TransactionsRepository {
               transaction: row.readTable(_database.transactions),
               accountName: row.readTable(_database.accounts).name,
               categoryName: row.readTable(_database.categories).name,
+              categoryIconKey: row.readTable(_database.categories).iconKey,
+              categoryColorValue: row.readTable(_database.categories).colorValue,
             ),
           )
           .toList(),

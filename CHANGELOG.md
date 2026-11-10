@@ -9,3 +9,9 @@
 - Corrected the active Account count label for singular and plural counts; updated the Accounts widget test to use the shared amount-visibility tooltips.
 - Used existing account icon/color metadata with a safe palette fallback.
 - UI-only change: Account data, provider/repository logic, navigation, search, ordering, pinning and archive behaviour are unchanged.
+
+### History screen — premium UI refresh
+- Added month pill, monthly summary cards, animated type selector, filter bottom sheet, removable filter chips, and filtered-result count.
+- Added pinned date-group headers, category icon/colour presentation, swipe-to-trash with Undo, shimmer loading, and separate first-run/no-results empty states.
+- Monthly totals continue to represent the full selected month regardless of active filters.
+- Reused shared design tokens/widgets; no new package, schema migration, or navigation change.

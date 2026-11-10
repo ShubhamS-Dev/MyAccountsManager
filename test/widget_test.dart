@@ -416,10 +416,19 @@ void main() {
     expect(find.text('Search note, Account or amount'), findsOneWidget);
     expect(find.text('All'), findsOneWidget);
     expect(find.text('Expense'), findsOneWidget);
-    expect(find.text('Account'), findsOneWidget);
-    expect(find.text('Category'), findsOneWidget);
+    expect(find.text('Account & Category filters'), findsOneWidget);
     expect(find.byTooltip('Open Trash'), findsOneWidget);
     expect(find.text('No transactions yet'), findsOneWidget);
+    expect(find.text('Add transaction'), findsOneWidget);
+
+    await tester.tap(find.text('Account & Category filters'));
+    await tester.pumpAndSettle();
+    expect(find.text('Account'), findsOneWidget);
+    expect(find.text('Category'), findsOneWidget);
+    expect(find.text('Clear'), findsOneWidget);
+    expect(find.text('Apply'), findsOneWidget);
+    await tester.tap(find.text('Apply'));
+    await tester.pumpAndSettle();
   });
 
   testWidgets('switches the transaction form from expense to income', (

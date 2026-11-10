@@ -1,0 +1,37 @@
+# History Screen
+
+## Purpose
+Show a month-scoped transaction history with quick search, type selection, Account and Category filters, and access to Transaction Trash.
+
+## Layout
+- Month selector pill with previous/next navigation; future months are disabled.
+- Income and Expense summary cards with compact progress bars.
+- Custom animated All / Expense / Income selector.
+- Search field and Account & Category filter bottom sheet.
+- Active Account, Category, and type selections appear as removable chips.
+- When search or any filter is active, show `Showing X of Y transactions`. Both counts are based on the already-loaded History list; no additional query is issued.
+- Transactions are grouped by date using Flutter slivers and pinned `SliverPersistentHeader` date labels.
+- Each transaction uses existing Category `iconKey` and `colorValue` from the History projection. If no icon mapping exists, use the income/expense directional arrow.
+- Existing transaction details/edit navigation and the Open Trash action remain available.
+
+## Summary calculation
+Income and Expense totals always cover the entire selected month and are independent of search, Account, Category, and type filters. The existing calculation is retained.
+
+## Filters
+Account and Category filters open a bottom sheet. The current selection is highlighted. Clear resets both staged selections; Apply commits them. Active Account, Category, and type filters can also be removed individually from chips. Search and type selection retain their existing in-memory filtering behavior.
+
+## Delete and restore
+- Swipe a transaction to move it to Trash using the existing `softDeleteTransaction` repository method.
+- The snackbar Undo action calls the existing `restoreTransaction` method.
+- The existing Trash button and Transaction Trash page are unchanged. Permanent deletion remains available only in Trash.
+
+## Empty and loading states
+- No transactions in the selected month: premium empty state with Add transaction CTA.
+- No results after search/filters: separate empty state with Clear filters CTA.
+- Initial loading: built-in animated shimmer placeholders. No shimmer dependency is added.
+
+## Data and architecture constraints
+- Category icon and colour are exposed only in `TransactionHistoryItem`, the History repository projection. No Drift table/schema/migration changes.
+- No Account type field is assumed.
+- No new dependency is added.
+- Existing search, filters, month navigation, transaction routes, repository financial logic, and Trash workflow are preserved.
