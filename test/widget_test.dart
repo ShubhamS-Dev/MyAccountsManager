@@ -552,13 +552,9 @@ void main() {
     final restoredHistory = TransactionsRepository(testDatabase)
         .watchHistory()
         .firstWhere(
-          (items) => items.any(
-            (item) => item.transaction.id == transactionId,
-          ),
+          (items) => items.any((item) => item.transaction.id == transactionId),
         );
-    tester
-        .widget<SnackBarAction>(find.byType(SnackBarAction))
-        .onPressed.call();
+    tester.widget<SnackBarAction>(find.byType(SnackBarAction)).onPressed.call();
     final restoredItems = await restoredHistory.timeout(
       const Duration(seconds: 5),
       onTimeout: () => throw TestFailure(
