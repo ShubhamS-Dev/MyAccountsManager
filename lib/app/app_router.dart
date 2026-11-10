@@ -51,9 +51,8 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/transaction/new',
-      builder: (context, state) => AddTransactionPage(
-        initialType: state.uri.queryParameters['type'],
-      ),
+      builder: (context, state) =>
+          AddTransactionPage(initialType: state.uri.queryParameters['type']),
     ),
   ],
 );
