@@ -84,25 +84,51 @@ class AccountDetailsPage extends ConsumerWidget {
                 'Transaction history',
                 style: AppTypography.sectionTitle,
               ),
+              const SizedBox(height: 8),
               history.when(
-                loading: () => const Padding(
-                  padding: EdgeInsets.all(20),
-                  child: Center(child: CircularProgressIndicator()),
+                loading: () => const Card(
+                  child: Padding(
+                    padding: EdgeInsets.all(20),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
                 ),
-                error: (error, stack) => TextButton(
-                  onPressed: () =>
-                      ref.invalidate(transactionHistoryProvider(filter)),
-                  child: const Text('Could not load history. Retry'),
+                error: (error, stack) => Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        const Text('Could not load history.'),
+                        TextButton(
+                          onPressed: () =>
+                              ref.invalidate(transactionHistoryProvider(filter)),
+                          child: const Text('Retry'),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
                 data: (items) {
                   if (items.isEmpty) {
                     return const _EmptyHistory();
                   }
-                  return Column(
-                    children: [
-                      for (final item in items.take(30))
-                        _TransactionTile(item: item, hidden: hideAmounts),
-                    ],
+                  return Card(
+                    clipBehavior: Clip.antiAlias,
+                    child: Column(
+                      children: [
+                        for (var index = 0; index < items.take(30).length; index++) ...[
+                          _TransactionTile(
+                            item: items[index],
+                            hidden: hideAmounts,
+                          ),
+                          if (index != items.take(30).length - 1)
+                            Divider(
+                              height: 1,
+                              indent: 56,
+                              color: Theme.of(context).colorScheme.outlineVariant,
+                            ),
+                        ],
+                      ],
+                    ),
                   );
                 },
               ),
@@ -136,14 +162,14 @@ class _BalanceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [AppColors.navy, Color(0xFF243B75)],
         ),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(AppRadius.card),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -356,6 +382,9 @@ class _TransactionTile extends StatelessWidget {
     return Card(
       child: ListTile(
         dense: true,
+        visualDensity: const VisualDensity(vertical: -1),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+        minVerticalPadding: 8,
         leading: CircleAvatar(
           radius: 16,
           backgroundColor: income
