@@ -378,3 +378,11 @@ User approval: implement Phases 1–3 first; stop for user review before beginni
 
 ## Run #365 validation trigger
 - Validation is being run against the branch after commit `312d5ff`, which contains both the History Undo analyzer correction and its Run #364 RCA documentation. This entry ensures the latest branch head receives a normal push-triggered Flutter validation; no force push or overlapping CI run is used.
+
+
+## Run #365 RCA — second formatter pass and branch update overlap (2026-11-10)
+- Run: [Flutter validation #365](https://github.com/ShubhamS-Dev/MyAccountsManager/actions/runs/42842068848)
+- The run checked commit `312d5ff`. Drift generation and generated-file verification passed, but `dart format .` reformatted `test/widget_test.dart` (one insertion, four deletions). Analyze and Tests were skipped.
+- The formatter's auto-format push was rejected because the remote branch had advanced to `b254989` while this run was active. That docs-only commit was pushed before the active run was noticed; this was a sequencing mistake. Going forward, no branch updates will be pushed while any validation run is active.
+- The exact remaining formatting difference was in the nested `watchHistory().firstWhere(...)` predicate and the `SnackBarAction.onPressed.call()` method chain. Both are now written in the formatter's canonical multi-line layout in the same commit as this RCA update.
+- The analyzer correction from Run #364 remains: use non-nullable `.onPressed.call()`, not `?.call()`. No production code changed. Run #365 did not execute Analyze or Tests.
