@@ -55,15 +55,18 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
       _type != null ||
       _search.text.trim().isNotEmpty;
 
-  Future<void> _moveToTrash(TransactionHistoryItem item) async {
+  Future<bool> _moveToTrash(TransactionHistoryItem item) async {
+    // Capture the page-level messenger before awaiting the database write.
+    // The Dismissible may be removed as soon as confirmDismiss returns true.
+    final messenger = ScaffoldMessenger.of(context);
     try {
       await ref
           .read(transactionsRepositoryProvider)
           .softDeleteTransaction(item.transaction.id);
       ref.invalidate(accountBalancePaiseProvider(item.transaction.accountId));
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      ScaffoldMessenger.of(context).showSnackBar(
+      if (!mounted || !messenger.mounted) return true;
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
         SnackBar(
           content: const Text('Transaction moved to Trash'),
           action: SnackBarAction(
@@ -89,14 +92,16 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
           ),
         ),
       );
+      return true;
     } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+      if (mounted && messenger.mounted) {
+        messenger.showSnackBar(
           const SnackBar(
             content: Text('Could not move transaction to Trash. Try again.'),
           ),
         );
       }
+      return false;
     }
   }
 
@@ -782,7 +787,7 @@ class _HistoryTile extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onEdit;
   final VoidCallback onTrash;
-  final VoidCallback onSwipeDelete;
+  final Future<bool> Function() onSwipeDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -813,7 +818,7 @@ class _HistoryTile extends StatelessWidget {
             color: Theme.of(context).colorScheme.onErrorContainer,
           ),
         ),
-        onDismissed: (_) => onSwipeDelete(),
+        confirmDismiss: (_) => onSwipeDelete(),
         child: AppCard(
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.md,
