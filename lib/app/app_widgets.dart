@@ -210,6 +210,7 @@ class CategoryChip extends StatelessWidget {
     required this.onTap,
     super.key,
     this.color,
+    this.iconColor,
   });
 
   final String label;
@@ -217,6 +218,7 @@ class CategoryChip extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
   final Color? color;
+  final Color? iconColor;
 
   @override
   Widget build(BuildContext context) {
@@ -251,7 +253,8 @@ class CategoryChip extends StatelessWidget {
                 Icon(
                   icon,
                   size: 17,
-                  color: selected ? accent : scheme.onSurfaceVariant,
+                  color:
+                      iconColor ?? (selected ? accent : scheme.onSurfaceVariant),
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 Text(label, style: AppTypography.fieldValue),

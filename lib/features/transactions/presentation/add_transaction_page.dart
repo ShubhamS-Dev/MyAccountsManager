@@ -542,7 +542,7 @@ class _AccountSelector extends StatelessWidget {
         const _FieldHeading(title: 'Account'),
         const SizedBox(height: AppSpacing.sm),
         SizedBox(
-          height: 76,
+          height: 68,
           child: ListView.separated(
             controller: controller,
             scrollDirection: Axis.horizontal,
@@ -757,8 +757,8 @@ class _DateChoice extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppRadius.pill),
         child: Container(
-          constraints: const BoxConstraints(minHeight: AppSpacing.touchTarget),
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+          constraints: const BoxConstraints(minHeight: 40),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppRadius.pill),
             border: Border.all(
@@ -812,6 +812,7 @@ class _NoteInput extends StatelessWidget {
             vertical: AppSpacing.xs,
           ),
           child: TextField(
+            key: const ValueKey('add-transaction-note-input'),
             controller: controller,
             maxLength: 500,
             minLines: 1,
@@ -820,6 +821,9 @@ class _NoteInput extends StatelessWidget {
             style: AppTypography.fieldValue.copyWith(color: scheme.onSurface),
             decoration: InputDecoration(
               hintText: 'What was this transaction for?',
+              filled: false,
+              fillColor: Colors.transparent,
+              isDense: true,
               border: InputBorder.none,
               enabledBorder: InputBorder.none,
               focusedBorder: InputBorder.none,
@@ -882,15 +886,20 @@ class _AmountInput extends StatelessWidget {
           ),
           child: Row(
             children: [
-              AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 180),
-                style: AppTypography.amountInput.copyWith(color: accent),
-                child: const Text('₹'),
+              Align(
+                alignment: Alignment.center,
+                child: AnimatedDefaultTextStyle(
+                  duration: const Duration(milliseconds: 180),
+                  style: AppTypography.amountInput.copyWith(color: accent),
+                  child: const Text('₹'),
+                ),
               ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: TextFormField(
+                  key: const ValueKey('add-transaction-amount-input'),
                   controller: controller,
+                  textAlignVertical: TextAlignVertical.center,
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
@@ -902,8 +911,13 @@ class _AmountInput extends StatelessWidget {
                     color: accent,
                     fontFeatures: const [FontFeature.tabularFigures()],
                   ),
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hintText: '0.00',
+                    hintStyle: AppTypography.amountInput.copyWith(
+                      color: scheme.onSurfaceVariant.withValues(alpha: .55),
+                    ),
+                    filled: false,
+                    fillColor: Colors.transparent,
                     border: InputBorder.none,
                     enabledBorder: InputBorder.none,
                     focusedBorder: InputBorder.none,
@@ -925,12 +939,28 @@ class _AmountInput extends StatelessWidget {
           ),
         ],
         const SizedBox(height: AppSpacing.sm),
-        Wrap(
-          spacing: AppSpacing.sm,
+        Row(
           children: [
-            _QuickAddChip(label: '+100', onTap: () => onQuickAdd(100)),
-            _QuickAddChip(label: '+500', onTap: () => onQuickAdd(500)),
-            _QuickAddChip(label: '+1,000', onTap: () => onQuickAdd(1000)),
+            Expanded(
+              child: _QuickAddChip(
+                label: '+100',
+                onTap: () => onQuickAdd(100),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: _QuickAddChip(
+                label: '+500',
+                onTap: () => onQuickAdd(500),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: _QuickAddChip(
+                label: '+1,000',
+                onTap: () => onQuickAdd(1000),
+              ),
+            ),
           ],
         ),
         const SizedBox(height: AppSpacing.xs),
@@ -1071,6 +1101,7 @@ class _CategoryChoice extends StatelessWidget {
         ),
         selected: selected,
         color: color,
+        iconColor: color,
         onTap: onTap,
       ),
     );

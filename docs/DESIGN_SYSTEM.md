@@ -24,7 +24,7 @@ Use `AppTypography`: screen title 16px, section title 14px, balance 38px, transa
 - `AmountText`: monetary text with tabular figures and consistent overflow handling.
 - `SectionHeader`: section title and optional action.
 - `PrimaryButton`: standard 40px action button with a 48px touch area. Optional `gradient` is opt-in; omitted gradient retains the default solid style.
-- `CategoryChip`: accessible selectable chip.
+- `CategoryChip`: accessible selectable chip with optional per-category icon tint (`iconColor`).
 - `EmptyState`: icon-led empty/error illustration, supporting copy, and optional CTA.
 
 ## Motion and accessibility

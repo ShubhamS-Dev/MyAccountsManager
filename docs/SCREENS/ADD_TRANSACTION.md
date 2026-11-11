@@ -19,7 +19,7 @@
 - Home's Income shortcut continues to route to Add Transaction with initialType: income.
 
 ## Account
-- Active Accounts are shown as horizontal, scrollable chips with icon, metadata color, name, and current balance.
+- Active Accounts are shown as horizontal, scrollable chips with icon, metadata color, name, and current balance. The selector uses a compact 68px card height.
 - Account icon and color use existing iconKey and colorValue.
 - Balance uses accountBalancePaiseProvider and respects amountsHiddenProvider.
 - Existing repository order is retained: pinned Accounts first, followed by sort order and name. The first item is preselected.
@@ -46,10 +46,13 @@
 - Quick-add chips add rupees to the current paise amount. Example: ₹10.50 + ₹100 = ₹110.50.
 - Reject input beyond 12 whole-rupee digits and prevent quick-add from exceeding that limit.
 - Validation messages remain inline and readable.
+- The rupee symbol, entered amount, and hint share the same 28px vertical text metrics; the amount remains the strongest visual element while typing.
+- The three quick-add actions (`+100`, `+500`, `+1,000`) remain in one compact horizontal row.
 
 ## Category
 - Display active categories for the current transaction type as a wrapping grid of shared CategoryChip widgets.
-- Use the shared category icon resolver and existing iconKey / colorValue, with semantic type color as fallback.
+- Tint every category icon from its own colorValue, including unselected chips; use semantic type color as fallback.
+- The shared resolver differentiates Transportation and Vehicle Maintenance and uses a generic category icon for Others. History uses the same resolver.
 - Selected category state animates through the shared chip presentation.
 - Recent categories are intentionally deferred; no schema or history-query expansion is included.
 

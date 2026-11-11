@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:drift/native.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -70,8 +73,10 @@ void main() {
     });
 
     await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
+      RepaintBoundary(
+        key: const ValueKey('app-screenshot-boundary'),
+        child: ProviderScope(
+          overrides: [
           appDatabaseProvider.overrideWithValue(testDatabase),
 
           // These are navigation/form tests. Repository stream behavior is
@@ -114,8 +119,9 @@ void main() {
             }
             return Stream.value(<TransactionHistoryItem>[]);
           }),
-        ],
-        child: const MyAccountsManagerApp(),
+          ],
+          child: const MyAccountsManagerApp(),
+        ),
       ),
     );
     await pumpUntilFound(tester, find.text('Home'));
@@ -683,7 +689,17 @@ void main() {
     await tester.tap(find.byTooltip('Add transaction'));
     await pumpUntilFound(tester, find.text('How much did you spend?'));
 
-    final amountField = find.byType(TextFormField);
+    final quickAddTops = [
+      tester.getTopLeft(find.text('+100')).dy,
+      tester.getTopLeft(find.text('+500')).dy,
+      tester.getTopLeft(find.text('+1,000')).dy,
+    ];
+    expect(quickAddTops[0], quickAddTops[1]);
+    expect(quickAddTops[1], quickAddTops[2]);
+
+    final amountField = find.byKey(
+      const ValueKey('add-transaction-amount-input'),
+    );
     await tester.enterText(amountField, '10.50');
     await tester.pump();
     await tester.tap(find.text('+100'));
@@ -710,7 +726,9 @@ void main() {
     await tester.tap(find.byTooltip('Add transaction'));
     await pumpUntilFound(tester, find.text('How much did you spend?'));
 
-    final amountField = find.byType(TextFormField);
+    final amountField = find.byKey(
+      const ValueKey('add-transaction-amount-input'),
+    );
     await tester.enterText(amountField, '999999999999');
     await tester.pump();
     final before = tester.widget<TextFormField>(amountField).controller!.text;
@@ -725,6 +743,51 @@ void main() {
     await tester.pump();
     expect(tester.widget<TextFormField>(amountField).controller!.text, before);
   }, timeout: const Timeout(Duration(seconds: 30)));
+
+  testWidgets(
+    'Add Transaction amount typing keeps 28px prominence and captures screenshot',
+    (tester) async {
+      await pumpApp(tester);
+      await tester.tap(find.byTooltip('Add transaction'));
+      await pumpUntilFound(tester, find.text('How much did you spend?'));
+
+      final amountField = find.byKey(
+        const ValueKey('add-transaction-amount-input'),
+      );
+      await tester.ensureVisible(amountField);
+      await tester.enterText(amountField, '12,500.75');
+      await tester.pump(const Duration(milliseconds: 200));
+
+      final amountWidget = tester.widget<TextFormField>(amountField);
+      expect(amountWidget.style?.fontSize, AppTypography.amountInput.fontSize);
+      expect(
+        amountWidget.decoration.hintStyle?.fontSize,
+        AppTypography.amountInput.fontSize,
+      );
+      expect(amountWidget.controller!.text, '12,500.75');
+
+      final noteField = tester.widget<TextField>(
+        find.byKey(const ValueKey('add-transaction-note-input')),
+      );
+      expect(noteField.decoration.filled, isFalse);
+      expect(noteField.decoration.fillColor, Colors.transparent);
+      expect(noteField.decoration.border, InputBorder.none);
+
+      final boundary = tester.renderObject<RenderRepaintBoundary>(
+        find.byKey(const ValueKey('app-screenshot-boundary')),
+      );
+      final image = await boundary.toImage(pixelRatio: 2);
+      final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+      expect(bytes, isNotNull);
+      final screenshot = File(
+        'build/screenshots/add_transaction_amount_typing.png',
+      );
+      await screenshot.parent.create(recursive: true);
+      await screenshot.writeAsBytes(bytes!.buffer.asUint8List());
+      image.dispose();
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
 
   testWidgets(
     'Add Transaction has no-active-Account empty state and Add account CTA',

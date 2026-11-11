@@ -36,9 +36,12 @@ IconData resolveCategoryIcon(String? key, {required bool income}) {
       return Icons.shopping_bag_rounded;
     case 'transport':
     case 'transportation':
-    case 'vehicle':
-    case 'vehicle maintenance':
       return Icons.directions_car_rounded;
+    case 'vehicle':
+      return Icons.directions_car_filled_rounded;
+    case 'vehicle_maintenance':
+    case 'vehicle maintenance':
+      return Icons.car_repair_rounded;
     case 'home':
     case 'housing':
     case 'housing_utilities':
@@ -85,6 +88,8 @@ IconData resolveCategoryIcon(String? key, {required bool income}) {
       return Icons.key_rounded;
     case 'refunds':
       return Icons.currency_exchange_rounded;
+    case 'others':
+      return Icons.category_rounded;
     default:
       return income ? Icons.south_west_rounded : Icons.north_east_rounded;
   }

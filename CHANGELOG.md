@@ -28,3 +28,10 @@
 - Added shared Account and Category icon resolvers without changing Accounts or History presentation.
 - Preserved UTC date-only storage, category-type filtering, repository validation/save flow, and Home Income shortcut.
 - No schema migration, package, Edit Transaction change, or shared shadow change.
+
+
+### Add Transaction — review refinements
+- Kept the three quick-add amounts in one compact horizontal row and removed the nested TextField fill from the Note pill.
+- Aligned the rupee symbol, amount and hint to the dedicated 28px amount typography; added a CI-captured screenshot while an amount is entered.
+- Applied per-category icon tints and distinct Transportation / Vehicle Maintenance / Others icon mappings through the shared resolver used by History.
+- Reduced the horizontal Account card selector height from 76px to 68px.

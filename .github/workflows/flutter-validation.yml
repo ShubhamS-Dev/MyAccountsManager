@@ -129,3 +129,11 @@ jobs:
 
       - name: Run tests
         run: flutter test --no-pub --reporter expanded --timeout 2m
+
+      - name: Upload Add Transaction amount typing screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: add-transaction-amount-typing-screenshot
+          path: build/screenshots/add_transaction_amount_typing.png
+          if-no-files-found: warn
