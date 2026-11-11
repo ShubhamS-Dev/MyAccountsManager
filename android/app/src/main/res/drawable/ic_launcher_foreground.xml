@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Wallet with a rupee mark. Artwork stays inside the 66dp adaptive safe zone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Card peeking out of the wallet. -->
+    <path
+        android:fillColor="#8CFFFFFF"
+        android:pathData="M39,32h30a4,4 0,0 1,4 4v8h-38v-8a4,4 0,0 1,4 -4z"/>
+    <!-- Wallet body. -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M35,40h40a6,6 0,0 1,6 6v24a6,6 0,0 1,-6 6h-40a6,6 0,0 1,-6 -6v-24a6,6 0,0 1,6 -6z"/>
+    <!-- Clasp. -->
+    <path
+        android:fillColor="#FF1E1B4B"
+        android:pathData="M66,51h15v14h-15a4,4 0,0 1,-4 -4v-6a4,4 0,0 1,4 -4z"/>
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M68,58m-2.2,0a2.2,2.2 0,1 1,4.4 0a2.2,2.2 0,1 1,-4.4 0"/>
+    <!-- Rupee sign. -->
+    <path
+        android:strokeColor="#FF4F46E5"
+        android:strokeWidth="2.8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M39,48.5h13M39,53h13M43.5,48.5c7,0 7,9 0,9h-4l9,10"/>
+</vector>
