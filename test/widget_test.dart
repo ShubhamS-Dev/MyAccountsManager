@@ -77,48 +77,48 @@ void main() {
         key: const ValueKey('app-screenshot-boundary'),
         child: ProviderScope(
           overrides: [
-          appDatabaseProvider.overrideWithValue(testDatabase),
+            appDatabaseProvider.overrideWithValue(testDatabase),
 
-          // These are navigation/form tests. Repository stream behavior is
-          // covered separately, so use deterministic streams here and avoid
-          // opening Drift query subscriptions from the widget tree.
-          activeAccountsProvider.overrideWith(
-            (ref) => Stream.value(accountRows ?? [testAccount]),
-          ),
-          allAccountsProvider.overrideWith(
-            (ref) => Stream.value([testAccount]),
-          ),
-          totalActiveBalancePaiseProvider.overrideWith(
-            (ref) => Stream.value(0),
-          ),
-          accountBalancePaiseProvider.overrideWith(
-            (ref, accountId) => Stream.value(0),
-          ),
-          balanceAdjustmentsProvider.overrideWith(
-            (ref, accountId) => Stream.value(<BalanceAdjustmentRow>[]),
-          ),
-          activeCategoriesByTypeProvider.overrideWith(
-            (ref, type) => Stream.value(
-              categoryRows
-                  .where(
-                    (category) => category.type == type && category.isActive,
-                  )
-                  .toList(),
+            // These are navigation/form tests. Repository stream behavior is
+            // covered separately, so use deterministic streams here and avoid
+            // opening Drift query subscriptions from the widget tree.
+            activeAccountsProvider.overrideWith(
+              (ref) => Stream.value(accountRows ?? [testAccount]),
             ),
-          ),
-          if (repository != null)
-            transactionsRepositoryProvider.overrideWithValue(repository),
-          transactionHistoryProvider.overrideWith((ref, filter) {
-            if (liveHistory) {
-              return TransactionsRepository(testDatabase).watchHistory(
-                accountId: filter.accountId,
-                fromDate: filter.fromDate,
-                throughDate: filter.throughDate,
-                type: filter.type,
-              );
-            }
-            return Stream.value(<TransactionHistoryItem>[]);
-          }),
+            allAccountsProvider.overrideWith(
+              (ref) => Stream.value([testAccount]),
+            ),
+            totalActiveBalancePaiseProvider.overrideWith(
+              (ref) => Stream.value(0),
+            ),
+            accountBalancePaiseProvider.overrideWith(
+              (ref, accountId) => Stream.value(0),
+            ),
+            balanceAdjustmentsProvider.overrideWith(
+              (ref, accountId) => Stream.value(<BalanceAdjustmentRow>[]),
+            ),
+            activeCategoriesByTypeProvider.overrideWith(
+              (ref, type) => Stream.value(
+                categoryRows
+                    .where(
+                      (category) => category.type == type && category.isActive,
+                    )
+                    .toList(),
+              ),
+            ),
+            if (repository != null)
+              transactionsRepositoryProvider.overrideWithValue(repository),
+            transactionHistoryProvider.overrideWith((ref, filter) {
+              if (liveHistory) {
+                return TransactionsRepository(testDatabase).watchHistory(
+                  accountId: filter.accountId,
+                  fromDate: filter.fromDate,
+                  throughDate: filter.throughDate,
+                  type: filter.type,
+                );
+              }
+              return Stream.value(<TransactionHistoryItem>[]);
+            }),
           ],
           child: const MyAccountsManagerApp(),
         ),

@@ -254,7 +254,8 @@ class CategoryChip extends StatelessWidget {
                   icon,
                   size: 17,
                   color:
-                      iconColor ?? (selected ? accent : scheme.onSurfaceVariant),
+                      iconColor ??
+                      (selected ? accent : scheme.onSurfaceVariant),
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 Text(label, style: AppTypography.fieldValue),

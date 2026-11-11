@@ -942,17 +942,11 @@ class _AmountInput extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: _QuickAddChip(
-                label: '+100',
-                onTap: () => onQuickAdd(100),
-              ),
+              child: _QuickAddChip(label: '+100', onTap: () => onQuickAdd(100)),
             ),
             const SizedBox(width: AppSpacing.sm),
             Expanded(
-              child: _QuickAddChip(
-                label: '+500',
-                onTap: () => onQuickAdd(500),
-              ),
+              child: _QuickAddChip(label: '+500', onTap: () => onQuickAdd(500)),
             ),
             const SizedBox(width: AppSpacing.sm),
             Expanded(
