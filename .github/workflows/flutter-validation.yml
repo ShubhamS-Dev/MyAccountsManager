@@ -1,0 +1,97 @@
+name: Flutter validation
+
+# master pushes are validated by release.yml, which calls this workflow before building.
+on:
+  push:
+    branches:
+      - "feature/**"
+      - "development/**"
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+  pull_request:
+    branches:
+      - "development/**"
+      - master
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+  workflow_dispatch:
+  workflow_call:
+
+concurrency:
+  group: flutter-validation-${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
+
+jobs:
+  # Runs in parallel with `check` so formatting problems surface in under a minute.
+  # Only this job gets write access, for the feature-branch auto-format push.
+  format:
+    name: Format
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: ./.github/actions/flutter-setup
+
+      - name: Format Dart source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          dart format .
+          if git diff --quiet -- '*.dart'; then
+            echo "Formatting OK"
+            exit 0
+          fi
+
+          if [ "${{ github.event_name }}" = "push" ] && [[ "${{ github.ref_name }}" == feature/* ]]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -- '*.dart'
+            git commit -m "Auto-format Dart source"
+            git push
+            gh workflow run flutter-validation.yml --ref "${{ github.ref_name }}"
+            echo "::notice::Auto-formatted and pushed. A fresh validation run was started on the formatted commit."
+            exit 1
+          fi
+
+          git diff -- '*.dart'
+          echo "::error::Dart formatting differs. Apply the diff shown above."
+          exit 1
+
+  check:
+    name: Code generation, analyze, and tests
+    timeout-minutes: 20
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: ./.github/actions/flutter-setup
+        with:
+          sqlite: "true"
+          codegen: "true"
+
+      - name: Analyze
+        run: flutter analyze --no-pub
+
+      - name: Run tests
+        run: flutter test --no-pub --reporter expanded --timeout 2m
+
+      - name: Upload Add Transaction amount typing screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: add-transaction-amount-typing-screenshot
+          path: build/screenshots/add_transaction_amount_typing.png
+          if-no-files-found: warn
+          retention-days: 7

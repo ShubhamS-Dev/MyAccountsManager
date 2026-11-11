@@ -1,0 +1,41 @@
+name: Build debug APK
+
+# Manual only: Actions tab -> "Build debug APK" -> Run workflow -> pick a branch.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: build-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-apk:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      # Generated Drift files are committed and verified by Flutter validation, so no codegen here.
+      - name: Set up Flutter
+        uses: ./.github/actions/flutter-setup
+        with:
+          java: "true"
+
+      # Caches the Gradle distribution, dependencies, and build outputs.
+      # Only the default branch writes the cache; other branches restore from it.
+      - name: Set up Gradle cache
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build Android debug APK (arm64 only)
+        run: bash .github/scripts/flutter-build-apk.sh --debug --target-platform android-arm64
+
+      - name: Upload Android debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: myaccountsmanager-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14

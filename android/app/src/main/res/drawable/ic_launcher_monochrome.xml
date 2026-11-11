@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 13+ themed icon: single-tone outline of the foreground. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="3"
+        android:strokeLineJoin="round"
+        android:pathData="M35,40h40a6,6 0,0 1,6 6v24a6,6 0,0 1,-6 6h-40a6,6 0,0 1,-6 -6v-24a6,6 0,0 1,6 -6zM66,51h15v14h-15a4,4 0,0 1,-4 -4v-6a4,4 0,0 1,4 -4z"/>
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M68,58m-2.2,0a2.2,2.2 0,1 1,4.4 0a2.2,2.2 0,1 1,-4.4 0"/>
+    <path
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="2.8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M39,48.5h13M39,53h13M43.5,48.5c7,0 7,9 0,9h-4l9,10"/>
+</vector>

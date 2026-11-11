@@ -1,0 +1,97 @@
+name: Flutter setup
+description: Shared setup for all Flutter workflows. Single source of truth for the Flutter and Java versions.
+
+inputs:
+  java:
+    description: Install Java 17 for Android builds.
+    default: "false"
+  sqlite:
+    description: Install the Linux SQLite development library for host-side tests.
+    default: "false"
+  codegen:
+    description: Run Drift code generation and fail if committed generated files are stale.
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Java
+      if: inputs.java == 'true'
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: "17"
+
+    # Caches both the Flutter SDK and the pub cache.
+    - name: Set up Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: "3.47.9"
+        channel: stable
+        cache: true
+
+    - name: Verify committed Android scaffold
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        required_files=(
+          android/settings.gradle.kts
+          android/build.gradle.kts
+          android/app/build.gradle.kts
+          android/gradle/wrapper/gradle-wrapper.properties
+          android/app/src/main/AndroidManifest.xml
+        )
+
+        for file in "${required_files[@]}"; do
+          if [[ ! -f "$file" ]]; then
+            echo "::error::Required Android project file is missing: $file"
+            exit 1
+          fi
+        done
+
+        if ! grep -Fq 'applicationId = "com.shubhams.myaccountsmanager"' android/app/build.gradle.kts; then
+          echo "::error::Android applicationId must be com.shubhams.myaccountsmanager."
+          exit 1
+        fi
+
+    - name: Install Linux SQLite development library
+      if: inputs.sqlite == 'true'
+      shell: bash
+      run: |
+        if ! dpkg -s libsqlite3-dev >/dev/null 2>&1; then
+          sudo apt-get update
+          sudo apt-get install -y libsqlite3-dev
+        fi
+
+    - name: Resolve dependencies
+      shell: bash
+      run: flutter pub get
+
+    # Keyed on the lockfile and Drift sources only, so the cache is reused until
+    # the schema or dependencies change instead of saving a new entry per commit.
+    - name: Cache build_runner output
+      if: inputs.codegen == 'true'
+      uses: actions/cache@v4
+      with:
+        path: .dart_tool/build
+        key: build-runner-${{ runner.os }}-${{ hashFiles('pubspec.lock', 'lib/core/database/**/*.dart', '!lib/**/*.g.dart') }}
+        restore-keys: |
+          build-runner-${{ runner.os }}-
+
+    - name: Generate Drift code
+      if: inputs.codegen == 'true'
+      shell: bash
+      run: dart run build_runner build --delete-conflicting-outputs
+
+    - name: Verify generated Drift files are committed and up to date
+      if: inputs.codegen == 'true'
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        if [[ -n "$(git status --porcelain --untracked-files=all -- lib)" ]]; then
+          echo "::error::Generated or modified files exist under lib/. Run Drift code generation locally and commit the resulting files."
+          git status --short --untracked-files=all -- lib
+          exit 1
+        fi

@@ -4,7 +4,7 @@ An offline-first Flutter personal finance manager with an independent **MyKhata*
 
 ## Project status
 
-Requirements and the baseline technical architecture are being finalized. Implementation has not started.
+Implementation is in progress. Accounts, categories, transactions, History/Trash, the Home dashboard, MyKhata (people, entries, repayments) and the More hub with Appearance are built. Budgets, recurring transactions, savings goals, reports and encrypted backups are not yet implemented. See `milestone.md`.
 
 ## Product principles
 
@@ -27,6 +27,11 @@ Requirements and the baseline technical architecture are being finalized. Implem
 - Secure device storage backed by Android Keystore
 - Encrypted versioned `.khata` backups
 
+## Application identity
+
+- Android application ID: `com.shubhams.myaccountsmanager`
+- Flutter package name: `my_accounts_manager`
+
 ## Navigation
 
 Home | Accounts | History | MyKhata | More
@@ -42,7 +47,17 @@ The Add Transaction action is a floating action button.
 - Database migrations create and validate a recovery snapshot before applying changes.
 - Deleted records remain in Trash for 30 days before permanent cleanup, subject to the approved audit and retention rules.
 
+## Branching strategy
+
+- `master`: production/release.
+- `development/YYYYMMDD`: daily development integration branch.
+- `feature/YYYYMMDD/<short-description>`: feature/task branch created from the active development branch.
+
+Feature work is implemented on feature branches, reviewed into the matching development branch, and promoted to `master` only for an explicitly approved release. See `agent.md` for the full workflow.
+
 ## Development workflow
+
+Commit se pehle chalao: `dart format . && flutter analyze && flutter test`
 
 Implementation must follow the approved requirements and architecture. Do not silently assume behavior where a requirement is unclear. Clarify material decisions before changing product behavior, data models, security, or deployment.
 

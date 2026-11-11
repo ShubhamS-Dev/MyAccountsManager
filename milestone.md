@@ -13,29 +13,78 @@ This file is the project progress tracker. Update it whenever a milestone change
 ## Current project status
 
 - Overall status: **In Progress — requirements and implementation planning**
-- Application source implementation: **Not Started**
-- Android APK/release: **Not Started**
+- Application source implementation: **In Progress — project foundation and initial local database source**
+- Android native scaffold and debug APK: **In Progress** — CI now generates the missing Android platform folder, verifies the confirmed application ID, builds a debug APK, and uploads it as a workflow artifact; execution is pending.
 - Current baseline commit: see repository history.
+
+## Branching workflow
+
+- Production/release: `master`.
+- Daily development integration: `development/YYYYMMDD`.
+- Feature/task work: `feature/YYYYMMDD/<short-description>`.
+- Create the development branch from the latest `master`; create feature branches from the active development branch.
+- Merge feature branches into the matching development branch through review/validation. Merge development into `master` only for an explicitly approved release.
+- Never implement features directly on `master`; never treat YAML-only changes as application implementation.
+
+Current branches created for the initial foundation work:
+
+- `development/20261108`
+- `feature/20261108/project-foundation`
 
 ## Milestone tracker
 
 | ID | Milestone | Status | Completion evidence / acceptance criteria |
 |---|---|---|---|
-| M0 | Repository and project instructions | In Progress | README, agent instructions, and this milestone tracker are committed and consistent. |
+| M0 | Repository and project instructions | Done | README, agent instructions, and this milestone tracker are committed and consistent. |
 | M1 | Product requirements finalization | In Progress | PRD covers all approved modules, workflows, edge cases, and open decisions. Material ambiguities are resolved with the user. |
-| M2 | Technical architecture and data design | Not Started | Architecture, feature boundaries, database entities/relations, migration strategy, security design, and backup format are documented and reviewed. |
-| M3 | Flutter project foundation | Not Started | Real Flutter/Dart source project exists; app launches; approved dependencies, routing, Riverpod setup, theme, and feature structure are in place. |
-| M4 | Local database and integrity foundation | Not Started | Drift schema, repositories, migrations, UUID strategy, transaction boundaries, and recovery behavior are implemented and tested. |
-| M5 | Accounts, categories, and transactions | Not Started | Account management, categories, income/expense, adjustments, future-dated records, history, attachments, and Trash meet approved requirements. |
+| M2 | Technical architecture and data design | In Progress | Architecture, feature boundaries, database entities/relations, migration strategy, security design, and backup format are documented and reviewed. |
+| M3 | Flutter project foundation | In Progress | Real Flutter/Dart source project exists; app launches; approved dependencies, routing, Riverpod setup, theme, and feature structure are in place. |
+| M4 | Local database and integrity foundation | In Progress | Version 1 schema and migration policy are documented in docs/DATABASE_SCHEMA_V1.md. Drift table definitions, database connection, version-1 creation/seed logic, repository classes, Riverpod providers, and initial database/repository tests have been added. Generated code and all checks remain unverified until the Flutter workflow completes. |
+| M5 | Accounts, categories, and transactions | In Progress | Account management, categories, income/expense, adjustments, future-dated records, history, attachments, and Trash meet approved requirements. |
 | M6 | Dashboards and budgets | Not Started | Global and Account dashboards, date filters, configurable sections, budgets, and alerts work as specified. |
-| M7 | Recurring transactions and notifications | Not Started | Automatic and reminder-based recurrence, catch-up/idempotency, notification center, preferences, and Quiet Hours are implemented and tested. |
+| M7 | Recurring transactions and notifications | In Progress | Automatic and reminder-based recurrence, catch-up/idempotency, notification center, preferences, and Quiet Hours are implemented and tested. |
 | M8 | Savings Goals | Not Started | Goal lifecycle, contributions/withdrawals, transaction linking, history, dashboard widget, and reminders meet approved requirements. |
-| M9 | MyKhata | Not Started | Person profiles, independent lending/borrowing ledgers, installments, repayments, allocation, settlement, audit history, attachments, and reports are implemented and tested. |
+| M9 | MyKhata | In Progress | Person profiles, independent lending/borrowing ledgers, installments, repayments, allocation, settlement, audit history, attachments, and reports are implemented and tested. |
 | M10 | Reports and exports | Not Started | Regular finance and MyKhata reports, PDF preview/export, and filtered CSV export work as specified. |
 | M11 | Backup, restore, and storage management | Not Started | Encrypted versioned `.khata` archives, password handling, validation, Replace/Merge, conflict resolution, recovery snapshots, retention, and storage review are implemented and tested. |
-| M12 | UX polish, accessibility, and resilience | Not Started | Onboarding, loading/error/recovery states, empty states, navigation, responsive layouts, accessibility, and performance are reviewed. |
+| M12 | UX polish, accessibility, and resilience | In Progress | Onboarding, loading/error/recovery states, empty states, navigation, responsive layouts, accessibility, and performance are reviewed. |
 | M13 | Quality assurance and release readiness | Not Started | Formatting, static analysis, automated tests, migration/backup tests, Android build, permissions, and release checks pass; limitations are documented. |
 | M14 | Android distribution | Not Started | User-approved distribution method and signing configuration are in place; release artifact is generated and verified. |
+
+## Confirmed decisions
+
+- Money is displayed as rupees: whole values without unnecessary decimals (e.g. `₹500`) and fractional values with two decimal places (e.g. `₹500.50`).
+- Date fields use timestamp storage; the UI displays date-only values (Option A). Date-only business dates are UTC-normalized calendar dates, while audit timestamps represent actual UTC instants.
+- Database and domain calculations use integer paise (₹500 = `50000`, ₹500.50 = `50050`); binary floating-point is not used for stored money.
+
+## Latest implementation update — 2026-11-08
+
+- Confirmed Android application ID: `com.shubhams.myaccountsmanager`.
+- Created Flutter/Dart source foundation on `feature/20261108/project-foundation`.
+- Added `pubspec.yaml` with Flutter, Riverpod, go_router, and Flutter test/lint baselines.
+- Added `lib/main.dart`, app theme host, GoRouter configuration, five-destination navigation shell, initial Home placeholder, and Expense/Income entry-form scaffold.
+- Added Dart static-analysis configuration.
+- Added initial widget tests for app launch, navigation shell, FAB route, and Expense/Income selection.
+- Added draft `docs/ARCHITECTURE.md` documenting approved boundaries, dependency direction, data principles, security design work, and open decisions.
+- Added a shared `MoneyFormatter` utility for integer-paise parsing and Indian rupee display, plus unit tests covering whole/fractional values, grouping, and invalid input. These tests are committed; local execution is unavailable.
+- Added Drift/SQLite dependencies, version-1 table definitions for Accounts, Categories, and Transactions, a local database connection, schema creation, initial category seeding, and supporting indexes.
+- Added account/category/transaction repositories and Riverpod providers, plus in-memory database and repository tests.
+- Added integer-paise Account balance calculation using opening balance plus effective income minus effective expenses; deleted and future-dated transactions are excluded based on a supplied UTC calendar date. Added tests for these rules, but execution remains unverified.
+- Connected the Accounts navigation destination to a Drift-backed active Account list with loading, error/retry, and empty states.
+- Added Account creation UI with required name, optional description, and signed opening balance input parsed directly into integer paise. Account rows persist through the repository and appear through the Riverpod stream.
+- Changed the app default to Light mode, retaining the existing Dark theme definition.
+- Added a Flutter GitHub Actions validation workflow to generate Drift source, format, analyze, and run tests. The workflow has not yet been verified as successful.
+- Documented the initial SQLite/Drift schema and migration policy in `docs/DATABASE_SCHEMA_V1.md`, covering Accounts, Categories, and regular Transactions, including fields, indexes, integrity rules, seed behavior, and deferred feature tables.
+- Confirmed timestamp storage with date-only UI display. Architecture distinguishes UTC-normalized calendar-date timestamps from actual UTC audit/event timestamps.
+- Added `DateOnly` and `AuditTimestamp` utilities with tests for UTC-midnight date storage, date-only formatting, and UTC audit instants. Tests are committed but not yet executed.
+- Added Account edit UI for name/description, repository update and lookup methods, pin/unpin actions, and confirmed archive action that preserves financial history. Opening balance is intentionally not exposed in edit UI. A formal balance-adjustment feature is not yet implemented, so the opening-balance lock rule still needs enforcement when that feature is added.
+- Added an Archived Accounts screen with restore action, archived/active Riverpod streams, and restore repository operation. Added per-Account balance display based on opening balance plus effective transactions through the current UTC calendar date. Expense/Income transaction entry and filtered transaction history are now connected to SQLite. Permanent Account deletion, adjustment editing/Trash, attachments, custom ordering, and Account-specific dashboard remain pending. Balance adjustments now have a dedicated schema-v2 table, signed paise values, required reason, date-aware balance calculation, entry UI, and history. Transaction editing now supports amount, type, Category, Account, date, and note updates with validation and balance refresh. Transaction soft-delete, restore, and confirmed permanent deletion from Trash are implemented; Flutter validation remains unverified.
+- Android native platform scaffolding and package identifier wiring remain pending; it must be generated/configured and built before this milestone can be marked Done.
+- Flutter formatting, analysis, tests, and Android build have **not** been run in this environment. No successful build is claimed.
+
+## Root-cause repair update — 2026-11-08
+
+The previous control-flow lint cleanup introduced invalid Dart by appending empty blocks after statements and inserting a block between `ScaffoldMessenger.of(context)` and `.showSnackBar`. This was traced through the diffs of commits `29cc58a`, `47d9d6a`, `e2144a3`, `728a415`, `9d8be32`, `5a7057d`, `bfb2a1c`, `ac582fe`, and `29369f1`. The malformed syntax has been removed from the affected source files. Future lint cleanup must add braces around the complete intended statement body; it must never append braces after an already-complete statement.
 
 ## Open decisions / blockers
 
@@ -55,6 +104,11 @@ Remove an item only after the decision is recorded in the approved requirements 
 | Date | Update |
 |---|---|
 | 2026-11-08 | Added project-level agent instructions and milestone tracker. No Flutter application source implementation is claimed by this documentation change. |
+| 2026-11-08 | Added decimal-safe integer-paise money parsing/formatting utility and unit tests on `feature/20261108/project-foundation`; execution remains pending Flutter toolchain availability. |
+| 2026-11-08 | Recorded timestamp storage with date-only UI presentation and explicit UTC semantics for business dates versus audit timestamps. |
+| 2026-11-08 | Added date-only and audit timestamp utilities plus unit tests; Flutter test execution remains pending toolchain availability. |
+| 2026-11-08 | Documented initial SQLite/Drift schema version 1 and migration strategy; Drift source definitions and validation remain pending. |
+| 2026-11-08 | Added Drift dependencies, initial tables/database/seed, repositories/providers, persistence tests, and a CI workflow for code generation and validation. Generated code and workflow results remain unverified. |
 
 ## Change log format
 
@@ -65,3 +119,190 @@ When updating this file, record:
 - Evidence: source files, tests, build output, or approved decision/document
 
 Keep this tracker concise and evidence-based.
+
+| 2026-11-08 | Added date-aware Account balance calculation and repository tests for future/deleted transaction exclusion. Generated Drift source is present on the feature branch; Flutter validation results remain unverified. |
+
+| 2026-11-08 | M5 started: connected Accounts navigation to the local database, implemented active Account list and Account creation form with integer-paise opening balance parsing; set Light mode as default. Formatting, analysis, tests, and device build remain unverified. |
+\n| 2026-11-08 | M5: added Account edit form, pin/unpin, archive confirmation and repository operations; added repository tests for edit/pin behavior. Permanent deletion and balance-adjustment-aware opening-balance lock remain pending. Checks are not yet executed. |\n\n| 2026-11-08 | M5: added archived Account listing and restore, active/archived streams, and current-date Account balance display. Added repository restore test. Flutter validation and Android build remain unverified. |\n\n| 2026-11-08 | M5: connected Expense/Income entry UI to SQLite repository with Account/category selection, date-only UTC storage, decimal-safe integer-paise parsing, optional note, validation, and Account balance invalidation after save. No runtime or CI validation is claimed. |\n
+| 2026-11-08 | M5: added joined transaction history query and History navigation screen with active/archived Account filter, Expense/Income filter, inclusive date-range filter, and newest-first ordering. Added repository test for joins and filters. Flutter validation remains unverified. |
+
+| 2026-11-08 | M5: added transaction soft-delete, Trash listing, restore, and confirmation-gated permanent deletion. History now exposes Move to Trash and a Trash entry point; repository lifecycle tests were added. Flutter formatting, analysis, tests, and Android build remain unverified. |
+
+| 2026-11-08 | M5: added transaction editing from History, typed transaction lookup, validated repository updates, Account reassignment, archived-Account safeguards, and tests for edits and invalid states. Flutter formatting, analysis, tests, and Android build remain unverified. |
+
+| 2026-11-08 | M5/M4: introduced schema version 2 with a non-destructive balance-adjustment migration; added signed adjustment storage, reason and date validation, date-aware balance calculations, Account-level adjustment entry/history UI, and repository/database tests. Drift code generation, formatting, analysis, tests, and Android build are not yet verified. |
+| 2026-11-08 | M5: removed an accidentally duplicated trailing fragment from the Add Transaction screen that caused Dart parser errors. CI formatting, analysis, and tests must still pass before validation is considered complete. |
+| 2026-11-08 | M5: fixed static-analysis findings in transaction editing, Trash list layout, and Drift/Matcher test imports. Validation is running again; test results remain pending. |
+
+| 2026-11-08 | M5/M13: traced formatter failures to nine earlier commits that incorrectly appended empty `{ ; }` blocks or malformed `ScaffoldMessenger` member access while attempting to fix curly-brace lint. Restored the original valid statements across transaction, Account, adjustment, and money-formatting source files. Root cause identified as an unsafe source-editing transformation, not Flutter tooling. Formatting, analysis, tests, and Android build must be rerun before validation is claimed. |
+
+
+## CI root-cause analysis — 2026-11-08
+
+Run #144 completed dependency resolution, Drift generation, Dart formatting, and the generated/formatted-source commit. It failed only at flutter analyze: 24 informational curly_braces_in_flow_control_structures findings caused analyzer exit code 1; tests were skipped. The syntax repairs therefore restored parseability but did not clear the analyzer gate.
+
+Root cause: (1) 24 unbraced control-flow statements remained across money formatting, Account/adjustment screens, transaction repository, and transaction screens. (2) analysis_options.yaml includes package:flutter_lints/flutter.yaml, which enables this rule; the current CI analyzer command fails on info-level findings. (3) The previous cleanup used unsafe text-level brace insertion rather than wrapping each complete statement body, causing semicolon loss, extra braces, and malformed chained ScaffoldMessenger calls. (4) CI formatting and code generation succeeded in run #144 and were not the cause of that run's failure.
+
+Corrective approach: explicitly wrap each complete intended statement body, preserve expression chains and semicolons, and keep dart fix --apply and blind brace insertion out of the workflow. All analyzer-reported sites have now been edited with complete blocks. Validation remains pending the next CI run.
+
+
+## Android build pipeline update — 2026-11-08
+
+- Updated the Flutter validation workflow to generate the missing Android platform scaffold only when absent, using the confirmed application ID `com.shubhams.myaccountsmanager`.
+- The workflow now builds a debug APK after formatting, analysis, and all tests pass, then uploads `app-debug.apk` as the `myaccountsmanager-debug-apk` artifact for 14 days.
+- The generated `android/` folder is committed only after the full validation and APK build succeed. No APK or Android scaffold completion is claimed until that run passes.
+
+
+## Gradle download failure RCA and mitigation — 2026-11-08
+
+- Run #187 passed Android scaffold generation, dependency resolution, Drift generation, Dart formatting, static analysis, and all 28 automated tests.
+- APK assembly failed before compilation because the Gradle wrapper could not download Gradle 9.3.1 from the Gradle GitHub release endpoint; the endpoint returned HTTP 504. APK upload and generated Android scaffold commit were consequently skipped.
+- Root cause is a transient external distribution-download gateway timeout. The run contains no evidence of an application source, Android manifest, or Gradle build-script compilation defect.
+- Updated CI to cache Gradle wrapper distributions and dependency caches using the wrapper properties as the cache key. Added up to three bounded APK build attempts, with increasing delays, only when logs indicate transient HTTP 5xx/network failures. Non-network build failures fail immediately and are not masked.
+- The mitigation is committed; it is not yet verified. A subsequent successful APK build is required before marking Android scaffold/APK milestone complete.
+
+
+## Android Gradle distribution endpoint repair — 2026-11-08
+
+- Run #190 passed Android scaffold generation, dependency resolution, Drift code generation, formatting, static analysis, and all 28 tests.
+- APK assembly again failed before Android compilation: all three configured attempts received HTTP 504 from the generated wrapper's GitHub release URL for Gradle 9.3.1. The Gradle cache had no prior distribution to restore, so the wrapper had to download it.
+- The previous retry-only mitigation was insufficient because the failing endpoint remained unchanged across all attempts.
+- Updated the workflow to rewrite the generated Gradle wrapper distribution URL to the Gradle downloads host (downloads.gradle.org) while preserving the generated Gradle version and archive type. Added a 120-second wrapper network timeout. Existing wrapper/dependency caching and bounded retry behavior remain in place.
+- This endpoint change is not yet validated. The next successful run must pass Gradle distribution download, Android compilation, APK upload, and generated scaffold commit before Android build completion is claimed.
+
+## UI/UX requirements update — 2026-11-08
+
+The user reviewed the current Android screens and approved cross-app UI/UX requirements. The detailed source of truth is docs/UI_UX_REQUIREMENTS.md; agent.md and docs/ARCHITECTURE.md require future implementation to follow it.
+
+Confirmed requirements recorded (not yet implemented or validated as a complete UI refresh):
+- Premium, cohesive visual design with purposeful, smooth, non-blocking animations.
+- Compact dropdowns, popup menus, and date-picker dialogs/calendars, while retaining accessible touch targets.
+- Add Transaction input order: **Account → Transaction date → Note → Amount → Category/other details**. Expense/Income type selection may remain as a compact selector above the fields.
+- Show **Today** when the selected transaction date matches the device's current local calendar date; otherwise show **DD MMM YYYY**, e.g. **08 Nov 2026**. This is display-only; UTC-normalized date-only storage remains unchanged.
+- Use Indian digit grouping for displayed amounts (e.g. ₹1,00,000), preserve the existing whole-rupee/two-decimal precision rule, and use consistent semantic colors for positive/income and negative/expense values while retaining explicit signs.
+- Ensure Drift/Riverpod reactive updates keep Home, Accounts, History, and other dependent screens synchronized after all relevant mutations. Add propagation tests; manual refresh is not a substitute.
+
+Status: requirements documented; implementation remains pending. M12 remains Not Started until the design system, interaction polish, accessibility, and resilience acceptance criteria are implemented and verified. Reactive refresh and transaction-form/date behavior must also be validated in their respective feature milestones.
+
+| Date | Update |
+|---|---|
+| 2026-11-08 | Documented approved premium UI/UX, compact control, transaction-form ordering, Today/date display, Indian amount grouping, semantic amount color, and reactive data-refresh requirements in docs/UI_UX_REQUIREMENTS.md; linked the requirements from agent instructions and architecture. Documentation only; no app source behavior changed in this commit. |
+
+
+## Premium UI/UX implementation sequence — 2026-11-08
+
+Implementation has started on the existing project-foundation feature branch. Work is intentionally sequenced to stabilize financial correctness before visual polish:
+
+1. **Reactive data synchronization:** replace one-shot balance reads with Drift queries watching Accounts, Transactions, and BalanceAdjustments; make Home's combined active-Account balance database-backed; add stream propagation tests.
+2. **Financial presentation:** centralize all amount display through MoneyFormatter and apply semantic positive/negative colors consistently across Home, Accounts, History, and future modules.
+3. **Transaction entry:** reorder fields to Account → Date → Note → Amount → Category/other details; display Today for the current local calendar date and DD MMM YYYY otherwise; compact dropdown/date-picker controls.
+4. **Premium design system:** refine shared theme, typography, spacing, cards, navigation, compact controls, loading/empty/error states, and restrained animations.
+5. **Regression and APK validation:** format, analyze, test, build debug APK, and review the installed screens.
+
+Current implementation slice (not yet CI-validated):
+- Added reactive Drift SQL streams for individual Account balance and combined active-Account balance, with dependencies declared for all source tables.
+- Changed Account balance provider to a StreamProvider and added a reactive Home total-balance provider.
+- Replaced Home's hardcoded ₹0.00 with the live combined balance.
+- Updated Account balance labels to use shared MoneyFormatter and semantic positive/negative colors.
+- Reordered Add Transaction inputs and made Account/Category dropdowns denser with bounded menu height.
+- Added Today / DD MMM YYYY transaction-date label behavior.
+- Updated History to use the shared currency/date formatters and semantic amount colors.
+- Added a repository stream test for a transaction mutation changing the watched Account balance.
+
+The source changes are committed, but the new workflow must pass before this slice is considered validated. Remaining tasks include checking the new Drift SQL at runtime, adding provider/widget propagation coverage, compacting date-picker presentation, polishing shared theme and animations, and applying semantic amount colors to every remaining monetary display.
+
+
+
+### CI follow-up — Run #199
+
+- Run #199 reached Drift code generation and Dart formatting successfully.
+- `flutter analyze` failed with five lint/info findings only: import directive ordering in AppShell, Add Transaction, and History, plus missing braces around one conditional in Add Transaction.
+- Tests and Android APK build were skipped because the workflow stops on analyzer failure.
+- Corrected those source findings and queued a new validation run. Do not mark this implementation slice complete until the replacement run passes analysis, tests, and APK build.
+
+
+### CI root-cause analysis — Run #200
+
+- Run #200 passed Flutter setup, Android scaffold generation, Gradle endpoint configuration, dependency resolution, Drift code generation, Dart formatting, and static analysis.
+- The test job failed in the first dashboard widget test with Flutter's pending-timer assertion. The timer stack points to Drift's `StreamQueryStore.markAsClosed`, invoked when a Riverpod `StreamProvider` backed by a Drift query is disposed.
+- Root cause: the widget test already replaced the account/category/history streams with deterministic streams, but the new Home dashboard also watches `totalActiveBalancePaiseProvider`. That provider was not overridden, so the test unexpectedly opened a real Drift SQL stream. Its deferred close timer remained in the widget-test fake-async zone. The subsequent widget tests then timed out after the first test failed and left the binding in a failed state.
+- Corrective change: override both reactive balance providers in navigation/form widget tests with deterministic in-memory streams. These tests validate navigation and form rendering; the real Drift stream behavior remains covered by repository-level stream tests. Teardown continues to unmount the widget tree before closing the test database.
+- This is a test-isolation correction; production reactive balance providers and application behavior are unchanged. Run #201 must verify tests and the Android debug APK before this fix is considered validated.
+
+## UI refresh implementation update — 2026-11-09
+
+- User confirmed the proposed screen inventory for implementation; see the approved screen scope in `docs/UI_UX_REQUIREMENTS.md`. Approval records design scope, not completed application behavior.
+- Created `feature/20261109/ui-refresh` from the existing `feature/20261108/project-foundation` branch as explicitly requested.
+- Read README.md, agent.md, milestone.md, docs/UI_UX_REQUIREMENTS.md, docs/ARCHITECTURE.md, and docs/DATABASE_SCHEMA_V1.md before source changes.
+- Added `lib/app/app_theme.dart` with shared premium-minimal color and typography tokens, light/dark theme construction, compact input styling, card styling, and standard action-button styles constrained to 40 logical pixels high.
+- Updated `lib/app/my_accounts_manager_app.dart` to use the shared theme, retaining Light as the default and Dark as the supported alternate.
+- This is the first shared-theme implementation slice only. Existing screen layouts still need migration to shared components/tokens; unimplemented modules remain unimplemented. Flutter formatting, analysis, tests, visual review, and Android build have not yet been run on this branch.
+
+## UI refresh implementation progress — 2026-11-09 (continued)
+
+- Implemented the approved compact Accounts overview: active-balance summary (excluding MyKhata), visibility toggle, archived navigation, searchable two-column Account grid, add action, pinned ordering from the repository, details/edit/adjust/pin/archive actions, and long-press quick actions.
+- Added Account Details route and screen. It reads the existing Account, balance, adjustment, and transaction providers; shows the current balance, opening balance, income, expenses, adjustments, and up to 30 transaction rows.
+- Added a widget regression test for Accounts → Account Details navigation and key sections.
+- Added `docs/UI_IMPLEMENTATION_LOG.md` to track file-level implementation, behavior, remaining gaps, and validation evidence.
+- Updated `docs/UI_UX_REQUIREMENTS.md` earlier with the user's confirmed screen scope and typography/button sizing.
+- No PR has been opened and no merge has been performed.
+- Validation remains **not run**: Dart format, Flutter analyze, Flutter tests, Android debug build, and device visual review. Do not interpret the added test as a passing result.
+
+
+
+## CI failure and repair — 2026-11-09
+
+- Run #217 failed at `flutter analyze` on commit `3ef527f95e80c7e652db0f226291d336d1f87cc8`; dependency resolution, Drift generation, and Dart formatting passed. Tests and Android debug build were skipped.
+- RCA: missing import for the concrete `TransactionHistoryItem` type in Account Details (causing cascading type/nullability/fold diagnostics) and Flutter 3.47.9 theme API mismatch (`CardTheme` versus `CardThemeData`). Analyzer also reported an unused local, missing braces, import ordering, and deprecated opacity calls.
+- Corrective source commits: Account Details type/import and null-flow cleanup; theme `CardThemeData` and `withValues`; Accounts import ordering and `withValues`.
+- Added the detailed RCA and fix record to `docs/UI_IMPLEMENTATION_LOG.md`.
+- **Current validation status: pending a fresh workflow run.** Do not mark M5 or M13 Done, and do not proceed to the next feature slice until analysis, tests, and Android debug build are verified successful.
+
+
+## Premium design system foundation — 2026-11-10
+
+- M12/UI foundation started on `feature/20261109/ui-refresh`.
+- Added centralized design tokens in `lib/app/design_tokens.dart`: fintech indigo/violet and semantic emerald/rose colors, light/dark surfaces, spacing, radii, shadows, tabular amount typography, and the approved 40px button / 48px touch-target dimensions.
+- Rebuilt `lib/app/app_theme.dart` with explicit Material 3 light/dark ColorSchemes and shared component themes; removed the generated seed-blue palette.
+- Added reusable `AppCard`, `GradientCard`, `AmountText`, `SectionHeader`, `PrimaryButton`, `CategoryChip`, and `EmptyState` in `lib/app/app_widgets.dart`.
+- Changed app theme selection to `ThemeMode.system`; the app now follows Android's system appearance and retains both light and dark themes.
+- Added `test/app/design_system_test.dart` for token values, light/dark surfaces, and the 48px hit-area / 40px visual-button contract.
+- This is the design-system foundation slice. Home, Accounts, History, and Add Transaction screen layouts have not yet been redesigned with the new components.
+- Google Fonts runtime loading is intentionally not enabled in this offline-first app: it can fetch font files over the network unless font assets are bundled. Typography currently uses Flutter's local platform font fallback with tabular figures. Animation, chart, Lottie, and SVG packages will be added only in the screen slice that actually uses them.
+- Validation for this slice is pending CI; do not mark it Done until formatting, analysis, tests, and Android debug build pass.
+
+
+## MyKhata, More and screen refresh (2026-11-11)
+
+- M9 moved from Not Started to In Progress. Built: person profiles, independent lend/borrow entries, repayments, settlement, overpayment blocking and the Account-isolation guarantee (schema v3). Still open: installment schedules, repayment allocation across entries, audit history, attachments, reports and a MyKhata Trash UI.
+- M12 moved from Not Started to In Progress. The premium design system is applied to every implemented screen, with loading, empty and error states and phone-width checks in both themes. Still open: onboarding, an accessibility audit and on-device review.
+- M5: Global Categories management (add, edit, hide, restore) and the refreshed Account forms, Archived Accounts, Adjustments and Trash.
+- Approved defaults recorded for the MyKhata open decisions: overpayment is rejected, and settled entries are not reopened (superseded 2026-11-11: removing the latest repayment reopens the entry). These are interim choices, so the open-decision entry stays until the PRD records the final rule.
+- Evidence: local format (0 changes), analyze (no issues), 90 tests passing, debug APK built. CI has not run on these changes, and no on-device review has been done. See docs/UI_IMPLEMENTATION_LOG.md.
+
+
+## Smart notes and category suggestions (2026-11-11)
+
+- M5: Add Transaction now suggests recent and matching notes and auto-selects a Category from the note (history first, keyword fallback); manual choices are never overridden. Edit Transaction suggests a Category with a one-tap "Use". No schema change.
+- Evidence: local analyze (only a pre-existing directives_ordering info in test/widget_test.dart), 109 tests passing including 14 new suggestion tests. Debug APK not rebuilt, CI not run, no on-device review.
+
+
+## UX audit fixes, system typography and Scheduled transactions (2026-11-11)
+
+- Decisions approved by the user: Material 3 system typography with device font scaling (replaces the 11/14/16px rule); future-dated regular transactions supported as Scheduled.
+- M12: M3 type scale and 48px tap targets in the theme; fixed-height Account cards, Account chips and the khata person picker now scale with font size; `PrimaryButton` grows with font size. "Discard changes?" guard on all eight forms. Android back on a non-Home tab returns to Home. Hide amounts is saved on the device. Hero amounts on gradient cards keep their white colour in light theme. Save spinner is visible on gradient buttons.
+- M5: History rows open the previously unrouted Transaction Details page; Home recent rows and Account Details rows open it too. Details shows hidden categories by name and audit dates in local time. Scheduled badge, Upcoming card on Home, scheduled-aware History totals and future-month navigation. Balances roll over at local midnight via `todayProvider`.
+- M9: A person can be removed once all their entries are deleted (deleted entries and repayments are purged with them). A full repayment asks for confirmation before settling, offers Undo, and removing the latest repayment reopens a settled entry. Khata entry dates are capped at today.
+- More: Currency & Format now shows ₹1,00,00,000 as one crore (it previously labelled ₹10,00,000 as a crore).
+- Evidence: local format (0 changes), analyze (no issues), 113 tests passing, including new tests for the Details route, back-to-Home, the discard guard, Scheduled/Upcoming, large-font layout, hide-amount persistence, person removal and settlement reopen. Debug APK not rebuilt, CI not run, no on-device review.
+| 2026-11-11 | M7 started: local reminders for MyKhata due dates (day before, due day, daily overdue summary) and Scheduled transactions, Activity center behind the app bar bell, and More > Notifications preferences (time, per-type switches, hidden amounts by default). Exact timing when Alarms & reminders access is granted, inexact otherwise. Recurring rules, Quiet Hours and budget alerts remain open. Evidence: format (0 changed), analyze (no issues), 129 tests passing (16 new in test/features/notifications_test.dart), debug APK built. Not verified on a device or emulator. |
+
+
+## Contrast, CSV export and MyKhata reminders (2026-11-11)
+
+- M12: Light-theme income and expense text tokens pass WCAG AA (checked by test). Person hero, avatar and selected-segment text are chosen by luminance. Gradient-card balances are white. Swatches, category icons, the category switch, the History type selector, Account cards, khata rows and masked amounts have screen-reader labels or merged semantics. Swatches, category icons and the History selector are 48dp. Hide amounts now covers History, Transaction Details, the Edit Account preview, Record Repayment and the khata entry form, all with one mask. Account cards show a ripple. Arrows are consistent across screens.
+- More: Export data shares Transactions and MyKhata CSV files through the share sheet. Encrypted Backup & Restore is still blocked on the crypto design decision and was not started.
+- M9: Person Details has Call/WhatsApp from the phone number, Send reminder (WhatsApp or other apps) and a shareable text statement. The MyKhata hero shows the overdue count and an Overdue filter.
+- New dependencies approved by the user: share_plus, url_launcher. No schema change.
+- Evidence: local format (0 changed), analyze (no issues), 151 tests passing (22 new: test/app/accessibility_test.dart, test/features/csv_export_test.dart, test/features/khata_reminders_and_export_test.dart, and a History/Details masking test in test/widget_test.dart). Debug APK built. CI not run. Call, WhatsApp and the share sheet were tested with fakes only, not on a device or emulator.
+
