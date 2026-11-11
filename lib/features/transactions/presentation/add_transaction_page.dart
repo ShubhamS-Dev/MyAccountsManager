@@ -1,18 +1,24 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/app_form_widgets.dart';
 import '../../../app/app_theme.dart';
 import '../../../app/app_widgets.dart';
 import '../../../app/icon_resolvers.dart';
 import '../../../app/privacy_state.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/formatting/date_timestamp.dart';
+import '../../../core/formatting/indian_amount_input_formatter.dart';
 import '../../../core/formatting/money_formatter.dart';
+import '../../../core/time/today_provider.dart';
 import '../../accounts/accounts_providers.dart';
 import '../../categories/categories_providers.dart';
 import '../transactions_providers.dart';
+import 'note_suggestion_chips.dart';
 
 enum TransactionKind { expense, income }
 
@@ -39,6 +45,20 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
   String? _categoryId;
   DateTime _date = DateTime.now();
   bool _saving = false;
+
+  // Note-driven suggestions. Once the user picks a Category themselves the
+  // suggestion never overrides it.
+  bool _categoryTouched = false;
+  String? _suggestedCategoryId;
+  List<String> _noteSuggestions = const [];
+  Timer? _suggestDebounce;
+  int _suggestRequest = 0;
+
+  // Unsaved-changes tracking for the back-navigation guard.
+  late final String _pristine = _snapshot;
+  String get _snapshot =>
+      [_amountController.text, _noteController.text, _date].join('\u0000');
+  bool get _dirty => !_saving && !_saved && _snapshot != _pristine;
   bool _saved = false;
   bool _showValidation = false;
   String? _error;
@@ -54,11 +74,49 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
   }
 
   void _noteChanged() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    setState(() {});
+    _suggestDebounce?.cancel();
+    _suggestDebounce = Timer(
+      const Duration(milliseconds: 300),
+      _refreshSuggestions,
+    );
+  }
+
+  Future<void> _refreshSuggestions() async {
+    final request = ++_suggestRequest;
+    final type = _kind.name;
+    final note = _noteController.text;
+    final repository = ref.read(transactionsRepositoryProvider);
+    List<String> notes = const [];
+    String? categoryId;
+    try {
+      notes = await repository.suggestNotes(type, note);
+      categoryId = await repository.suggestCategoryForNote(type, note);
+    } catch (_) {
+      // Suggestions are optional and must never block entry.
+    }
+    if (!mounted || request != _suggestRequest) return;
+    setState(() {
+      _noteSuggestions = notes;
+      _suggestedCategoryId = categoryId;
+      if (!_categoryTouched) _categoryId = categoryId;
+      if (_categoryId != null) _error = null;
+    });
+  }
+
+  void _useNote(String note) {
+    _noteController.value = TextEditingValue(
+      text: note,
+      selection: TextSelection.collapsed(offset: note.length),
+    );
+    _suggestDebounce?.cancel();
+    _refreshSuggestions();
   }
 
   @override
   void dispose() {
+    _suggestDebounce?.cancel();
     _noteController.removeListener(_noteChanged);
     _amountController.dispose();
     _noteController.dispose();
@@ -93,9 +151,12 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
       ? 'Today'
       : DateOnly.format(DateOnly.toUtcEpochMilliseconds(_date));
 
-  Color _accent() => _kind == TransactionKind.expense
-      ? AppColors.negative
-      : AppColors.positive;
+  Color _accent() {
+    final scheme = Theme.of(context).colorScheme;
+    return _kind == TransactionKind.expense
+        ? scheme.negativeText
+        : scheme.positiveText;
+  }
 
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
@@ -202,7 +263,10 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      UnsavedChangesGuard(dirty: _dirty, child: _buildPage(context));
+
+  Widget _buildPage(BuildContext context) {
     final accounts = ref.watch(activeAccountsProvider);
     final categories = ref.watch(activeCategoriesByTypeProvider(_kind.name));
     final scheme = Theme.of(context).colorScheme;
@@ -243,6 +307,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
 
           return Form(
             key: _formKey,
+            onChanged: () => setState(() {}),
             child: ListView(
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               padding: const EdgeInsets.fromLTRB(
@@ -258,8 +323,12 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                     setState(() {
                       _kind = kind;
                       _categoryId = null;
+                      _categoryTouched = false;
+                      _suggestedCategoryId = null;
+                      _noteSuggestions = const [];
                       _error = null;
                     });
+                    _refreshSuggestions();
                   },
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -284,10 +353,38 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                     onPick: _pickDate,
                   ),
                 ),
+                if (isScheduledDate(
+                  DateOnly.toUtcEpochMilliseconds(_date),
+                  ref.watch(todayProvider),
+                ))
+                  const _ScheduledNote(),
                 const SizedBox(height: AppSpacing.md),
                 KeyedSubtree(
                   key: const ValueKey('add-transaction-note'),
-                  child: _NoteInput(controller: _noteController),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _NoteInput(controller: _noteController),
+                      if (_noteController.text.trim().isEmpty)
+                        NoteSuggestionChips(
+                          key: const ValueKey('add-transaction-recent-notes'),
+                          label: 'Recent',
+                          notes:
+                              ref
+                                  .watch(recentNotesProvider(_kind.name))
+                                  .valueOrNull ??
+                              const [],
+                          onSelected: _useNote,
+                        )
+                      else
+                        NoteSuggestionChips(
+                          key: const ValueKey('add-transaction-note-matches'),
+                          label: 'Suggestions',
+                          notes: _noteSuggestions,
+                          onSelected: _useNote,
+                        ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 KeyedSubtree(
@@ -333,10 +430,15 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                       return _CategorySelector(
                         categories: categoryRows,
                         selectedId: _categoryId,
+                        suggested:
+                            !_categoryTouched &&
+                            _categoryId != null &&
+                            _categoryId == _suggestedCategoryId,
                         kind: _kind,
                         showValidation: _showValidation,
                         onSelected: (id) => setState(() {
                           _categoryId = id;
+                          _categoryTouched = true;
                           _error = null;
                         }),
                       );
@@ -438,14 +540,14 @@ class _TypeSelector extends StatelessWidget {
             children: [
               _TypeOption(
                 label: 'Expense',
-                icon: Icons.arrow_upward_rounded,
+                icon: Icons.north_east_rounded,
                 selected: expense,
                 selectedColor: selectedForeground,
                 onTap: () => onChanged(TransactionKind.expense),
               ),
               _TypeOption(
                 label: 'Income',
-                icon: Icons.arrow_downward_rounded,
+                icon: Icons.south_west_rounded,
                 selected: !expense,
                 selectedColor: selectedForeground,
                 onTap: () => onChanged(TransactionKind.income),
@@ -542,7 +644,7 @@ class _AccountSelector extends StatelessWidget {
         const _FieldHeading(title: 'Account'),
         const SizedBox(height: AppSpacing.sm),
         SizedBox(
-          height: 68,
+          height: 20 + MediaQuery.textScalerOf(context).scale(48),
           child: ListView.separated(
             controller: controller,
             scrollDirection: Axis.horizontal,
@@ -640,7 +742,8 @@ class _AccountBalance extends ConsumerWidget {
     final scheme = Theme.of(context).colorScheme;
     if (hidden) {
       return Text(
-        '₹ ••••••',
+        hiddenAmountMask,
+        semanticsLabel: 'amount hidden',
         style: AppTypography.metadata.copyWith(color: scheme.onSurfaceVariant),
       );
     }
@@ -903,7 +1006,7 @@ class _AmountInput extends StatelessWidget {
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
-                  inputFormatters: [_IndianAmountInputFormatter()],
+                  inputFormatters: const [IndianAmountInputFormatter()],
                   validator: validator,
                   onChanged: onChanged,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -1004,6 +1107,7 @@ class _CategorySelector extends StatelessWidget {
   const _CategorySelector({
     required this.categories,
     required this.selectedId,
+    required this.suggested,
     required this.kind,
     required this.showValidation,
     required this.onSelected,
@@ -1011,6 +1115,7 @@ class _CategorySelector extends StatelessWidget {
 
   final List<CategoryRow> categories;
   final String? selectedId;
+  final bool suggested;
   final TransactionKind kind;
   final bool showValidation;
   final ValueChanged<String> onSelected;
@@ -1019,12 +1124,15 @@ class _CategorySelector extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final income = kind == TransactionKind.income;
-    final accent = income ? AppColors.positive : AppColors.negative;
+    final accent = income ? scheme.positiveText : scheme.negativeText;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _FieldHeading(title: 'Category'),
+        _FieldHeading(
+          title: 'Category',
+          hint: suggested ? 'Suggested from note' : null,
+        ),
         const SizedBox(height: AppSpacing.sm),
         if (categories.isEmpty)
           AppCard(
@@ -1131,48 +1239,26 @@ class _FieldHeading extends StatelessWidget {
   }
 }
 
-class _IndianAmountInputFormatter extends TextInputFormatter {
+/// Explains that a future-dated transaction is saved as Scheduled.
+class _ScheduledNote extends StatelessWidget {
+  const _ScheduledNote();
+
   @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    final raw = newValue.text.replaceAll(',', '');
-    if (raw.isEmpty) return newValue.copyWith(text: '');
-    if (!RegExp(r'^\d*(\.\d{0,2})?$').hasMatch(raw)) return oldValue;
-
-    final parts = raw.split('.');
-    final whole = parts.first;
-    if (whole.length > 12) return oldValue;
-
-    final formattedWhole = whole.isEmpty
-        ? ''
-        : MoneyFormatter.formatPaise(
-            int.parse(whole) * 100,
-            includeSymbol: false,
-          );
-    final formatted = parts.length == 2
-        ? '$formattedWhole.${parts[1]}'
-        : formattedWhole;
-
-    final cursor = newValue.selection.baseOffset.clamp(0, newValue.text.length);
-    final prefix = newValue.text.substring(0, cursor).replaceAll(',', '');
-    final prefixParts = prefix.split('.');
-    final prefixWhole = prefixParts.first;
-    final formattedPrefix = prefixWhole.isEmpty
-        ? ''
-        : MoneyFormatter.formatPaise(
-            int.parse(prefixWhole) * 100,
-            includeSymbol: false,
-          );
-    final nextCursor =
-        (formattedPrefix.length +
-                (prefixParts.length == 2 ? 1 + prefixParts[1].length : 0))
-            .clamp(0, formatted.length);
-
-    return TextEditingValue(
-      text: formatted,
-      selection: TextSelection.collapsed(offset: nextCursor),
-    );
-  }
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(top: AppSpacing.xs),
+    child: Row(
+      children: [
+        const ScheduledBadge(),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: Text(
+            'Counts towards balances on this date.',
+            style: AppTypography.supporting.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
 }

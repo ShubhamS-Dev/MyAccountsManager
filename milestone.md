@@ -42,12 +42,12 @@ Current branches created for the initial foundation work:
 | M4 | Local database and integrity foundation | In Progress | Version 1 schema and migration policy are documented in docs/DATABASE_SCHEMA_V1.md. Drift table definitions, database connection, version-1 creation/seed logic, repository classes, Riverpod providers, and initial database/repository tests have been added. Generated code and all checks remain unverified until the Flutter workflow completes. |
 | M5 | Accounts, categories, and transactions | In Progress | Account management, categories, income/expense, adjustments, future-dated records, history, attachments, and Trash meet approved requirements. |
 | M6 | Dashboards and budgets | Not Started | Global and Account dashboards, date filters, configurable sections, budgets, and alerts work as specified. |
-| M7 | Recurring transactions and notifications | Not Started | Automatic and reminder-based recurrence, catch-up/idempotency, notification center, preferences, and Quiet Hours are implemented and tested. |
+| M7 | Recurring transactions and notifications | In Progress | Automatic and reminder-based recurrence, catch-up/idempotency, notification center, preferences, and Quiet Hours are implemented and tested. |
 | M8 | Savings Goals | Not Started | Goal lifecycle, contributions/withdrawals, transaction linking, history, dashboard widget, and reminders meet approved requirements. |
-| M9 | MyKhata | Not Started | Person profiles, independent lending/borrowing ledgers, installments, repayments, allocation, settlement, audit history, attachments, and reports are implemented and tested. |
+| M9 | MyKhata | In Progress | Person profiles, independent lending/borrowing ledgers, installments, repayments, allocation, settlement, audit history, attachments, and reports are implemented and tested. |
 | M10 | Reports and exports | Not Started | Regular finance and MyKhata reports, PDF preview/export, and filtered CSV export work as specified. |
 | M11 | Backup, restore, and storage management | Not Started | Encrypted versioned `.khata` archives, password handling, validation, Replace/Merge, conflict resolution, recovery snapshots, retention, and storage review are implemented and tested. |
-| M12 | UX polish, accessibility, and resilience | Not Started | Onboarding, loading/error/recovery states, empty states, navigation, responsive layouts, accessibility, and performance are reviewed. |
+| M12 | UX polish, accessibility, and resilience | In Progress | Onboarding, loading/error/recovery states, empty states, navigation, responsive layouts, accessibility, and performance are reviewed. |
 | M13 | Quality assurance and release readiness | Not Started | Formatting, static analysis, automated tests, migration/backup tests, Android build, permissions, and release checks pass; limitations are documented. |
 | M14 | Android distribution | Not Started | User-approved distribution method and signing configuration are in place; release artifact is generated and verified. |
 
@@ -270,3 +270,39 @@ The source changes are committed, but the new workflow must pass before this sli
 - This is the design-system foundation slice. Home, Accounts, History, and Add Transaction screen layouts have not yet been redesigned with the new components.
 - Google Fonts runtime loading is intentionally not enabled in this offline-first app: it can fetch font files over the network unless font assets are bundled. Typography currently uses Flutter's local platform font fallback with tabular figures. Animation, chart, Lottie, and SVG packages will be added only in the screen slice that actually uses them.
 - Validation for this slice is pending CI; do not mark it Done until formatting, analysis, tests, and Android debug build pass.
+
+
+## MyKhata, More and screen refresh (2026-11-11)
+
+- M9 moved from Not Started to In Progress. Built: person profiles, independent lend/borrow entries, repayments, settlement, overpayment blocking and the Account-isolation guarantee (schema v3). Still open: installment schedules, repayment allocation across entries, audit history, attachments, reports and a MyKhata Trash UI.
+- M12 moved from Not Started to In Progress. The premium design system is applied to every implemented screen, with loading, empty and error states and phone-width checks in both themes. Still open: onboarding, an accessibility audit and on-device review.
+- M5: Global Categories management (add, edit, hide, restore) and the refreshed Account forms, Archived Accounts, Adjustments and Trash.
+- Approved defaults recorded for the MyKhata open decisions: overpayment is rejected, and settled entries are not reopened (superseded 2026-11-11: removing the latest repayment reopens the entry). These are interim choices, so the open-decision entry stays until the PRD records the final rule.
+- Evidence: local format (0 changes), analyze (no issues), 90 tests passing, debug APK built. CI has not run on these changes, and no on-device review has been done. See docs/UI_IMPLEMENTATION_LOG.md.
+
+
+## Smart notes and category suggestions (2026-11-11)
+
+- M5: Add Transaction now suggests recent and matching notes and auto-selects a Category from the note (history first, keyword fallback); manual choices are never overridden. Edit Transaction suggests a Category with a one-tap "Use". No schema change.
+- Evidence: local analyze (only a pre-existing directives_ordering info in test/widget_test.dart), 109 tests passing including 14 new suggestion tests. Debug APK not rebuilt, CI not run, no on-device review.
+
+
+## UX audit fixes, system typography and Scheduled transactions (2026-11-11)
+
+- Decisions approved by the user: Material 3 system typography with device font scaling (replaces the 11/14/16px rule); future-dated regular transactions supported as Scheduled.
+- M12: M3 type scale and 48px tap targets in the theme; fixed-height Account cards, Account chips and the khata person picker now scale with font size; `PrimaryButton` grows with font size. "Discard changes?" guard on all eight forms. Android back on a non-Home tab returns to Home. Hide amounts is saved on the device. Hero amounts on gradient cards keep their white colour in light theme. Save spinner is visible on gradient buttons.
+- M5: History rows open the previously unrouted Transaction Details page; Home recent rows and Account Details rows open it too. Details shows hidden categories by name and audit dates in local time. Scheduled badge, Upcoming card on Home, scheduled-aware History totals and future-month navigation. Balances roll over at local midnight via `todayProvider`.
+- M9: A person can be removed once all their entries are deleted (deleted entries and repayments are purged with them). A full repayment asks for confirmation before settling, offers Undo, and removing the latest repayment reopens a settled entry. Khata entry dates are capped at today.
+- More: Currency & Format now shows ₹1,00,00,000 as one crore (it previously labelled ₹10,00,000 as a crore).
+- Evidence: local format (0 changes), analyze (no issues), 113 tests passing, including new tests for the Details route, back-to-Home, the discard guard, Scheduled/Upcoming, large-font layout, hide-amount persistence, person removal and settlement reopen. Debug APK not rebuilt, CI not run, no on-device review.
+| 2026-11-11 | M7 started: local reminders for MyKhata due dates (day before, due day, daily overdue summary) and Scheduled transactions, Activity center behind the app bar bell, and More > Notifications preferences (time, per-type switches, hidden amounts by default). Exact timing when Alarms & reminders access is granted, inexact otherwise. Recurring rules, Quiet Hours and budget alerts remain open. Evidence: format (0 changed), analyze (no issues), 129 tests passing (16 new in test/features/notifications_test.dart), debug APK built. Not verified on a device or emulator. |
+
+
+## Contrast, CSV export and MyKhata reminders (2026-11-11)
+
+- M12: Light-theme income and expense text tokens pass WCAG AA (checked by test). Person hero, avatar and selected-segment text are chosen by luminance. Gradient-card balances are white. Swatches, category icons, the category switch, the History type selector, Account cards, khata rows and masked amounts have screen-reader labels or merged semantics. Swatches, category icons and the History selector are 48dp. Hide amounts now covers History, Transaction Details, the Edit Account preview, Record Repayment and the khata entry form, all with one mask. Account cards show a ripple. Arrows are consistent across screens.
+- More: Export data shares Transactions and MyKhata CSV files through the share sheet. Encrypted Backup & Restore is still blocked on the crypto design decision and was not started.
+- M9: Person Details has Call/WhatsApp from the phone number, Send reminder (WhatsApp or other apps) and a shareable text statement. The MyKhata hero shows the overdue count and an Overdue filter.
+- New dependencies approved by the user: share_plus, url_launcher. No schema change.
+- Evidence: local format (0 changed), analyze (no issues), 151 tests passing (22 new: test/app/accessibility_test.dart, test/features/csv_export_test.dart, test/features/khata_reminders_and_export_test.dart, and a History/Details masking test in test/widget_test.dart). Debug APK built. CI not run. Call, WhatsApp and the share sheet were tested with fakes only, not on a device or emulator.
+

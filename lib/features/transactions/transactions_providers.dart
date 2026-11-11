@@ -59,3 +59,9 @@ final transactionByIdProvider = FutureProvider.family<TransactionRow?, String>((
 ) {
   return ref.watch(transactionsRepositoryProvider).getTransaction(id);
 });
+
+/// Distinct recent notes for a transaction type, newest first.
+final recentNotesProvider = FutureProvider.autoDispose
+    .family<List<String>, String>((ref, type) {
+      return ref.watch(transactionsRepositoryProvider).recentNotes(type);
+    });

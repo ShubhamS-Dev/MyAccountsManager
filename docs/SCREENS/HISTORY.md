@@ -4,7 +4,8 @@
 Show a month-scoped transaction history with quick search, type selection, Account and Category filters, and access to Transaction Trash.
 
 ## Layout
-- Month selector pill with previous/next navigation; future months are disabled.
+- Month selector pill with previous/next navigation. Future months open only when they contain scheduled transactions.
+- Scheduled (future-dated) rows show a Scheduled badge and are excluded from the month's Income/Expense totals; a "N scheduled · counted on their dates" note appears when any exist.
 - Income and Expense summary cards with compact progress bars.
 - Custom animated All / Expense / Income selector.
 - Search field and Account & Category filter bottom sheet.

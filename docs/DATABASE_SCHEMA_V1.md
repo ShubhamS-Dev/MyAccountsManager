@@ -2,7 +2,7 @@
 
 **Status:** Initial schema proposal / implementation baseline  
 **Database:** SQLite through Drift  
-**Initial schema:** version 1; **current implementation:** version 2  
+**Initial schema:** version 1; **current implementation:** version 3  
 **Date recorded:** 2026-11-08
 
 This document defines the first persistence boundary. It intentionally covers Accounts, Categories, and regular Income/Expense Transactions only. Later feature milestones will add their own tables through versioned migrations.
@@ -191,3 +191,65 @@ MyKhata must use its own tables and repository boundary. No MyKhata record refer
 - Generate Drift code with build_runner; commit generated source when required by the repository workflow.
 - Run formatter, analyzer, unit tests, migration tests, and Android build in a Flutter-enabled environment.
 - Verify foreign-key enforcement, date-only timezone behavior, and integer-paise round trips on an Android device/emulator.
+
+## 10. Version 3 addition: MyKhata and app settings
+
+Recorded 2026-11-11. The upgrade from version 2 is additive: it creates four tables and three indexes and does not touch existing rows. A migration test builds a real version-2 file, upgrades it, and confirms Accounts and categories survive.
+
+### khata_people
+
+| Column | Type | Required | Meaning |
+|---|---|---:|---|
+| id | TEXT | Yes | UUID primary key |
+| name | TEXT | Yes | 1 to 100 characters, not blank |
+| phone | TEXT | No | Optional contact number |
+| note | TEXT | No | Optional note |
+| color_value | INTEGER | No | ARGB avatar colour |
+| created_at / updated_at | INTEGER | Yes | UTC audit instants |
+
+A person can be deleted only when no entry (including soft-deleted ones) references them.
+
+### khata_entries
+
+| Column | Type | Required | Meaning |
+|---|---|---:|---|
+| id | TEXT | Yes | UUID primary key |
+| person_id | TEXT | Yes | FK to khata_people |
+| direction | TEXT | Yes | `lent` (they owe you) or `borrowed` (you owe them) |
+| amount_paise | INTEGER | Yes | Positive integer paise |
+| note | TEXT | No | Up to 500 characters |
+| entry_date | INTEGER | Yes | UTC-midnight date-only value |
+| due_date | INTEGER | No | UTC-midnight date-only value, not before entry_date |
+| created_at / updated_at | INTEGER | Yes | UTC audit instants |
+| deleted_at | INTEGER | No | Soft-delete instant |
+
+Index: `khata_entries_person_date_idx(person_id, entry_date)`, `khata_entries_deleted_idx(deleted_at)`.
+
+### khata_repayments
+
+| Column | Type | Required | Meaning |
+|---|---|---:|---|
+| id | TEXT | Yes | UUID primary key |
+| entry_id | TEXT | Yes | FK to khata_entries |
+| amount_paise | INTEGER | Yes | Positive integer paise |
+| note | TEXT | No | Up to 500 characters |
+| repayment_date | INTEGER | Yes | UTC-midnight date, not before the entry date |
+| created_at / updated_at | INTEGER | Yes | UTC audit instants |
+| deleted_at | INTEGER | No | Soft-delete instant |
+
+Index: `khata_repayments_entry_date_idx(entry_id, repayment_date)`.
+
+### app_settings
+
+Key/value store (`key` TEXT primary key, `value` TEXT, `updated_at` INTEGER). Current keys: `appearance.theme_mode` (`system`, `light`, `dark`); `privacy.amounts_hidden`; and reminder preferences under `notifications.`: `enabled`, `reminder_minutes` (minutes after local midnight, default 540), `khata_day_before`, `khata_due_date`, `overdue_summary`, `scheduled_transactions`, `show_amounts` (default `false`) and `permission_asked`. Booleans are stored as `true`/`false`; a missing key means the default. Reminders themselves are not stored: they are derived from khata due dates and future-dated transactions and rescheduled on every change.
+
+### MyKhata rules enforced in KhataRepository
+
+- No MyKhata table references Accounts or Transactions. MyKhata activity cannot change Account balances or income/expense totals; a repository test asserts this.
+- Outstanding = entry amount minus active repayments. It is derived in SQL, never stored.
+- A repayment above the outstanding amount is rejected (approved default for the open overpayment decision).
+- Settled entries cannot be reopened: their repayments cannot be removed and the entry cannot be edited (approved default for the open reopening decision).
+- An entry's amount cannot be edited below or equal to what has already been repaid.
+- An entry with repayments cannot be deleted. Deletion is a soft delete; a MyKhata Trash UI is not yet built.
+- Installment schedules are not part of version 3.
+- Multi-record checks run inside a database transaction.

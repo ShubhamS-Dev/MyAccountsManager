@@ -3,8 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/app_theme.dart';
+import '../../../app/app_widgets.dart';
+import '../../../app/privacy_state.dart';
 import '../../../core/formatting/date_timestamp.dart';
 import '../../../core/formatting/money_formatter.dart';
+import '../../../core/time/today_provider.dart';
 import '../../accounts/accounts_providers.dart';
 import '../../categories/categories_providers.dart';
 import '../transactions_providers.dart';
@@ -16,6 +19,7 @@ class TransactionDetailsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final result = ref.watch(transactionByIdProvider(transactionId));
+    final hidden = ref.watch(amountsHiddenProvider);
     final colors = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(title: const Text('Transaction details')),
@@ -37,10 +41,13 @@ class TransactionDetailsPage extends ConsumerWidget {
             );
           }
           final accounts = ref.watch(allAccountsProvider);
-          final categories = ref.watch(
-            activeCategoriesByTypeProvider(row.type),
-          );
+          // Include hidden categories so older transactions keep their label.
+          final categories = ref.watch(allCategoriesByTypeProvider(row.type));
           final income = row.type == 'income';
+          final scheduled = isScheduledDate(
+            row.transactionDate,
+            ref.watch(todayProvider),
+          );
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
@@ -58,7 +65,7 @@ class TransactionDetailsPage extends ConsumerWidget {
                           ? Icons.south_west_rounded
                           : Icons.north_east_rounded,
                       size: 28,
-                      color: income ? AppColors.positive : AppColors.negative,
+                      color: income ? colors.positiveText : colors.negativeText,
                     ),
                     const SizedBox(height: 10),
                     Text(
@@ -68,12 +75,25 @@ class TransactionDetailsPage extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 5),
-                    Text(
-                      '${income ? '+' : '-'}${MoneyFormatter.formatPaise(row.amountPaise)}',
-                      style: AppTypography.transactionAmount.copyWith(
-                        color: income ? AppColors.positive : AppColors.negative,
-                      ),
+                    AmountText(
+                      hidden
+                          ? hiddenAmountMask
+                          : '${income ? '+' : '-'}${MoneyFormatter.formatPaise(row.amountPaise)}',
+                      color: income ? colors.positiveText : colors.negativeText,
                     ),
+                    if (scheduled) ...[
+                      const SizedBox(height: 8),
+                      const ScheduledBadge(),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Counts towards balances from '
+                        '${DateOnly.format(row.transactionDate)}.',
+                        textAlign: TextAlign.center,
+                        style: AppTypography.supporting.copyWith(
+                          color: colors.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
                     if (row.note?.isNotEmpty == true) ...[
                       const SizedBox(height: 8),
                       Text(
@@ -115,11 +135,11 @@ class TransactionDetailsPage extends ConsumerWidget {
               ),
               _DetailRow(
                 label: 'Created',
-                value: DateOnly.format(row.createdAt),
+                value: AuditTimestamp.formatLocalDate(row.createdAt),
               ),
               _DetailRow(
                 label: 'Last updated',
-                value: DateOnly.format(row.updatedAt),
+                value: AuditTimestamp.formatLocalDate(row.updatedAt),
               ),
               const SizedBox(height: 18),
               SizedBox(

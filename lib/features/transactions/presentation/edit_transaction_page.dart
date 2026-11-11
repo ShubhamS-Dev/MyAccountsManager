@@ -1,13 +1,21 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/app_form_widgets.dart';
+import '../../../app/app_theme.dart';
+import '../../../app/app_widgets.dart';
+
 import '../../../core/database/app_database.dart';
 import '../../../core/formatting/date_timestamp.dart';
+import '../../../core/time/today_provider.dart';
 
 import '../../accounts/accounts_providers.dart';
 import '../../categories/categories_providers.dart';
 import '../transactions_providers.dart';
+import 'note_suggestion_chips.dart';
 
 class EditTransactionPage extends ConsumerStatefulWidget {
   const EditTransactionPage({super.key, required this.transactionId});
@@ -29,10 +37,32 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
   DateTime? _date;
   bool _initialized = false;
   bool _saving = false;
+
+  // Note-driven suggestions. The category is only ever suggested here; the
+  // user applies it with "Use".
+  String? _suggestedCategoryId;
+  List<String> _noteSuggestions = const [];
+  Timer? _suggestDebounce;
+  int _suggestRequest = 0;
+  int _categoryFieldVersion = 0;
+
+  // Unsaved-changes tracking for the back-navigation guard.
+  String? _pristine;
+  String get _snapshot => [
+    _amountController.text,
+    _noteController.text,
+    _accountId,
+    _categoryId,
+    _kind,
+    _date,
+  ].join('\u0000');
+  bool get _dirty => !_saving && _pristine != null && _snapshot != _pristine;
   String? _error;
 
   @override
   void dispose() {
+    _suggestDebounce?.cancel();
+    _noteController.removeListener(_noteChanged);
     _amountController.dispose();
     _noteController.dispose();
     super.dispose();
@@ -62,6 +92,53 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
     _amountController.text =
         '${amount ~/ 100}.${(amount % 100).toString().padLeft(2, '0')}';
     _noteController.text = transaction.note ?? '';
+    _noteController.addListener(_noteChanged);
+    _pristine = _snapshot;
+  }
+
+  void _noteChanged() {
+    _suggestDebounce?.cancel();
+    _suggestDebounce = Timer(
+      const Duration(milliseconds: 300),
+      _refreshSuggestions,
+    );
+  }
+
+  Future<void> _refreshSuggestions() async {
+    final type = _kind;
+    if (type == null) return;
+    final request = ++_suggestRequest;
+    final note = _noteController.text;
+    final repository = ref.read(transactionsRepositoryProvider);
+    List<String> notes = const [];
+    String? categoryId;
+    try {
+      notes = await repository.suggestNotes(type, note);
+      categoryId = await repository.suggestCategoryForNote(type, note);
+    } catch (_) {
+      // Suggestions are optional and must never block editing.
+    }
+    if (!mounted || request != _suggestRequest) return;
+    setState(() {
+      _noteSuggestions = notes;
+      _suggestedCategoryId = categoryId;
+    });
+  }
+
+  void _useNote(String note) {
+    _noteController.value = TextEditingValue(
+      text: note,
+      selection: TextSelection.collapsed(offset: note.length),
+    );
+    _suggestDebounce?.cancel();
+    _refreshSuggestions();
+  }
+
+  void _useSuggestedCategory() {
+    setState(() {
+      _categoryId = _suggestedCategoryId;
+      _categoryFieldVersion++;
+    });
   }
 
   bool _isToday(DateTime date) {
@@ -131,7 +208,10 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      UnsavedChangesGuard(dirty: _dirty, child: _buildPage(context));
+
+  Widget _buildPage(BuildContext context) {
     final transaction = ref.watch(
       transactionByIdProvider(widget.transactionId),
     );
@@ -176,6 +256,7 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
               );
               return Form(
                 key: _formKey,
+                onChanged: () => setState(() {}),
                 child: ListView(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                   children: [
@@ -184,19 +265,24 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
                         ButtonSegment(
                           value: 'expense',
                           label: Text('Expense'),
-                          icon: Icon(Icons.arrow_upward_rounded),
+                          icon: Icon(Icons.north_east_rounded),
                         ),
                         ButtonSegment(
                           value: 'income',
                           label: Text('Income'),
-                          icon: Icon(Icons.arrow_downward_rounded),
+                          icon: Icon(Icons.south_west_rounded),
                         ),
                       ],
                       selected: {_kind!},
-                      onSelectionChanged: (selection) => setState(() {
-                        _kind = selection.first;
-                        _categoryId = null;
-                      }),
+                      onSelectionChanged: (selection) {
+                        setState(() {
+                          _kind = selection.first;
+                          _categoryId = null;
+                          _suggestedCategoryId = null;
+                          _noteSuggestions = const [];
+                        });
+                        _refreshSuggestions();
+                      },
                     ),
                     const SizedBox(height: 14),
                     DropdownButtonFormField<String>(
@@ -239,6 +325,11 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
                       trailing: const Icon(Icons.chevron_right_rounded),
                       onTap: _pickDate,
                     ),
+                    if (isScheduledDate(
+                      DateOnly.toUtcEpochMilliseconds(_date!),
+                      ref.watch(todayProvider),
+                    ))
+                      const _ScheduledNote(),
                     TextFormField(
                       controller: _noteController,
                       maxLength: 500,
@@ -250,6 +341,24 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
                         alignLabelWithHint: true,
                       ),
                     ),
+                    if (_noteController.text.trim().isEmpty)
+                      NoteSuggestionChips(
+                        key: const ValueKey('edit-transaction-recent-notes'),
+                        label: 'Recent',
+                        notes:
+                            ref
+                                .watch(recentNotesProvider(_kind!))
+                                .valueOrNull ??
+                            const [],
+                        onSelected: _useNote,
+                      )
+                    else
+                      NoteSuggestionChips(
+                        key: const ValueKey('edit-transaction-note-matches'),
+                        label: 'Suggestions',
+                        notes: _noteSuggestions,
+                        onSelected: _useNote,
+                      ),
                     const SizedBox(height: 10),
                     TextFormField(
                       controller: _amountController,
@@ -289,7 +398,20 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
                             'No active categories for this transaction type.',
                           );
                         }
-                        return DropdownButtonFormField<String>(
+                        final suggestion =
+                            _suggestedCategoryId == null ||
+                                _suggestedCategoryId == _categoryId
+                            ? null
+                            : categoryRows
+                                  .where(
+                                    (category) =>
+                                        category.id == _suggestedCategoryId,
+                                  )
+                                  .firstOrNull;
+                        final dropdown = DropdownButtonFormField<String>(
+                          key: ValueKey(
+                            'edit-transaction-category-$_categoryFieldVersion',
+                          ),
                           initialValue: _categoryId,
                           isExpanded: true,
                           decoration: const InputDecoration(
@@ -310,6 +432,35 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
                               setState(() => _categoryId = value),
                           validator: (value) =>
                               value == null ? 'Select a category.' : null,
+                        );
+                        if (suggestion == null) return dropdown;
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            dropdown,
+                            Row(
+                              key: const ValueKey(
+                                'edit-transaction-category-suggestion',
+                              ),
+                              children: [
+                                const Icon(
+                                  Icons.auto_awesome_outlined,
+                                  size: 16,
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    'Suggested from note: ${suggestion.name}',
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: _useSuggestedCategory,
+                                  child: const Text('Use'),
+                                ),
+                              ],
+                            ),
+                          ],
                         );
                       },
                     ),
@@ -342,4 +493,28 @@ class _EditTransactionPageState extends ConsumerState<EditTransactionPage> {
       ),
     );
   }
+}
+
+/// Explains that a future-dated transaction is saved as Scheduled.
+class _ScheduledNote extends StatelessWidget {
+  const _ScheduledNote();
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(top: AppSpacing.xs),
+    child: Row(
+      children: [
+        const ScheduledBadge(),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: Text(
+            'Counts towards balances on this date.',
+            style: AppTypography.supporting.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
 }

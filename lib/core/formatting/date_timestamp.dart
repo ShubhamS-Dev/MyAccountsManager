@@ -45,4 +45,10 @@ class AuditTimestamp {
 
   static DateTime fromUtcEpochMilliseconds(int timestamp) =>
       DateTime.fromMillisecondsSinceEpoch(timestamp, isUtc: true);
+
+  /// Formats the audit instant as the device's local calendar date.
+  static String formatLocalDate(int timestamp) {
+    final local = DateTime.fromMillisecondsSinceEpoch(timestamp);
+    return DateOnly.format(DateOnly.toUtcEpochMilliseconds(local));
+  }
 }

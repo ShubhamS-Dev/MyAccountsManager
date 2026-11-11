@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:my_accounts_manager/core/formatting/date_timestamp.dart';
+import 'package:my_accounts_manager/core/time/today_provider.dart';
 
 void main() {
   group('DateOnly', () {
@@ -33,5 +34,20 @@ void main() {
   test('AuditTimestamp produces a UTC instant', () {
     final timestamp = AuditTimestamp.nowUtcEpochMilliseconds();
     expect(AuditTimestamp.fromUtcEpochMilliseconds(timestamp).isUtc, isTrue);
+  });
+
+  test('treats only dates after today as scheduled', () {
+    final today = DateTime.utc(2026, 11, 11).millisecondsSinceEpoch;
+    final tomorrow = DateTime.utc(2026, 11, 12).millisecondsSinceEpoch;
+    final yesterday = DateTime.utc(2026, 11, 10).millisecondsSinceEpoch;
+
+    expect(isScheduledDate(today, today), isFalse);
+    expect(isScheduledDate(yesterday, today), isFalse);
+    expect(isScheduledDate(tomorrow, today), isTrue);
+  });
+
+  test('formats audit instants as the local calendar date', () {
+    final instant = DateTime(2026, 11, 8, 0, 30).millisecondsSinceEpoch;
+    expect(AuditTimestamp.formatLocalDate(instant), '08 Nov 2026');
   });
 }

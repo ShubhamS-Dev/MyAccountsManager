@@ -250,10 +250,13 @@ class AccountsRepository {
     )..where((row) => row.id.equals(accountId))).getSingleOrNull();
   }
 
+  /// Icon and colour are left unchanged unless explicitly supplied.
   Future<void> updateAccount({
     required String accountId,
     required String name,
     String? description,
+    Value<String?> iconKey = const Value.absent(),
+    Value<int?> colorValue = const Value.absent(),
   }) async {
     final normalizedName = name.trim();
     if (normalizedName.isEmpty) {
@@ -272,6 +275,8 @@ class AccountsRepository {
                       ? null
                       : description?.trim(),
                 ),
+                iconKey: iconKey,
+                colorValue: colorValue,
                 updatedAt: Value(now),
               ),
             );

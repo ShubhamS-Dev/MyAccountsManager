@@ -412,3 +412,39 @@ User approval: implement Phases 1–3 first; stop for user review before beginni
 - Added an explicit pumpWidget(SizedBox.shrink()) and a 1ms pump at the end of the test body, after all assertions, so the live History provider is disposed before Flutter's post-body pending-timer invariant check. The existing teardown remains a defensive cleanup and closes the test database.
 - Next failure report must use the first primary error and its complete stack trace, alongside the last emitted printOnFailure checkpoint. Ignore later cascading Guarded function conflict / !inTest diagnostics unless independently reproduced.
 - This is diagnostic/synchronization instrumentation only; no production behavior or assertions for History removal, Trash persistence, Undo restoration, or persisted deletedAt clearing are weakened. Validate with a complete CI run before further changes.
+
+
+## MyKhata, More and remaining screen refresh (2026-11-11)
+
+User approval: build steps 1 to 5. MyKhata defaults approved: block overpayment, no reopening of settled entries, no installment schedules. Appearance is saved in the database. This folder was not a git repository, so no branch or commit was created.
+
+### Fixes
+- `test/widget_test.dart`: the Add Transaction screenshot test hung because `RenderRepaintBoundary.toImage` and file I/O ran inside FakeAsync. They now run in `tester.runAsync`. No production change.
+
+### Data (schema v3)
+- `lib/core/database/tables/khata.dart`, `tables/app_settings.dart`, `app_database.dart` (v3, additive `from < 3` step plus indexes); regenerated `app_database.g.dart`.
+- `lib/features/my_khata/data/khata_repository.dart` and `khata_providers.dart`: reactive SQL summaries, entries and repayments, with validation in transactions.
+- `lib/features/settings/`: settings repository and `themeModeProvider`. `MyAccountsManagerApp` now watches it and falls back to System while loading.
+- `CategoriesRepository`: `watchAllByType`, `createCategory`, `updateCategory` (built-in names fixed), `setActive`.
+- `AccountsRepository.updateAccount`: optional `iconKey`/`colorValue` (`Value.absent()` by default, so existing callers are unchanged).
+
+### UI
+- Shared: `lib/app/app_form_widgets.dart`, `AppColors.pickerPalette`, `lib/core/formatting/indian_amount_input_formatter.dart`.
+- Refreshed: Create Account, Edit Account, Archived Accounts, Balance Adjustments, Transaction Trash.
+- New: MyKhata tab and five MyKhata routes; More hub, Appearance, Categories, Currency & Format, Budget Alerts, Backup & Restore, About App.
+- Shell: placeholders removed. The FAB is hidden on More and adds a khata entry on MyKhata. Home has a MyKhata summary card.
+- Transaction Details is still unrouted and was left unchanged.
+
+### Tests added
+- `test/features/khata_repository_test.dart` (11): totals, partial/full repayment, overpayment, settled lock, edit/delete guards, soft delete, person removal, validation, Account isolation, reactive emission.
+- `test/features/settings_and_categories_test.dart` (7) and an upgrade test from v2 to v3 in `test/core/database/app_database_test.dart`.
+- `test/features/khata_and_more_widget_test.dart` (8), `test/core/formatting/shared_form_helpers_test.dart` (8), and a shell test for the new tabs.
+- `pumpApp` overrides `themeModeProvider` and `khataPeopleSummariesProvider` with deterministic streams.
+
+### Validation record (local, Flutter 3.47.5, macOS)
+- `dart format --output=none --set-exit-if-changed .`: passed, 0 changes.
+- `flutter analyze`: no issues.
+- `flutter test`: 90 passed, 0 failed (baseline before this work: 52 passed, 1 failed).
+- `flutter build apk --debug`: built `build/app/outputs/flutter-apk/app-debug.apk`.
+- A temporary phone-width check (360x780, light and dark, 11 new or refreshed screens) found two RenderFlex overflows with 12-digit amounts. Both were fixed and the check passed, then the temporary test was removed.
+- Not run: on-device or emulator visual review. CI has not run on these changes. Local Flutter is 3.47.5; CI uses 3.47.9.

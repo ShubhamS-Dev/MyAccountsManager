@@ -4,6 +4,9 @@ analyzer:
   errors:
     avoid_print: warning
     missing_return: error
+  exclude:
+    - build/**
+    - android/**
 
 linter:
   rules:

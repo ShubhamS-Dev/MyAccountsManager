@@ -11,12 +11,19 @@ import 'package:my_accounts_manager/app/app_router.dart';
 import 'package:my_accounts_manager/app/app_theme.dart';
 import 'package:my_accounts_manager/app/app_widgets.dart';
 import 'package:my_accounts_manager/app/my_accounts_manager_app.dart';
+import 'package:my_accounts_manager/app/privacy_state.dart';
 import 'package:my_accounts_manager/core/database/app_database.dart';
 import 'package:my_accounts_manager/core/database/database_provider.dart';
+import 'package:my_accounts_manager/core/formatting/date_timestamp.dart';
 import 'package:my_accounts_manager/features/accounts/accounts_providers.dart';
 import 'package:my_accounts_manager/features/accounts/data/accounts_repository.dart';
 import 'package:my_accounts_manager/features/accounts/presentation/archived_accounts_page.dart';
 import 'package:my_accounts_manager/features/categories/categories_providers.dart';
+import 'package:my_accounts_manager/features/my_khata/data/khata_repository.dart';
+import 'package:my_accounts_manager/features/my_khata/khata_providers.dart';
+import 'package:my_accounts_manager/features/notifications/data/notification_preferences.dart';
+import 'package:my_accounts_manager/features/notifications/notifications_providers.dart';
+import 'package:my_accounts_manager/features/settings/settings_providers.dart';
 import 'package:my_accounts_manager/features/transactions/data/transactions_repository.dart';
 import 'package:my_accounts_manager/features/transactions/transactions_providers.dart';
 
@@ -58,6 +65,8 @@ void main() {
     bool includeCategories = false,
     List<AccountRow>? accountRows,
     TransactionsRepository? repository,
+    List<KhataPersonSummary> khataPeople = const [],
+    bool amountsHidden = false,
   }) async {
     final categoryRows = includeCategories
         ? await tester.runAsync(
@@ -65,6 +74,11 @@ void main() {
               ) ??
               <CategoryRow>[]
         : <CategoryRow>[];
+    // Typical phone viewport (about 411 x 914 logical pixels).
+    tester.view
+      ..physicalSize = const Size(1080, 2400)
+      ..devicePixelRatio = 2.625;
+    addTearDown(tester.view.reset);
     addTearDown(() async {
       // Unmount consumers before closing the in-memory database.
       await tester.pumpWidget(const SizedBox.shrink());
@@ -84,6 +98,22 @@ void main() {
             // opening Drift query subscriptions from the widget tree.
             activeAccountsProvider.overrideWith(
               (ref) => Stream.value(accountRows ?? [testAccount]),
+            ),
+            themeModeProvider.overrideWith(
+              (ref) => Stream.value(ThemeMode.light),
+            ),
+            storedAmountsHiddenProvider.overrideWith(
+              (ref) => Stream.value(amountsHidden),
+            ),
+            khataPeopleSummariesProvider.overrideWith(
+              (ref) => Stream.value(khataPeople),
+            ),
+            // The bell badge and More tile read these; keep Drift out of the tree.
+            khataEntriesProvider.overrideWith(
+              (ref, personId) => Stream.value(<KhataEntryItem>[]),
+            ),
+            notificationPreferencesProvider.overrideWith(
+              (ref) => Stream.value(const NotificationPreferences()),
             ),
             allAccountsProvider.overrideWith(
               (ref) => Stream.value([testAccount]),
@@ -127,7 +157,7 @@ void main() {
     await pumpUntilFound(tester, find.text('Home'));
   }
 
-  testWidgets('shared action buttons render at exactly 40px high', (
+  testWidgets('shared action buttons have a 40px face and 48px hit area', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -152,10 +182,20 @@ void main() {
       OutlinedButton,
       TextButton,
     ]) {
+      final button = find.byType(buttonType);
       expect(
-        tester.getSize(find.byType(buttonType)).height,
+        tester.getSize(button).height,
+        48,
+        reason: '${buttonType.toString()} should keep a 48px hit area.',
+      );
+      expect(
+        tester
+            .getSize(
+              find.descendant(of: button, matching: find.byType(Material)),
+            )
+            .height,
         40,
-        reason: '${buttonType.toString()} should render at exactly 40px high.',
+        reason: '${buttonType.toString()} should render a 40px face.',
       );
     }
   }, timeout: const Timeout(Duration(seconds: 30)));
@@ -252,7 +292,8 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('This month'), findsOneWidget);
-    expect(find.text('Income'), findsOneWidget);
+    // Monthly summary label plus the Quick actions shortcut.
+    expect(find.text('Income'), findsNWidgets(2));
     expect(find.text('Expenses'), findsOneWidget);
     expect(find.text('Net cash flow'), findsOneWidget);
 
@@ -379,16 +420,15 @@ void main() {
 
     final detailsShowToggle = find.byTooltip('Show amounts');
     expect(detailsShowToggle, findsOneWidget);
-    expect(find.text('₹ ••••••'), findsOneWidget);
-    expect(find.text('₹ •••'), findsNWidgets(4));
+    // Balance plus the four breakdown figures share one mask.
+    expect(find.text(hiddenAmountMask), findsNWidgets(5));
 
     await tester.tap(detailsShowToggle);
     await tester.pumpAndSettle();
 
     expect(find.byTooltip('Hide amounts'), findsOneWidget);
     expect(find.text('₹0'), findsNWidgets(5));
-    expect(find.text('₹ ••••••'), findsNothing);
-    expect(find.text('₹ •••'), findsNothing);
+    expect(find.text(hiddenAmountMask), findsNothing);
   }, timeout: const Timeout(Duration(seconds: 30)));
 
   testWidgets('opens Account Details from the Accounts grid', (tester) async {
@@ -425,7 +465,7 @@ void main() {
       'Manage balance adjustments',
     );
     expect(adjustmentsAction, findsOneWidget);
-    expect(tester.getSize(adjustmentsAction).height, 40);
+    expect(tester.getSize(adjustmentsAction).height, 48);
   }, timeout: const Timeout(Duration(seconds: 30)));
 
   testWidgets(
@@ -608,6 +648,187 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(milliseconds: 1));
     printOnFailure('step 9: widget tree unmounted inside the test body');
+  }, timeout: const Timeout(Duration(seconds: 30)));
+
+  testWidgets('tapping a History row opens Transaction details', (
+    tester,
+  ) async {
+    final category =
+        await (testDatabase.select(testDatabase.categories)
+              ..where((row) => row.type.equals('expense'))
+              ..where((row) => row.name.equals('Food & Dining')))
+            .getSingle();
+    await TransactionsRepository(testDatabase).createTransaction(
+      accountId: testAccount.id,
+      categoryId: category.id,
+      type: 'expense',
+      amountPaise: 12500,
+      transactionDate: DateTime.now().millisecondsSinceEpoch,
+      note: 'Details route transaction',
+    );
+
+    await pumpApp(tester, liveHistory: true);
+    await tester.tap(find.text('History').last);
+    await pumpUntilFound(tester, find.text('Details route transaction'));
+
+    await tester.tap(find.text('Details route transaction'));
+    await pumpUntilFound(tester, find.text('Transaction details'));
+    expect(find.text('Edit transaction'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 1));
+  }, timeout: const Timeout(Duration(seconds: 30)));
+
+  testWidgets('Hide amounts masks History and Transaction details', (
+    tester,
+  ) async {
+    final category =
+        await (testDatabase.select(testDatabase.categories)
+              ..where((row) => row.type.equals('expense'))
+              ..where((row) => row.name.equals('Food & Dining')))
+            .getSingle();
+    await TransactionsRepository(testDatabase).createTransaction(
+      accountId: testAccount.id,
+      categoryId: category.id,
+      type: 'expense',
+      amountPaise: 12500,
+      transactionDate: DateTime.now().millisecondsSinceEpoch,
+      note: 'Masked transaction',
+    );
+
+    await pumpApp(tester, liveHistory: true, amountsHidden: true);
+    await tester.tap(find.text('History').last);
+    await pumpUntilFound(tester, find.text('Masked transaction'));
+
+    // Two summary cards and the row; no real figure anywhere.
+    expect(find.text(hiddenAmountMask), findsNWidgets(3));
+    expect(find.textContaining('125'), findsNothing);
+    final semantics = tester.ensureSemantics();
+    expect(find.bySemanticsLabel(RegExp('amount hidden')), findsWidgets);
+    semantics.dispose();
+
+    await tester.tap(find.text('Masked transaction'));
+    await pumpUntilFound(tester, find.text('Transaction details'));
+    // History stays mounted under the pushed route: its 3 plus Details' 1.
+    expect(find.text(hiddenAmountMask), findsNWidgets(4));
+    expect(find.textContaining('125'), findsNothing);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 1));
+  }, timeout: const Timeout(Duration(seconds: 30)));
+
+  testWidgets('future-dated transactions show as Scheduled and Upcoming', (
+    tester,
+  ) async {
+    final category =
+        await (testDatabase.select(testDatabase.categories)
+              ..where((row) => row.type.equals('expense'))
+              ..where((row) => row.name.equals('Food & Dining')))
+            .getSingle();
+    final now = DateTime.now();
+    final transactionId = await TransactionsRepository(testDatabase)
+        .createTransaction(
+          accountId: testAccount.id,
+          categoryId: category.id,
+          type: 'expense',
+          amountPaise: 9900,
+          transactionDate: DateOnly.toUtcEpochMilliseconds(
+            DateTime(now.year, now.month, now.day + 3),
+          ),
+          note: 'Scheduled rent',
+        );
+
+    await pumpApp(tester, liveHistory: true);
+    await pumpUntilFound(tester, find.text('Net cash flow'));
+    await tester.scrollUntilVisible(
+      find.text('Upcoming'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.textContaining('1 scheduled · next on'), findsOneWidget);
+    // Recent transactions only list money that has already moved.
+    expect(find.text('Scheduled rent'), findsNothing);
+
+    appRouter.push('/transaction/$transactionId');
+    await pumpUntilFound(tester, find.text('Transaction details'));
+    await pumpUntilFound(tester, find.text('Scheduled'));
+    expect(find.textContaining('Counts towards balances from'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 1));
+  }, timeout: const Timeout(Duration(seconds: 30)));
+
+  testWidgets('main screens lay out without overflow at large font sizes', (
+    tester,
+  ) async {
+    tester.platformDispatcher.textScaleFactorTestValue = 1.6;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+
+    await pumpApp(tester);
+    await pumpUntilFound(tester, find.text('Net cash flow'));
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.text('Accounts').last);
+    await pumpUntilFound(tester, find.text('Widget test Account'));
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.text('Home').last);
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.byTooltip('Add transaction'));
+    await pumpUntilFound(tester, find.text('How much did you spend?'));
+    expect(tester.takeException(), isNull);
+  }, timeout: const Timeout(Duration(seconds: 30)));
+
+  testWidgets('back on a non-Home tab returns to Home', (tester) async {
+    await pumpApp(tester);
+    await tester.tap(find.text('History').last);
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.widgetWithText(AppBar, 'History'), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.widgetWithText(AppBar, 'Home'), findsOneWidget);
+  }, timeout: const Timeout(Duration(seconds: 30)));
+
+  testWidgets('leaving Add Transaction with input asks before discarding', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+    await tester.tap(find.byTooltip('Add transaction'));
+    await pumpUntilFound(tester, find.text('How much did you spend?'));
+
+    // An untouched form leaves without a prompt.
+    await tester.binding.handlePopRoute();
+    await pumpUntilFound(tester, find.widgetWithText(AppBar, 'Home'));
+    expect(find.text('Discard changes?'), findsNothing);
+    // Let the closing route finish so later finders hit the new page.
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 1));
+
+    await tester.tap(find.byTooltip('Add transaction'));
+    await pumpUntilFound(tester, find.text('How much did you spend?'));
+    await tester.enterText(
+      find.byKey(const ValueKey('add-transaction-amount-input')),
+      '250',
+    );
+    await tester.pump();
+
+    await tester.binding.handlePopRoute();
+    await pumpUntilFound(tester, find.text('Discard changes?'));
+
+    await tester.tap(find.text('Cancel'));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('How much did you spend?'), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await pumpUntilFound(tester, find.text('Discard changes?'));
+    await tester.tap(find.text('Discard'));
+    // Dialog close, guard rebuild, then the page's exit transition.
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.text('How much did you spend?'), findsNothing);
   }, timeout: const Timeout(Duration(seconds: 30)));
 
   testWidgets('switches the transaction form from expense to income', (
@@ -804,15 +1025,22 @@ void main() {
       final boundary = tester.renderObject<RenderRepaintBoundary>(
         find.byKey(const ValueKey('app-screenshot-boundary')),
       );
-      final image = await boundary.toImage(pixelRatio: 2);
-      final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+      // Image encoding and file I/O are real async work; run them outside
+      // the widget test's FakeAsync zone so they can complete.
+      final bytes = await tester.runAsync(() async {
+        final image = await boundary.toImage(pixelRatio: 2);
+        final data = await image.toByteData(format: ui.ImageByteFormat.png);
+        image.dispose();
+        if (data != null) {
+          final screenshot = File(
+            'build/screenshots/add_transaction_amount_typing.png',
+          );
+          await screenshot.parent.create(recursive: true);
+          await screenshot.writeAsBytes(data.buffer.asUint8List());
+        }
+        return data;
+      });
       expect(bytes, isNotNull);
-      final screenshot = File(
-        'build/screenshots/add_transaction_amount_typing.png',
-      );
-      await screenshot.parent.create(recursive: true);
-      await screenshot.writeAsBytes(bytes!.buffer.asUint8List());
-      image.dispose();
     },
     timeout: const Timeout(Duration(seconds: 30)),
   );
@@ -1001,6 +1229,23 @@ void main() {
     },
     timeout: const Timeout(Duration(seconds: 30)),
   );
+
+  testWidgets('MyKhata and More tabs replace the placeholders', (tester) async {
+    await pumpApp(tester);
+
+    await tester.tap(find.text('MyKhata').last);
+    await pumpUntilFound(tester, find.text('Start your khata'));
+    expect(find.byTooltip('Add khata entry'), findsOneWidget);
+    expect(find.byTooltip('Add transaction'), findsNothing);
+    expect(find.text('Feature implementation is pending.'), findsNothing);
+
+    await tester.tap(find.text('More').last);
+    await pumpUntilFound(tester, find.text('Private by design'));
+    // Let Scaffold finish the FAB exit animation.
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byType(FloatingActionButton), findsNothing);
+    expect(find.text('Feature implementation is pending.'), findsNothing);
+  }, timeout: const Timeout(Duration(seconds: 30)));
 }
 
 Future<void> scrollFormToTop(WidgetTester tester) async {

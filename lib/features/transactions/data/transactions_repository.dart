@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/database/app_database.dart';
+import 'note_suggestions.dart';
 
 class TransactionHistoryItem {
   const TransactionHistoryItem({
@@ -106,6 +107,50 @@ class TransactionsRepository {
           )
           .toList(),
     );
+  }
+
+  /// How many recent notes of a type the suggestion helpers look at.
+  static const noteHistoryWindow = 500;
+
+  Future<List<NoteUse>> _noteHistory(String type) async {
+    final rows =
+        await (_database.select(_database.transactions)
+              ..where(
+                (row) =>
+                    row.deletedAt.isNull() &
+                    row.type.equals(type) &
+                    row.note.isNotNull(),
+              )
+              ..orderBy([(row) => OrderingTerm.desc(row.createdAt)])
+              ..limit(noteHistoryWindow))
+            .get();
+    return [
+      for (final row in rows)
+        NoteUse(note: row.note!, categoryId: row.categoryId),
+    ];
+  }
+
+  Future<List<String>> recentNotes(String type, {int limit = 8}) async {
+    return recentNotesFrom(await _noteHistory(type), limit: limit);
+  }
+
+  Future<List<String>> suggestNotes(
+    String type,
+    String query, {
+    int limit = 5,
+  }) async {
+    if (normalizeNote(query).isEmpty) return const [];
+    return matchingNotesFrom(await _noteHistory(type), query, limit: limit);
+  }
+
+  /// Returns the id of the active [type] category that best fits [note], or
+  /// null when nothing matches well enough.
+  Future<String?> suggestCategoryForNote(String type, String note) async {
+    if (normalizeNote(note).length < 2) return null;
+    final categories = await (_database.select(
+      _database.categories,
+    )..where((row) => row.type.equals(type) & row.isActive.equals(true))).get();
+    return suggestCategoryFrom(await _noteHistory(type), categories, note);
   }
 
   Future<TransactionRow?> getTransaction(String transactionId) {

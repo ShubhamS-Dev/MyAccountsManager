@@ -5,8 +5,13 @@ import '../../../core/formatting/money_formatter.dart';
 import '../accounts_providers.dart';
 
 class AccountBalanceLabel extends ConsumerWidget {
-  const AccountBalanceLabel({required this.accountId, super.key});
+  const AccountBalanceLabel({required this.accountId, super.key, this.color});
   final String accountId;
+
+  /// Overrides the income/deficit colour, e.g. white on gradient cards where
+  /// the semantic tones have too little contrast. The minus sign still marks
+  /// a deficit.
+  final Color? color;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -29,7 +34,7 @@ class AccountBalanceLabel extends ConsumerWidget {
         return Text(
           'Balance: ${MoneyFormatter.formatPaise(value)}',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: value < 0 ? colors.error : colors.tertiary,
+            color: color ?? (value < 0 ? colors.error : colors.tertiary),
             fontWeight: FontWeight.w600,
           ),
         );

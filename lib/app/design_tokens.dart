@@ -6,6 +6,11 @@ abstract final class AppColors {
   static const violet = Color(0xFF7C3AED);
   static const positive = Color(0xFF10B981);
   static const negative = Color(0xFFF43F5E);
+
+  /// Light-theme text tones for [positive] and [negative]. The bright tones
+  /// fail WCAG AA as text on light surfaces, so they stay for fills and icons.
+  static const positiveTextLight = Color(0xFF047857);
+  static const negativeTextLight = Color(0xFFBE123C);
   static const lightBackground = Color(0xFFF8F9FC);
   static const lightSurface = Color(0xFFFFFFFF);
   static const lightText = Color(0xFF171923);
@@ -20,7 +25,46 @@ abstract final class AppColors {
     [Color(0xFF9D174D), Color(0xFFEC4899)],
     [Color(0xFF1E40AF), Color(0xFF38BDF8)],
   ];
+
+  /// User-selectable accent colours for people and custom categories.
+  static const pickerPalette = [
+    primary,
+    violet,
+    positive,
+    negative,
+    Color(0xFFF59E0B),
+    Color(0xFF0EA5E9),
+    Color(0xFFEC4899),
+    Color(0xFF14B8A6),
+  ];
+
+  /// Spoken names for [pickerPalette], in the same order.
+  static const pickerPaletteNames = [
+    'Indigo',
+    'Violet',
+    'Emerald',
+    'Rose',
+    'Amber',
+    'Sky',
+    'Pink',
+    'Teal',
+  ];
 }
+
+/// Text-safe income/expense colours for the current theme.
+extension SemanticTextColors on ColorScheme {
+  Color get positiveText => brightness == Brightness.dark
+      ? AppColors.positive
+      : AppColors.positiveTextLight;
+
+  Color get negativeText => brightness == Brightness.dark
+      ? AppColors.negative
+      : AppColors.negativeTextLight;
+}
+
+/// Black or white, whichever reads better on [background].
+Color readableOn(Color background) =>
+    background.computeLuminance() > 0.18 ? AppColors.lightText : Colors.white;
 
 abstract final class AppSpacing {
   static const xs = 4.0;
@@ -49,68 +93,92 @@ abstract final class AppShadows {
   ];
 }
 
+/// Material 3 type scale. Sizes are logical pixels before the device's
+/// font-scale setting, which the app always honours.
 abstract final class AppTypography {
+  /// App-bar and page titles (M3 titleLarge).
   static const screenTitle = TextStyle(
-    fontSize: 16,
-    height: 1.25,
-    fontWeight: FontWeight.w700,
-    letterSpacing: -0.2,
+    fontSize: 22,
+    height: 1.27,
+    fontWeight: FontWeight.w600,
   );
+
+  /// Section headings (M3 titleMedium).
   static const sectionTitle = TextStyle(
-    fontSize: 14,
-    height: 1.3,
-    fontWeight: FontWeight.w700,
+    fontSize: 16,
+    height: 1.5,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0.15,
   );
   static const balance = TextStyle(
-    fontSize: 38,
-    height: 1.1,
-    fontWeight: FontWeight.w800,
-    letterSpacing: -1.1,
+    fontSize: 36,
+    height: 1.2,
+    fontWeight: FontWeight.w700,
+    letterSpacing: -0.5,
     fontFeatures: [FontFeature.tabularFigures()],
   );
 
-  /// Dedicated 28px style used only by Add Transaction's amount input.
+  /// Add Transaction's amount input (M3 headlineMedium).
   static const amountInput = TextStyle(
     fontSize: 28,
-    height: 1.2,
+    height: 1.29,
     fontWeight: FontWeight.w700,
-    letterSpacing: -0.6,
     fontFeatures: [FontFeature.tabularFigures()],
   );
+
+  /// Amounts in lists and detail rows (M3 titleMedium).
   static const transactionAmount = TextStyle(
     fontSize: 16,
-    height: 1.25,
-    fontWeight: FontWeight.w700,
+    height: 1.5,
+    fontWeight: FontWeight.w600,
     fontFeatures: [FontFeature.tabularFigures()],
   );
+
+  /// Field labels (M3 labelMedium).
   static const fieldLabel = TextStyle(
-    fontSize: 11,
-    height: 1.3,
-    fontWeight: FontWeight.w600,
-  );
-  static const fieldValue = TextStyle(
-    fontSize: 11,
-    height: 1.35,
-    fontWeight: FontWeight.w500,
-  );
-  static const supporting = TextStyle(
-    fontSize: 11,
-    height: 1.35,
-    fontWeight: FontWeight.w400,
-  );
-  static const metadata = TextStyle(
-    fontSize: 11,
-    height: 1.25,
-    fontWeight: FontWeight.w500,
-  );
-  static const button = TextStyle(
-    fontSize: 11,
-    height: 1.2,
-    fontWeight: FontWeight.w700,
-  );
-  static const body = TextStyle(
     fontSize: 12,
-    height: 1.4,
+    height: 1.33,
+    fontWeight: FontWeight.w500,
+    letterSpacing: 0.5,
+  );
+
+  /// Values, list titles and input text (M3 bodyMedium).
+  static const fieldValue = TextStyle(
+    fontSize: 14,
+    height: 1.43,
+    fontWeight: FontWeight.w500,
+    letterSpacing: 0.25,
+  );
+
+  /// Secondary lines and captions (M3 bodySmall).
+  static const supporting = TextStyle(
+    fontSize: 12,
+    height: 1.33,
     fontWeight: FontWeight.w400,
+    letterSpacing: 0.4,
+  );
+
+  /// Dates, chips and badges (M3 labelMedium).
+  static const metadata = TextStyle(
+    fontSize: 12,
+    height: 1.33,
+    fontWeight: FontWeight.w500,
+    letterSpacing: 0.5,
+  );
+
+  /// Button labels (M3 labelLarge).
+  static const button = TextStyle(
+    fontSize: 14,
+    height: 1.43,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0.1,
+  );
+
+  /// Running text (M3 bodyMedium).
+  static const body = TextStyle(
+    fontSize: 14,
+    height: 1.43,
+    fontWeight: FontWeight.w400,
+    letterSpacing: 0.25,
   );
 }

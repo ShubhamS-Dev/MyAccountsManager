@@ -4,7 +4,7 @@ An offline-first Flutter personal finance manager with an independent **MyKhata*
 
 ## Project status
 
-Requirements and the baseline technical architecture are being finalized. Implementation has not started.
+Implementation is in progress. Accounts, categories, transactions, History/Trash, the Home dashboard, MyKhata (people, entries, repayments) and the More hub with Appearance are built. Budgets, recurring transactions, savings goals, reports and encrypted backups are not yet implemented. See `milestone.md`.
 
 ## Product principles
 

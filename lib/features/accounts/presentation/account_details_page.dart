@@ -3,10 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/app_theme.dart';
+import '../../../app/app_widgets.dart';
 import '../../../app/privacy_state.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/formatting/date_timestamp.dart';
 import '../../../core/formatting/money_formatter.dart';
+import '../../../core/time/today_provider.dart';
 import '../../transactions/data/transactions_repository.dart';
 import '../../transactions/transactions_providers.dart';
 import '../accounts_providers.dart';
@@ -23,6 +25,7 @@ class AccountDetailsPage extends ConsumerWidget {
     final adjustments = ref.watch(balanceAdjustmentsProvider(accountId));
     final filter = TransactionHistoryFilter(accountId: accountId);
     final history = ref.watch(transactionHistoryProvider(filter));
+    final today = ref.watch(todayProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -31,7 +34,7 @@ class AccountDetailsPage extends ConsumerWidget {
           IconButton(
             tooltip: hideAmounts ? 'Show amounts' : 'Hide amounts',
             onPressed: () =>
-                ref.read(amountsHiddenProvider.notifier).state = !hideAmounts,
+                ref.read(amountsHiddenProvider.notifier).set(!hideAmounts),
             icon: Icon(
               hideAmounts
                   ? Icons.visibility_off_rounded
@@ -124,6 +127,10 @@ class AccountDetailsPage extends ConsumerWidget {
                           _TransactionTile(
                             item: items[index],
                             hidden: hideAmounts,
+                            scheduled: isScheduledDate(
+                              items[index].transaction.transactionDate,
+                              today,
+                            ),
                           ),
                           if (index != items.take(30).length - 1)
                             Divider(
@@ -188,10 +195,8 @@ class _BalanceCard extends StatelessWidget {
                   name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: AppTypography.sectionTitle.copyWith(
                     color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
@@ -208,15 +213,14 @@ class _BalanceCard extends StatelessWidget {
               description!,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: Colors.white70, fontSize: 11),
+              style: AppTypography.supporting.copyWith(color: Colors.white70),
             ),
           ],
           const SizedBox(height: 14),
-          const Text(
+          Text(
             'CURRENT BALANCE',
-            style: TextStyle(
+            style: AppTypography.metadata.copyWith(
               color: Colors.white70,
-              fontSize: 11,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.8,
             ),
@@ -231,16 +235,17 @@ class _BalanceCard extends StatelessWidget {
                 color: Colors.white,
               ),
             ),
-            error: (error, stack) => const Text(
+            error: (error, stack) => Text(
               'Balance unavailable',
-              style: TextStyle(color: Colors.white, fontSize: 12),
+              style: AppTypography.supporting.copyWith(color: Colors.white),
             ),
             data: (value) => Text(
               value == null
                   ? '—'
                   : hidden
-                  ? '₹ ••••••'
+                  ? hiddenAmountMask
                   : MoneyFormatter.formatPaise(value),
+              semanticsLabel: value != null && hidden ? 'amount hidden' : null,
               style: AppTypography.transactionAmount.copyWith(
                 color: Colors.white,
               ),
@@ -368,7 +373,8 @@ class _BreakdownRow extends StatelessWidget {
             ),
           ),
           Text(
-            hidden ? '₹ •••' : MoneyFormatter.formatPaise(amount),
+            hidden ? hiddenAmountMask : MoneyFormatter.formatPaise(amount),
+            semanticsLabel: hidden ? 'amount hidden' : null,
             style: AppTypography.transactionAmount.copyWith(color: color),
           ),
         ],
@@ -378,9 +384,14 @@ class _BreakdownRow extends StatelessWidget {
 }
 
 class _TransactionTile extends StatelessWidget {
-  const _TransactionTile({required this.item, required this.hidden});
+  const _TransactionTile({
+    required this.item,
+    required this.hidden,
+    this.scheduled = false,
+  });
   final TransactionHistoryItem item;
   final bool hidden;
+  final bool scheduled;
   @override
   Widget build(BuildContext context) {
     final transaction = item.transaction;
@@ -409,23 +420,34 @@ class _TransactionTile extends StatelessWidget {
               : item.categoryName,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: AppTypography.supporting.copyWith(fontWeight: FontWeight.w600),
+          style: AppTypography.fieldValue.copyWith(fontWeight: FontWeight.w600),
         ),
-        subtitle: Text(
-          '${item.categoryName} · ${DateOnly.format(transaction.transactionDate)}',
-          style: Theme.of(context).textTheme.bodySmall,
+        subtitle: Row(
+          children: [
+            if (scheduled) ...[
+              const ScheduledBadge(),
+              const SizedBox(width: AppSpacing.xs),
+            ],
+            Expanded(
+              child: Text(
+                '${item.categoryName} · ${DateOnly.format(transaction.transactionDate)}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
+          ],
         ),
         trailing: Text(
           hidden
-              ? '••••'
+              ? hiddenAmountMask
               : '${income ? '+' : '-'}${MoneyFormatter.formatPaise(transaction.amountPaise)}',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
+          semanticsLabel: hidden ? 'amount hidden' : null,
+          style: AppTypography.transactionAmount.copyWith(
             color: income ? colors.tertiary : colors.error,
           ),
         ),
-        onTap: () => context.push('/transaction/${transaction.id}/edit'),
+        onTap: () => context.push('/transaction/${transaction.id}'),
       ),
     );
   }

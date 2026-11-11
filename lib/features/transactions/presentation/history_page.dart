@@ -5,9 +5,11 @@ import 'package:go_router/go_router.dart';
 import '../../../app/app_theme.dart';
 import '../../../app/app_widgets.dart';
 import '../../../app/icon_resolvers.dart';
+import '../../../app/privacy_state.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/formatting/date_timestamp.dart';
 import '../../../core/formatting/money_formatter.dart';
+import '../../../core/time/today_provider.dart';
 import '../../accounts/accounts_providers.dart';
 import '../data/transactions_repository.dart';
 import '../transactions_providers.dart';
@@ -256,6 +258,8 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
       DateTime(_month.year, _month.month + 1).subtract(const Duration(days: 1)),
     );
     final monthLabel = '${_months[_month.month - 1]} ${_month.year}';
+    final today = ref.watch(todayProvider);
+    final hidden = ref.watch(amountsHiddenProvider);
 
     return history.when(
       loading: () => const _HistoryShimmer(),
@@ -273,10 +277,15 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
               item.transaction.transactionDate >= from &&
               item.transaction.transactionDate <= through,
         );
+        // Scheduled (future-dated) items are listed but not counted yet,
+        // matching Home and Account balances.
         var income = 0;
         var expense = 0;
+        var scheduledCount = 0;
         for (final item in monthItems) {
-          if (item.transaction.type == 'income') {
+          if (isScheduledDate(item.transaction.transactionDate, today)) {
+            scheduledCount++;
+          } else if (item.transaction.type == 'income') {
             income += item.transaction.amountPaise;
           } else {
             expense += item.transaction.amountPaise;
@@ -355,9 +364,20 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                               _month.month - 1,
                             ),
                           ),
+                          // Future months open only when something is
+                          // scheduled after this month.
                           onNext:
-                              _month.year == DateTime.now().year &&
-                                  _month.month == DateTime.now().month
+                              !_month.isBefore(
+                                    DateTime(
+                                      DateTime.now().year,
+                                      DateTime.now().month,
+                                    ),
+                                  ) &&
+                                  !items.any(
+                                    (item) =>
+                                        item.transaction.transactionDate >
+                                        through,
+                                  )
                               ? null
                               : () => setState(
                                   () => _month = DateTime(
@@ -376,7 +396,8 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                             label: 'Income',
                             amount: income,
                             total: income + expense,
-                            color: AppColors.positive,
+                            color: colors.positiveText,
+                            hidden: hidden,
                           ),
                         ),
                         const SizedBox(width: AppSpacing.sm),
@@ -385,11 +406,21 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                             label: 'Expenses',
                             amount: expense,
                             total: income + expense,
-                            color: AppColors.negative,
+                            color: colors.negativeText,
+                            hidden: hidden,
                           ),
                         ),
                       ],
                     ),
+                    if (scheduledCount > 0) ...[
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        '$scheduledCount scheduled · counted on their dates',
+                        style: AppTypography.supporting.copyWith(
+                          color: colors.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: AppSpacing.md),
                     TextField(
                       controller: _search,
@@ -523,6 +554,11 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                       return _HistoryTile(
                         key: ValueKey(item.transaction.id),
                         item: item,
+                        hidden: hidden,
+                        scheduled: isScheduledDate(
+                          item.transaction.transactionDate,
+                          today,
+                        ),
                         onTap: () =>
                             context.push('/transaction/${item.transaction.id}'),
                         onEdit: () => context.push(
@@ -589,16 +625,21 @@ class _SummaryCard extends StatelessWidget {
     required this.amount,
     required this.total,
     required this.color,
+    required this.hidden,
   });
 
   final String label;
   final int amount;
   final int total;
   final Color color;
+  final bool hidden;
 
   @override
   Widget build(BuildContext context) {
-    final progress = total == 0 ? 0.0 : (amount / total).clamp(0.0, 1.0);
+    // The bar would reveal the income/expense ratio, so it empties too.
+    final progress = total == 0 || hidden
+        ? 0.0
+        : (amount / total).clamp(0.0, 1.0);
     return AppCard(
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
@@ -611,7 +652,10 @@ class _SummaryCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.xs),
-          AmountText(MoneyFormatter.formatPaise(amount), color: color),
+          AmountText(
+            hidden ? hiddenAmountMask : MoneyFormatter.formatPaise(amount),
+            color: color,
+          ),
           const SizedBox(height: AppSpacing.sm),
           ClipRRect(
             borderRadius: BorderRadius.circular(AppRadius.pill),
@@ -677,28 +721,38 @@ class _SegmentOption extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => AnimatedContainer(
-    duration: const Duration(milliseconds: 180),
-    decoration: BoxDecoration(
-      color: selected
-          ? Theme.of(context).colorScheme.primary
-          : Theme.of(context).colorScheme.surfaceContainerHighest,
-      borderRadius: BorderRadius.circular(AppRadius.sm),
-      boxShadow: selected ? AppShadows.card : null,
-    ),
-    child: InkWell(
-      borderRadius: BorderRadius.circular(AppRadius.sm),
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-        child: Text(
-          label,
-          textAlign: TextAlign.center,
-          style: AppTypography.fieldValue.copyWith(
-            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-            color: selected
-                ? Theme.of(context).colorScheme.onPrimary
-                : Theme.of(context).colorScheme.onSurfaceVariant,
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    selected: selected,
+    inMutuallyExclusiveGroup: true,
+    child: AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      decoration: BoxDecoration(
+        color: selected
+            ? Theme.of(context).colorScheme.primary
+            : Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        boxShadow: selected ? AppShadows.card : null,
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        onTap: onTap,
+        // With the selector's 3px padding the row is a full 48px tap target.
+        child: Container(
+          constraints: const BoxConstraints(
+            minHeight: AppSpacing.touchTarget - 6,
+          ),
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: AppTypography.fieldValue.copyWith(
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+              color: selected
+                  ? Theme.of(context).colorScheme.onPrimary
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
         ),
       ),
@@ -781,10 +835,14 @@ class _HistoryTile extends StatelessWidget {
     required this.onEdit,
     required this.onTrash,
     required this.onSwipeDelete,
+    this.scheduled = false,
+    this.hidden = false,
     super.key,
   });
 
   final TransactionHistoryItem item;
+  final bool scheduled;
+  final bool hidden;
   final VoidCallback onTap;
   final VoidCallback onEdit;
   final VoidCallback onTrash;
@@ -792,6 +850,7 @@ class _HistoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final transaction = item.transaction;
     final income = transaction.type == 'income';
     final fallbackColor = income ? AppColors.positive : AppColors.negative;
@@ -854,21 +913,35 @@ class _HistoryTile extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 2),
-                    Text(
-                      '${item.categoryName} · ${item.accountName}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTypography.metadata.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                    Row(
+                      children: [
+                        if (scheduled) ...[
+                          const ScheduledBadge(),
+                          const SizedBox(width: AppSpacing.xs),
+                        ],
+                        Expanded(
+                          child: Text(
+                            '${item.categoryName} · ${item.accountName}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.metadata.copyWith(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
               const SizedBox(width: AppSpacing.xs),
               AmountText(
-                '${income ? '+' : '-'}${MoneyFormatter.formatPaise(transaction.amountPaise)}',
-                color: income ? AppColors.positive : AppColors.negative,
+                hidden
+                    ? hiddenAmountMask
+                    : '${income ? '+' : '-'}${MoneyFormatter.formatPaise(transaction.amountPaise)}',
+                color: income ? scheme.positiveText : scheme.negativeText,
               ),
               PopupMenuButton<String>(
                 tooltip: 'Transaction actions',

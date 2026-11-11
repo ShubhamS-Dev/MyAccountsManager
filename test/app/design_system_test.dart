@@ -37,20 +37,28 @@ void main() {
     },
   );
 
-  test('design tokens keep the approved visual and touch dimensions', () {
-    expect(AppSpacing.buttonHeight, 40);
-    expect(AppSpacing.touchTarget, 48);
-    expect(AppTypography.screenTitle.fontSize, 16);
-    expect(AppTypography.sectionTitle.fontSize, 14);
-    expect(AppTypography.transactionAmount.fontSize, 16);
-    expect(AppTypography.amountInput.fontSize, 28);
-    expect(AppTypography.balance.fontSize, greaterThanOrEqualTo(36));
-    expect(AppTypography.balance.fontSize, lessThanOrEqualTo(44));
-    expect(AppColors.primary, const Color(0xFF4F46E5));
-    expect(AppColors.violet, const Color(0xFF7C3AED));
-    expect(AppColors.positive, const Color(0xFF10B981));
-    expect(AppColors.negative, const Color(0xFFF43F5E));
-  });
+  test(
+    'design tokens follow the Material 3 type scale and touch dimensions',
+    () {
+      expect(AppSpacing.buttonHeight, 40);
+      expect(AppSpacing.touchTarget, 48);
+      expect(AppTypography.screenTitle.fontSize, 22);
+      expect(AppTypography.sectionTitle.fontSize, 16);
+      expect(AppTypography.fieldValue.fontSize, 14);
+      expect(AppTypography.body.fontSize, 14);
+      expect(AppTypography.supporting.fontSize, 12);
+      expect(AppTypography.metadata.fontSize, 12);
+      expect(AppTypography.button.fontSize, 14);
+      expect(AppTypography.transactionAmount.fontSize, 16);
+      expect(AppTypography.amountInput.fontSize, 28);
+      expect(AppTypography.balance.fontSize, greaterThanOrEqualTo(36));
+      expect(AppTypography.balance.fontSize, lessThanOrEqualTo(44));
+      expect(AppColors.primary, const Color(0xFF4F46E5));
+      expect(AppColors.violet, const Color(0xFF7C3AED));
+      expect(AppColors.positive, const Color(0xFF10B981));
+      expect(AppColors.negative, const Color(0xFFF43F5E));
+    },
+  );
 
   testWidgets('CategoryChip can tint an unselected icon per category', (
     tester,

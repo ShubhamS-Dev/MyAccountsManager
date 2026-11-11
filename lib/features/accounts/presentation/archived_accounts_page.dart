@@ -1,172 +1,175 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../app/app_form_widgets.dart';
 import '../../../app/app_theme.dart';
+import '../../../app/app_widgets.dart';
+import '../../../app/icon_resolvers.dart';
+import '../../../core/database/app_database.dart';
 import '../accounts_providers.dart';
+import 'account_form.dart';
 
 class ArchivedAccountsPage extends ConsumerWidget {
   const ArchivedAccountsPage({super.key});
 
+  Future<void> _restore(
+    BuildContext context,
+    WidgetRef ref,
+    AccountRow account,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref.read(accountsRepositoryProvider).restoreAccount(account.id);
+      ref.invalidate(activeAccountsProvider);
+      ref.invalidate(archivedAccountsProvider);
+      messenger.showSnackBar(
+        SnackBar(content: Text('${account.name} is active again')),
+      );
+    } catch (_) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Could not restore this Account.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final accounts = ref.watch(archivedAccountsProvider);
-    final colors = Theme.of(context).colorScheme;
+    final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Archived Accounts')),
       body: accounts.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
-          child: FilledButton(
-            onPressed: () => ref.invalidate(archivedAccountsProvider),
-            child: const Text('Retry'),
-          ),
+        loading: () => const SkeletonList(),
+        error: (error, stack) => ScreenErrorState(
+          message: 'Archived Accounts could not be loaded.',
+          onRetry: () => ref.invalidate(archivedAccountsProvider),
         ),
         data: (items) {
           if (items.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 52,
-                      height: 52,
-                      decoration: BoxDecoration(
-                        color: colors.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Icon(
-                        Icons.archive_outlined,
-                        color: colors.onSurfaceVariant,
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    Text(
-                      'No archived Accounts',
-                      style: AppTypography.sectionTitle.copyWith(
-                        color: colors.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Accounts you archive will appear here. You can restore them whenever you need.',
-                      textAlign: TextAlign.center,
-                      style: AppTypography.supporting.copyWith(
-                        color: colors.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
+            return const Center(
+              child: EmptyState(
+                title: 'No archived Accounts',
+                message:
+                    'Accounts you archive will appear here. You can restore them whenever you need.',
+                icon: Icons.archive_outlined,
               ),
             );
           }
 
           return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.sm,
+              AppSpacing.md,
+              AppSpacing.lg,
+            ),
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Archived Accounts',
-                      style: AppTypography.sectionTitle.copyWith(
-                        color: colors.onSurface,
+              AppCard(
+                padding: const EdgeInsets.all(AppSpacing.sm + 4),
+                child: Row(
+                  children: [
+                    IconBadge(
+                      icon: Icons.inventory_2_outlined,
+                      color: scheme.primary,
+                    ),
+                    const SizedBox(width: AppSpacing.sm + 4),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${items.length} ${items.length == 1 ? 'Account' : 'Accounts'}',
+                            style: AppTypography.sectionTitle,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Hidden from active views. History is preserved.',
+                            style: AppTypography.supporting.copyWith(
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                  Text(
-                    '${items.length} ${items.length == 1 ? 'Account' : 'Accounts'}',
-                    style: AppTypography.supporting.copyWith(
-                      color: colors.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'These Accounts are hidden from active views. Restore an Account to use it again.',
-                style: AppTypography.supporting.copyWith(
-                  color: colors.onSurfaceVariant,
+                  ],
                 ),
               ),
-              const SizedBox(height: 14),
-              for (final account in items)
-                Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: colors.surface,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: colors.outlineVariant.withValues(alpha: 0.65),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 38,
-                        height: 38,
-                        decoration: BoxDecoration(
-                          color: colors.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          Icons.archive_outlined,
-                          color: colors.onSurfaceVariant,
-                          size: 19,
-                        ),
-                      ),
-                      const SizedBox(width: 11),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              account.name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppTypography.sectionTitle.copyWith(
-                                color: colors.onSurface,
-                              ),
-                            ),
-                            if (account.description?.isNotEmpty == true) ...[
-                              const SizedBox(height: 3),
-                              Text(
-                                account.description!,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: AppTypography.supporting.copyWith(
-                                  color: colors.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      OutlinedButton.icon(
-                        onPressed: () async {
-                          await ref
-                              .read(accountsRepositoryProvider)
-                              .restoreAccount(account.id);
-                          ref.invalidate(activeAccountsProvider);
-                          ref.invalidate(archivedAccountsProvider);
-                        },
-                        icon: const Icon(Icons.unarchive_outlined, size: 16),
-                        label: const Text('Restore'),
-                      ),
-                    ],
+              const SizedBox(height: AppSpacing.md),
+              for (final (index, account) in items.indexed)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                  child: _ArchivedAccountTile(
+                    account: account,
+                    index: index,
+                    onRestore: () => _restore(context, ref, account),
                   ),
                 ),
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+class _ArchivedAccountTile extends StatelessWidget {
+  const _ArchivedAccountTile({
+    required this.account,
+    required this.index,
+    required this.onRestore,
+  });
+
+  final AccountRow account;
+  final int index;
+  final VoidCallback onRestore;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final accent = accountGradientFor(account.colorValue, index: index).first;
+    return AppCard(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.sm + 4,
+        AppSpacing.sm + 2,
+        AppSpacing.sm,
+        AppSpacing.sm + 2,
+      ),
+      child: Row(
+        children: [
+          IconBadge(icon: resolveAccountIcon(account.iconKey), color: accent),
+          const SizedBox(width: AppSpacing.sm + 4),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  account.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.sectionTitle,
+                ),
+                if (account.description?.isNotEmpty == true) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    account.description!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.supporting.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          OutlinedButton.icon(
+            onPressed: onRestore,
+            icon: const Icon(Icons.unarchive_outlined, size: 16),
+            label: const Text('Restore'),
+          ),
+        ],
       ),
     );
   }

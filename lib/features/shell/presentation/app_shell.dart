@@ -5,10 +5,16 @@ import 'package:go_router/go_router.dart';
 import '../../../app/app_theme.dart';
 import '../../../app/app_widgets.dart';
 import '../../../app/privacy_state.dart';
+import '../../../core/formatting/date_timestamp.dart';
 import '../../../core/formatting/money_formatter.dart';
+import '../../../core/time/today_provider.dart';
 import '../../accounts/accounts_providers.dart';
 import '../../accounts/presentation/account_balance_label.dart';
 import '../../accounts/presentation/accounts_page.dart';
+import '../../my_khata/khata_providers.dart';
+import '../../my_khata/presentation/my_khata_page.dart';
+import '../../notifications/notifications_providers.dart';
+import '../../settings/presentation/more_page.dart';
 import '../../transactions/data/transactions_repository.dart';
 import '../../transactions/presentation/history_page.dart';
 import '../../transactions/transactions_providers.dart';
@@ -36,16 +42,23 @@ class _AppShellState extends State<AppShell> {
 
   @override
   Widget build(BuildContext context) {
+    // Back on any other tab returns to Home before leaving the app.
+    return PopScope(
+      canPop: _selectedIndex == 0,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) setState(() => _selectedIndex = 0);
+      },
+      child: _buildScaffold(context),
+    );
+  }
+
+  Widget _buildScaffold(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(_destinations[_selectedIndex].label),
-        actions: [
-          IconButton(
-            tooltip: 'Activity center',
-            onPressed: () {},
-            icon: const Icon(Icons.notifications_none_rounded),
-          ),
-          const SizedBox(width: AppSpacing.sm),
+        actions: const [
+          _ActivityBell(),
+          SizedBox(width: AppSpacing.sm),
         ],
       ),
       body: IndexedStack(
@@ -56,38 +69,36 @@ class _AppShellState extends State<AppShell> {
           ),
           const AccountsPage(),
           const HistoryPage(),
-          const _PlaceholderPage(
-            title: 'MyKhata',
-            description:
-                'Track money lent and borrowed independently from your Accounts.',
-            icon: Icons.people_outline,
-          ),
-          const _PlaceholderPage(
-            title: 'More',
-            description:
-                'Budgets, savings goals, reports, backup and settings.',
-            icon: Icons.grid_view_outlined,
-          ),
+          const MyKhataPage(),
+          const MorePage(),
         ],
       ),
-      floatingActionButton: _selectedIndex < 3
-          ? Container(
+      floatingActionButton: _selectedIndex == 4
+          ? null
+          : Container(
               decoration: const BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: LinearGradient(colors: AppColors.heroGradient),
                 boxShadow: AppShadows.card,
               ),
               child: FloatingActionButton(
-                onPressed: () => context.push('/transaction/new'),
-                tooltip: 'Add transaction',
+                // MyKhata entries never touch Accounts, so that tab adds a
+                // khata entry instead of a regular transaction.
+                onPressed: () => context.push(
+                  _selectedIndex == 3
+                      ? '/khata/entries/new'
+                      : '/transaction/new',
+                ),
+                tooltip: _selectedIndex == 3
+                    ? 'Add khata entry'
+                    : 'Add transaction',
                 backgroundColor: Colors.transparent,
                 foregroundColor: Theme.of(context).colorScheme.onPrimary,
                 elevation: 0,
                 highlightElevation: 0,
                 child: const Icon(Icons.add_rounded, size: 28),
               ),
-            )
-          : null,
+            ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (index) =>
@@ -137,11 +148,7 @@ class _HomeDashboardPageState extends ConsumerState<_HomeDashboardPage> {
       now.month,
       1,
     ).millisecondsSinceEpoch;
-    final today = DateTime.utc(
-      now.year,
-      now.month,
-      now.day,
-    ).millisecondsSinceEpoch;
+    final today = ref.watch(todayProvider);
     final monthFilter = TransactionHistoryFilter(
       fromDate: monthStart,
       throughDate: today,
@@ -198,7 +205,7 @@ class _HomeDashboardPageState extends ConsumerState<_HomeDashboardPage> {
             IconButton(
               tooltip: hideAmounts ? 'Show amounts' : 'Hide amounts',
               onPressed: () =>
-                  ref.read(amountsHiddenProvider.notifier).state = !hideAmounts,
+                  ref.read(amountsHiddenProvider.notifier).set(!hideAmounts),
               icon: Icon(
                 hideAmounts
                     ? Icons.visibility_off_rounded
@@ -271,8 +278,9 @@ class _HomeDashboardPageState extends ConsumerState<_HomeDashboardPage> {
                       duration: const Duration(milliseconds: 250),
                       child: Text(
                         hideAmounts
-                            ? '₹ ••••••'
+                            ? hiddenAmountMask
                             : MoneyFormatter.formatPaise(value),
+                        semanticsLabel: hideAmounts ? 'amount hidden' : null,
                         key: ValueKey('$hideAmounts-$value'),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -335,7 +343,7 @@ class _HomeDashboardPageState extends ConsumerState<_HomeDashboardPage> {
                   child: _MonthMetric(
                     label: 'Income',
                     amount: income,
-                    color: AppColors.positive,
+                    color: scheme.positiveText,
                     icon: Icons.south_west_rounded,
                     hidden: hideAmounts,
                   ),
@@ -345,7 +353,7 @@ class _HomeDashboardPageState extends ConsumerState<_HomeDashboardPage> {
                   child: _MonthMetric(
                     label: 'Expenses',
                     amount: expense,
-                    color: AppColors.negative,
+                    color: scheme.negativeText,
                     icon: Icons.north_east_rounded,
                     hidden: hideAmounts,
                   ),
@@ -355,7 +363,7 @@ class _HomeDashboardPageState extends ConsumerState<_HomeDashboardPage> {
                   child: _MonthMetric(
                     label: 'Net cash flow',
                     amount: net,
-                    color: net < 0 ? AppColors.negative : AppColors.positive,
+                    color: net < 0 ? scheme.negativeText : scheme.positiveText,
                     icon: Icons.swap_vert_rounded,
                     hidden: hideAmounts,
                   ),
@@ -373,7 +381,7 @@ class _HomeDashboardPageState extends ConsumerState<_HomeDashboardPage> {
               child: _QuickAction(
                 icon: Icons.north_east_rounded,
                 label: 'Expense',
-                color: AppColors.negative,
+                color: scheme.negativeText,
                 onTap: () => context.push('/transaction/new?type=expense'),
               ),
             ),
@@ -381,7 +389,7 @@ class _HomeDashboardPageState extends ConsumerState<_HomeDashboardPage> {
               child: _QuickAction(
                 icon: Icons.south_west_rounded,
                 label: 'Income',
-                color: AppColors.positive,
+                color: scheme.positiveText,
                 onTap: () => context.push('/transaction/new?type=income'),
               ),
             ),
@@ -402,6 +410,11 @@ class _HomeDashboardPageState extends ConsumerState<_HomeDashboardPage> {
               ),
             ),
           ],
+        ),
+        const SizedBox(height: AppSpacing.md),
+        _KhataSummaryCard(
+          hidden: hideAmounts,
+          onTap: () => widget.onNavigate(3),
         ),
         const SizedBox(height: AppSpacing.lg),
         SectionHeader(
@@ -445,11 +458,11 @@ class _HomeDashboardPageState extends ConsumerState<_HomeDashboardPage> {
                           AppColors.accountGradients.length];
                   return SizedBox(
                     width: 196,
-                    child: GradientCard(
-                      colors: gradient,
-                      padding: const EdgeInsets.all(AppSpacing.md),
-                      radius: AppRadius.card,
-                      child: InkWell(
+                    child: MergeSemantics(
+                      child: GradientCard(
+                        colors: gradient,
+                        padding: const EdgeInsets.all(AppSpacing.md),
+                        radius: AppRadius.card,
                         onTap: () => context.push('/accounts/${account.id}'),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -471,7 +484,8 @@ class _HomeDashboardPageState extends ConsumerState<_HomeDashboardPage> {
                             const SizedBox(height: AppSpacing.xs),
                             if (hideAmounts)
                               Text(
-                                '₹ ••••••',
+                                hiddenAmountMask,
+                                semanticsLabel: 'amount hidden',
                                 style: AppTypography.transactionAmount.copyWith(
                                   color: Colors.white,
                                 ),
@@ -483,6 +497,7 @@ class _HomeDashboardPageState extends ConsumerState<_HomeDashboardPage> {
                                 ),
                                 child: AccountBalanceLabel(
                                   accountId: account.id,
+                                  color: Colors.white,
                                 ),
                               ),
                           ],
@@ -554,8 +569,9 @@ class _HomeDashboardPageState extends ConsumerState<_HomeDashboardPage> {
                       child: Center(
                         child: Text(
                           hideAmounts
-                              ? '•••'
+                              ? hiddenAmountMask
                               : MoneyFormatter.formatPaise(total),
+                          semanticsLabel: hideAmounts ? 'amount hidden' : null,
                           textAlign: TextAlign.center,
                           style: AppTypography.fieldValue.copyWith(
                             fontWeight: FontWeight.w800,
@@ -592,10 +608,13 @@ class _HomeDashboardPageState extends ConsumerState<_HomeDashboardPage> {
                                 ),
                                 Text(
                                   hideAmounts
-                                      ? '•••'
+                                      ? hiddenAmountMask
                                       : MoneyFormatter.formatPaise(
                                           entries[i].value,
                                         ),
+                                  semanticsLabel: hideAmounts
+                                      ? 'amount hidden'
+                                      : null,
                                   style: AppTypography.metadata.copyWith(
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -636,18 +655,72 @@ class _HomeDashboardPageState extends ConsumerState<_HomeDashboardPage> {
                 ),
               );
             }
-            final recent = items.take(6).toList();
-            return AppCard(
-              padding: EdgeInsets.zero,
-              child: Column(
-                children: [
-                  for (var i = 0; i < recent.length; i++) ...[
-                    _RecentTransaction(item: recent[i], hidden: hideAmounts),
-                    if (i != recent.length - 1)
-                      Divider(height: 1, color: scheme.outlineVariant),
-                  ],
+            // Scheduled items are summarised separately so Recent shows
+            // only money that has already moved.
+            final scheduled = items
+                .where(
+                  (item) =>
+                      isScheduledDate(item.transaction.transactionDate, today),
+                )
+                .toList();
+            final recent = items
+                .where(
+                  (item) =>
+                      !isScheduledDate(item.transaction.transactionDate, today),
+                )
+                .take(6)
+                .toList();
+            final nextScheduled = scheduled.isEmpty
+                ? null
+                : scheduled
+                      .map((item) => item.transaction.transactionDate)
+                      .reduce((a, b) => a < b ? a : b);
+            return Column(
+              children: [
+                if (nextScheduled != null) ...[
+                  AppCard(
+                    padding: EdgeInsets.zero,
+                    child: ListTile(
+                      onTap: () => widget.onNavigate(2),
+                      leading: Icon(
+                        Icons.schedule_rounded,
+                        color: scheme.secondary,
+                      ),
+                      title: Text(
+                        'Upcoming',
+                        style: AppTypography.fieldValue.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      subtitle: Text(
+                        '${scheduled.length} scheduled · next on '
+                        '${DateOnly.format(nextScheduled)}',
+                        style: AppTypography.supporting.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
                 ],
-              ),
+                if (recent.isNotEmpty)
+                  AppCard(
+                    padding: EdgeInsets.zero,
+                    child: Column(
+                      children: [
+                        for (var i = 0; i < recent.length; i++) ...[
+                          _RecentTransaction(
+                            item: recent[i],
+                            hidden: hideAmounts,
+                          ),
+                          if (i != recent.length - 1)
+                            Divider(height: 1, color: scheme.outlineVariant),
+                        ],
+                      ],
+                    ),
+                  ),
+              ],
             );
           },
         ),
@@ -707,7 +780,8 @@ class _MonthMetric extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.xs),
         Text(
-          hidden ? '₹ •••' : MoneyFormatter.formatPaise(amount),
+          hidden ? hiddenAmountMask : MoneyFormatter.formatPaise(amount),
+          semanticsLabel: hidden ? 'amount hidden' : null,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: AppTypography.transactionAmount.copyWith(color: color),
@@ -782,6 +856,30 @@ class _QuickAction extends StatelessWidget {
   );
 }
 
+/// Opens the Activity center; the badge counts overdue and due-today
+/// MyKhata entries.
+class _ActivityBell extends ConsumerWidget {
+  const _ActivityBell();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final count = ref.watch(attentionCountProvider);
+    return IconButton(
+      tooltip: count == 0 ? 'Activity center' : 'Activity center, $count due',
+      onPressed: () => context.push('/activity'),
+      icon: Badge(
+        isLabelVisible: count > 0,
+        label: Text(count > 99 ? '99+' : '$count'),
+        child: Icon(
+          count > 0
+              ? Icons.notifications_active_rounded
+              : Icons.notifications_none_rounded,
+        ),
+      ),
+    );
+  }
+}
+
 class _RecentTransaction extends StatelessWidget {
   const _RecentTransaction({required this.item, required this.hidden});
   final TransactionHistoryItem item;
@@ -789,10 +887,12 @@ class _RecentTransaction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final income = item.transaction.type == 'income';
-    final color = income ? AppColors.positive : AppColors.negative;
+    final color = income ? scheme.positiveText : scheme.negativeText;
     return ListTile(
       minVerticalPadding: 10,
+      onTap: () => context.push('/transaction/${item.transaction.id}'),
       leading: Container(
         width: 40,
         height: 40,
@@ -815,7 +915,7 @@ class _RecentTransaction extends StatelessWidget {
         style: AppTypography.fieldValue.copyWith(fontWeight: FontWeight.w700),
       ),
       subtitle: Text(
-        '${item.accountName} · ${item.categoryName}',
+        '${DateOnly.format(item.transaction.transactionDate)} · ${item.accountName}',
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: AppTypography.metadata.copyWith(
@@ -824,8 +924,9 @@ class _RecentTransaction extends StatelessWidget {
       ),
       trailing: Text(
         hidden
-            ? '••••'
+            ? hiddenAmountMask
             : '${income ? '+' : '-'}${MoneyFormatter.formatPaise(item.transaction.amountPaise)}',
+        semanticsLabel: hidden ? 'amount hidden' : null,
         style: AppTypography.transactionAmount.copyWith(color: color),
       ),
     );
@@ -860,42 +961,111 @@ class _DonutPainter extends CustomPainter {
       oldDelegate.values != values || oldDelegate.colors != colors;
 }
 
-class _PlaceholderPage extends StatelessWidget {
-  const _PlaceholderPage({
-    required this.title,
-    required this.description,
-    required this.icon,
-  });
-  final String title;
-  final String description;
-  final IconData icon;
+/// Separate MyKhata position. Never included in Account totals above.
+class _KhataSummaryCard extends ConsumerWidget {
+  const _KhataSummaryCard({required this.hidden, required this.onTap});
+
+  final bool hidden;
+  final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => Center(
-    child: Padding(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+  Widget build(BuildContext context, WidgetRef ref) {
+    final totals = ref.watch(khataTotalsProvider).valueOrNull;
+    final scheme = Theme.of(context).colorScheme;
+    String money(int paise) =>
+        hidden ? hiddenAmountMask : MoneyFormatter.formatPaise(paise);
+    return AppCard(
+      onTap: onTap,
+      padding: const EdgeInsets.all(AppSpacing.sm + 4),
+      child: Row(
         children: [
-          Icon(icon, size: 48, color: Theme.of(context).colorScheme.primary),
-          const SizedBox(height: AppSpacing.md),
-          Text(title, style: AppTypography.screenTitle),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            description,
-            textAlign: TextAlign.center,
-            style: AppTypography.supporting,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            'Feature implementation is pending.',
-            textAlign: TextAlign.center,
-            style: AppTypography.metadata.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppColors.violet.withValues(alpha: .12),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(
+              Icons.people_alt_rounded,
+              color: AppColors.violet,
+              size: 19,
             ),
           ),
+          const SizedBox(width: AppSpacing.sm + 4),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'MyKhata',
+                  style: AppTypography.fieldValue.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                Text(
+                  totals == null || totals.people == 0
+                      ? 'Track money lent and borrowed'
+                      : 'Separate ledger · not in Account totals',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.metadata.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (totals != null && totals.people > 0) ...[
+            _KhataFigure(
+              label: "You'll get",
+              value: money(totals.receivablePaise),
+              color: scheme.positiveText,
+            ),
+            const SizedBox(width: AppSpacing.md),
+            _KhataFigure(
+              label: "You'll give",
+              value: money(totals.payablePaise),
+              color: scheme.negativeText,
+            ),
+          ] else
+            Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant),
         ],
       ),
-    ),
+    );
+  }
+}
+
+class _KhataFigure extends StatelessWidget {
+  const _KhataFigure({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.end,
+    children: [
+      Text(
+        label,
+        style: AppTypography.metadata.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+      ),
+      Text(
+        value,
+        semanticsLabel: maskedAmountSemantics(value),
+        style: AppTypography.fieldValue.copyWith(
+          color: color,
+          fontWeight: FontWeight.w800,
+          fontFeatures: const [FontFeature.tabularFigures()],
+        ),
+      ),
+    ],
   );
 }

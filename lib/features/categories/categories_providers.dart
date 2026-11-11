@@ -12,3 +12,8 @@ final activeCategoriesByTypeProvider =
     StreamProvider.family<List<CategoryRow>, String>((ref, type) {
       return ref.watch(categoriesRepositoryProvider).watchActiveByType(type);
     });
+
+final allCategoriesByTypeProvider =
+    StreamProvider.family<List<CategoryRow>, String>((ref, type) {
+      return ref.watch(categoriesRepositoryProvider).watchAllByType(type);
+    });

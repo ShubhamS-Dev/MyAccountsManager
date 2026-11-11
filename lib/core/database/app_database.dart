@@ -6,20 +6,33 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import 'tables/accounts.dart';
+import 'tables/app_settings.dart';
 import 'tables/balance_adjustments.dart';
 import 'tables/categories.dart';
+import 'tables/khata.dart';
 import 'tables/transactions.dart';
 
 part 'app_database.g.dart';
 
-@DriftDatabase(tables: [Accounts, Categories, Transactions, BalanceAdjustments])
+@DriftDatabase(
+  tables: [
+    Accounts,
+    Categories,
+    Transactions,
+    BalanceAdjustments,
+    KhataPeople,
+    KhataEntries,
+    KhataRepayments,
+    AppSettings,
+  ],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -53,6 +66,7 @@ class AppDatabase extends _$AppDatabase {
       await customStatement(
         'CREATE INDEX categories_type_active_sort_idx ON categories (type, is_active, sort_order)',
       );
+      await _createKhataIndexes();
     },
     onUpgrade: (migrator, from, to) async {
       if (from < 2) {
@@ -64,11 +78,31 @@ class AppDatabase extends _$AppDatabase {
           'CREATE INDEX balance_adjustments_deleted_date_idx ON balance_adjustments (deleted_at, adjustment_date)',
         );
       }
+      if (from < 3) {
+        // Additive only: existing finance tables and rows are untouched.
+        await migrator.createTable(khataPeople);
+        await migrator.createTable(khataEntries);
+        await migrator.createTable(khataRepayments);
+        await migrator.createTable(appSettings);
+        await _createKhataIndexes();
+      }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
     },
   );
+
+  Future<void> _createKhataIndexes() async {
+    await customStatement(
+      'CREATE INDEX khata_entries_person_date_idx ON khata_entries (person_id, entry_date)',
+    );
+    await customStatement(
+      'CREATE INDEX khata_entries_deleted_idx ON khata_entries (deleted_at)',
+    );
+    await customStatement(
+      'CREATE INDEX khata_repayments_entry_date_idx ON khata_repayments (entry_id, repayment_date)',
+    );
+  }
 
   Future<void> _seedDefaultCategories() async {
     final now = DateTime.now().toUtc().millisecondsSinceEpoch;

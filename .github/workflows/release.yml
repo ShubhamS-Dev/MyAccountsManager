@@ -1,0 +1,140 @@
+name: Release
+
+# Every push to master: validate, build a release APK (arm64), publish a GitHub Release.
+on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+  workflow_dispatch:
+
+# Never cancel a release in progress; queue the next one instead.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    uses: ./.github/workflows/flutter-validation.yml
+    permissions:
+      contents: write
+      actions: write
+
+  build:
+    name: Build release APK
+    needs: validate
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+      signed: ${{ steps.signing.outputs.signed }}
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: ./.github/actions/flutter-setup
+        with:
+          java: "true"
+
+      - name: Set up Gradle cache
+        uses: gradle/actions/setup-gradle@v4
+
+      # versionName comes from pubspec.yaml; versionCode is the run number so it always increases.
+      - name: Resolve version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          name="$(grep -E '^version:' pubspec.yaml | sed -E 's/^version:[[:space:]]*([^+[:space:]]+).*/\1/')"
+          echo "name=${name}" >> "$GITHUB_OUTPUT"
+          echo "tag=v${name}-build.${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+
+      # Uses the upload keystore when the secrets exist; otherwise Gradle falls back to debug signing.
+      - name: Configure release signing
+        id: signing
+        shell: bash
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${KEYSTORE_BASE64}" ]]; then
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::ANDROID_KEYSTORE_BASE64 is not set. The APK is debug-signed and will be published as a pre-release."
+            exit 0
+          fi
+
+          echo "${KEYSTORE_BASE64}" | base64 --decode > android/app/upload-keystore.jks
+          {
+            echo "storeFile=upload-keystore.jks"
+            echo "storePassword=${KEYSTORE_PASSWORD}"
+            echo "keyAlias=${KEY_ALIAS}"
+            echo "keyPassword=${KEY_PASSWORD}"
+          } > android/key.properties
+          echo "signed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Build Android release APK (arm64 only)
+        run: >-
+          bash .github/scripts/flutter-build-apk.sh --release
+          --target-platform android-arm64
+          --build-number=${{ github.run_number }}
+          --obfuscate --split-debug-info=build/app/outputs/symbols
+
+      - name: Rename APK
+        shell: bash
+        run: mv build/app/outputs/flutter-apk/app-release.apk "build/app/outputs/flutter-apk/myaccountsmanager-${{ steps.version.outputs.tag }}-arm64.apk"
+
+      - name: Upload release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apk
+          path: build/app/outputs/flutter-apk/myaccountsmanager-*.apk
+          if-no-files-found: error
+          retention-days: 7
+
+      # Needed to symbolicate obfuscated stack traces from this build.
+      - name: Upload debug symbols
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-symbols-${{ steps.version.outputs.tag }}
+          path: build/app/outputs/symbols
+          if-no-files-found: error
+          retention-days: 90
+
+  publish:
+    name: Publish GitHub Release
+    needs: build
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download release APK
+        uses: actions/download-artifact@v4
+        with:
+          name: release-apk
+          path: dist
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.build.outputs.tag }}
+          SIGNED: ${{ needs.build.outputs.signed }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          args=(--repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "$TAG" --generate-notes)
+          if [[ "${SIGNED}" != "true" ]]; then
+            args+=(--prerelease --notes "Debug-signed build. Uninstall the previous version before installing.")
+          fi
+
+          gh release create "$TAG" dist/*.apk "${args[@]}"

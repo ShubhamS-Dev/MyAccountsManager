@@ -46,34 +46,67 @@ class GradientCard extends StatelessWidget {
     this.colors = AppColors.heroGradient,
     this.padding = const EdgeInsets.all(AppSpacing.lg),
     this.radius = AppRadius.hero,
+    this.onTap,
+    this.onLongPress,
   });
 
   final Widget child;
   final List<Color> colors;
   final EdgeInsetsGeometry padding;
   final double radius;
+  final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
 
   @override
-  Widget build(BuildContext context) => Container(
-    padding: padding,
-    decoration: BoxDecoration(
-      gradient: LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: colors,
+  Widget build(BuildContext context) {
+    final borderRadius = BorderRadius.circular(radius);
+    // The gradient is painted with Ink so the tap ripple shows on top of it.
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: borderRadius,
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x263D35A8),
+            blurRadius: 24,
+            offset: Offset(0, 12),
+          ),
+        ],
       ),
-      borderRadius: BorderRadius.circular(radius),
-      boxShadow: const [
-        BoxShadow(
-          color: Color(0x263D35A8),
-          blurRadius: 24,
-          offset: Offset(0, 12),
+      child: Material(
+        type: MaterialType.transparency,
+        borderRadius: borderRadius,
+        clipBehavior: Clip.antiAlias,
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: colors,
+            ),
+          ),
+          child: onTap == null && onLongPress == null
+              ? Padding(padding: padding, child: child)
+              : InkWell(
+                  onTap: onTap,
+                  onLongPress: onLongPress,
+                  splashColor: Colors.white.withValues(alpha: .16),
+                  highlightColor: Colors.white.withValues(alpha: .08),
+                  child: Padding(padding: padding, child: child),
+                ),
         ),
-      ],
-    ),
-    child: child,
-  );
+      ),
+    );
+  }
 }
+
+/// Shown in place of every amount while Hide amounts is on.
+const hiddenAmountMask = '₹ ••••';
+
+/// [text] with each [hiddenAmountMask] spoken as "amount hidden", for
+/// `semanticsLabel`; null when nothing in [text] is masked.
+String? maskedAmountSemantics(String text) => text.contains(hiddenAmountMask)
+    ? text.replaceAll(hiddenAmountMask, 'amount hidden')
+    : null;
 
 class AmountText extends StatelessWidget {
   const AmountText(
@@ -92,10 +125,11 @@ class AmountText extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Text(
     value,
+    semanticsLabel: maskedAmountSemantics(value),
     maxLines: maxLines,
     overflow: TextOverflow.ellipsis,
     style: (style ?? AppTypography.transactionAmount).copyWith(
-      color: color ?? Theme.of(context).colorScheme.onSurface,
+      color: color ?? style?.color ?? Theme.of(context).colorScheme.onSurface,
       fontFeatures: const [FontFeature.tabularFigures()],
     ),
   );
@@ -143,14 +177,18 @@ class PrimaryButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    // The face is 40px at default text size and grows with the device font
+    // size; the outer box keeps the 48px hit area.
     final face = SizedBox(
-      height: AppSpacing.buttonHeight,
       width: double.infinity,
       child: FilledButton(
         onPressed: loading ? null : onPressed,
         style: gradient == null
-            ? null
+            ? FilledButton.styleFrom(
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              )
             : FilledButton.styleFrom(
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 backgroundColor: Colors.transparent,
                 disabledBackgroundColor: scheme.onSurface.withValues(
                   alpha: .12,
@@ -160,10 +198,13 @@ class PrimaryButton extends StatelessWidget {
                 shadowColor: Colors.transparent,
               ),
         child: loading
-            ? const SizedBox(
+            ? SizedBox(
                 width: 18,
                 height: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: scheme.onPrimary,
+                ),
               )
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -176,14 +217,23 @@ class PrimaryButton extends StatelessWidget {
                     Icon(icon, size: 17),
                     const SizedBox(width: AppSpacing.sm),
                   ],
-                  Text(label),
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ],
               ),
       ),
     );
-    return SizedBox(
-      height: AppSpacing.touchTarget,
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        vertical: (AppSpacing.touchTarget - AppSpacing.buttonHeight) / 2,
+      ),
       child: Center(
+        heightFactor: 1,
         child: gradient == null
             ? face
             : DecoratedBox(
@@ -318,6 +368,41 @@ class EmptyState extends StatelessWidget {
             const SizedBox(height: AppSpacing.md),
             PrimaryButton(label: actionLabel!, onPressed: onAction),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Marks a future-dated transaction that is not yet counted in balances.
+class ScheduledBadge extends StatelessWidget {
+  const ScheduledBadge({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: scheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.schedule_rounded,
+            size: 12,
+            color: scheme.onSecondaryContainer,
+          ),
+          const SizedBox(width: 3),
+          Text(
+            'Scheduled',
+            style: AppTypography.metadata.copyWith(
+              fontSize: 11,
+              color: scheme.onSecondaryContainer,
+            ),
+          ),
         ],
       ),
     );

@@ -64,7 +64,7 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
               total: total,
               hidden: hidden,
               onToggle: () {
-                ref.read(amountsHiddenProvider.notifier).state = !hidden;
+                ref.read(amountsHiddenProvider.notifier).set(!hidden);
               },
               onArchived: () => context.push('/accounts/archived'),
             ),
@@ -129,11 +129,14 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: filtered.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   crossAxisSpacing: AppSpacing.sm,
                   mainAxisSpacing: AppSpacing.sm,
-                  mainAxisExtent: 148,
+                  // Padding and action row are fixed; the text part grows
+                  // with the device font size.
+                  mainAxisExtent:
+                      80 + MediaQuery.textScalerOf(context).scale(68),
                 ),
                 itemBuilder: (context, index) {
                   final account = filtered[index];
@@ -271,7 +274,7 @@ class _BalanceOverview extends StatelessWidget {
             data: (value) => AnimatedSwitcher(
               duration: const Duration(milliseconds: 250),
               child: AmountText(
-                hidden ? '₹ ••••••' : MoneyFormatter.formatPaise(value),
+                hidden ? hiddenAmountMask : MoneyFormatter.formatPaise(value),
                 key: ValueKey('$hidden-$value'),
                 style: AppTypography.balance.copyWith(color: Colors.white),
               ),
@@ -320,64 +323,74 @@ class _AccountCard extends StatelessWidget {
       colors: gradient,
       padding: const EdgeInsets.all(AppSpacing.md),
       radius: AppRadius.card,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadius.card),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 18,
-                  backgroundColor: Colors.white.withValues(alpha: .18),
-                  child: Icon(
-                    resolveAccountIcon(account.iconKey),
-                    size: 19,
-                    color: Colors.white,
-                  ),
-                ),
-                if (account.isPinned) ...[
-                  const SizedBox(width: AppSpacing.xs),
-                  const Icon(
-                    Icons.push_pin_rounded,
-                    size: 14,
-                    color: Colors.white,
-                  ),
-                ],
-                const Spacer(),
-                IconButton(
-                  tooltip: 'Account actions',
-                  onPressed: () => _showMenu(context),
+      onTap: onTap,
+      onLongPress: () => _showMenu(context),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: Colors.white.withValues(alpha: .18),
+                child: Icon(
+                  resolveAccountIcon(account.iconKey),
+                  size: 19,
                   color: Colors.white,
-                  icon: const Icon(Icons.more_horiz_rounded),
+                ),
+              ),
+              if (account.isPinned) ...[
+                const SizedBox(width: AppSpacing.xs),
+                const Icon(
+                  Icons.push_pin_rounded,
+                  size: 14,
+                  color: Colors.white,
                 ),
               ],
-            ),
-            const Spacer(),
-            Text(
-              account.name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppTypography.sectionTitle.copyWith(color: Colors.white),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            if (hidden)
-              AmountText(
-                '₹ ••••••',
-                style: AppTypography.transactionAmount.copyWith(
-                  color: Colors.white,
-                ),
-              )
-            else
-              DefaultTextStyle(
-                style: AppTypography.transactionAmount.copyWith(
-                  color: Colors.white,
-                ),
-                child: AccountBalanceLabel(accountId: account.id),
+              const Spacer(),
+              IconButton(
+                tooltip: 'Account actions',
+                onPressed: () => _showMenu(context),
+                color: Colors.white,
+                icon: const Icon(Icons.more_horiz_rounded),
               ),
-          ],
-        ),
+            ],
+          ),
+          const Spacer(),
+          MergeSemantics(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  account.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.sectionTitle.copyWith(
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                if (hidden)
+                  AmountText(
+                    hiddenAmountMask,
+                    style: AppTypography.transactionAmount.copyWith(
+                      color: Colors.white,
+                    ),
+                  )
+                else
+                  DefaultTextStyle(
+                    style: AppTypography.transactionAmount.copyWith(
+                      color: Colors.white,
+                    ),
+                    child: AccountBalanceLabel(
+                      accountId: account.id,
+                      color: Colors.white,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -87,16 +87,17 @@ A manual refresh affordance is not an acceptable substitute for reactive synchro
 ## 8. Typography, controls, and screen approval baseline
 
 ### Typography
-Use the following shared sizes consistently across existing and future screens:
-- Screen/app-bar title: **16 logical pixels maximum**.
-- Section headings: **14 logical pixels**.
-- Transaction amounts and primary balance figures: **16 logical pixels**.
-- **Approved exception:** only the Add Transaction amount-entry field uses the dedicated `AppTypography.amountInput` token at **28 logical pixels**. This does not change the 16px rule for displayed transaction amounts, balances, or Edit Transaction.
-- Labels, values, dates, supporting details, button labels, and bottom-navigation labels: **11 logical pixels**.
-- Use weight, spacing, and semantic color for hierarchy rather than increasing text size beyond these limits.
+Superseded 2026-11-11: the user approved system-oriented typography following the Material 3 type scale, replacing the earlier 11/14/16px limits.
+- Screen/app-bar title: **22 logical pixels** (titleLarge).
+- Section headings: **16 logical pixels** (titleMedium).
+- Displayed transaction amounts: **16 logical pixels** (titleMedium). Hero balances: **36 logical pixels**.
+- Add Transaction amount entry: `AppTypography.amountInput` at **28 logical pixels**.
+- Values, body text and button labels: **14 logical pixels**. Labels, dates, metadata, captions and navigation labels: **12 logical pixels**.
+- All text honours the device font-size setting. Layouts must not overflow at large font sizes; fixed heights scale with the text scaler.
+- See docs/DESIGN_SYSTEM.md for the token table.
 
 ### Action button dimensions
-- Every standard action button has an exact **40 logical-pixel visual height**.
+- Every standard action button has a **40 logical-pixel visual height** at default text size and a **48 logical-pixel hit area**. Buttons may grow taller when the device font size is increased.
 - Apply this consistently to Filled, Outlined, Elevated, and Text buttons, including form submit, retry, restore, archive, and other action controls.
 - Icon-only action controls use a 40 × 40 logical-pixel hit area.
 - Segmented selectors, navigation destinations, and the floating Add Transaction action are selection/navigation controls, not standard action buttons; preserve accessible touch targets and their established component behavior.

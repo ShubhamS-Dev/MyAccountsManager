@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../../app/app_form_widgets.dart';
+import '../../../app/app_theme.dart';
+import '../../../app/app_widgets.dart';
+import '../../../core/formatting/money_formatter.dart';
 import '../accounts_providers.dart';
+import 'account_form.dart';
 
 class CreateAccountPage extends ConsumerStatefulWidget {
   const CreateAccountPage({super.key});
@@ -14,8 +20,31 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _openingBalanceController = TextEditingController(text: '0');
+  String _iconKey = 'wallet';
+  int? _colorValue;
   bool _saving = false;
+
+  // Unsaved-changes tracking for the back-navigation guard.
+  late final String _pristine = _snapshot;
+  String get _snapshot => [
+    _nameController.text,
+    _descriptionController.text,
+    _openingBalanceController.text,
+    _iconKey,
+    _colorValue,
+  ].join('\u0000');
+  bool get _dirty => !_saving && _snapshot != _pristine;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    // Keep the preview card and semantic amount colour in sync.
+    _nameController.addListener(_refresh);
+    _openingBalanceController.addListener(_refresh);
+  }
+
+  void _refresh() => setState(() {});
 
   @override
   void dispose() {
@@ -25,22 +54,12 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
     super.dispose();
   }
 
-  int? _parsePaise(String input) {
-    final value = input.trim().replaceAll(',', '');
-    if (!RegExp(r'^-?\d+(\.\d{1,2})?$').hasMatch(value)) return null;
-    final negative = value.startsWith('-');
-    final unsigned = negative ? value.substring(1) : value;
-    final parts = unsigned.split('.');
-    final rupees = int.tryParse(parts[0]);
-    if (rupees == null) return null;
-    final fraction = parts.length == 1 ? '' : parts[1].padRight(2, '0');
-    final total = rupees * 100 + (fraction.isEmpty ? 0 : int.parse(fraction));
-    return negative ? -total : total;
-  }
-
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-    final paise = _parsePaise(_openingBalanceController.text);
+    final paise = parseAmountPaise(
+      _openingBalanceController.text,
+      allowSign: true,
+    );
     if (paise == null) return;
     setState(() {
       _saving = true;
@@ -53,6 +72,8 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
             name: _nameController.text,
             description: _descriptionController.text,
             openingBalancePaise: paise,
+            iconKey: _iconKey,
+            colorValue: _colorValue,
           );
       ref.invalidate(activeAccountsProvider);
       if (mounted) context.pop();
@@ -67,74 +88,103 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Create Account')),
-    body: Form(
-      key: _formKey,
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-        children: [
-          TextFormField(
-            controller: _nameController,
-            autofocus: true,
-            textCapitalization: TextCapitalization.words,
-            decoration: const InputDecoration(
-              labelText: 'Account name *',
-              hintText: 'e.g. Monthly Expenses',
-              border: OutlineInputBorder(),
-            ),
-            validator: (value) => value == null || value.trim().isEmpty
-                ? 'Enter an Account name.'
-                : null,
+  Widget build(BuildContext context) =>
+      UnsavedChangesGuard(dirty: _dirty, child: _buildPage(context));
+
+  Widget _buildPage(BuildContext context) {
+    final balance = parseAmountPaise(
+      _openingBalanceController.text,
+      allowSign: true,
+    );
+    return Scaffold(
+      appBar: AppBar(title: const Text('Create Account')),
+      body: Form(
+        key: _formKey,
+        onChanged: () => setState(() {}),
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            AppSpacing.sm,
+            AppSpacing.md,
+            AppSpacing.lg,
           ),
-          const SizedBox(height: 12),
-          TextFormField(
-            controller: _descriptionController,
-            textCapitalization: TextCapitalization.sentences,
-            maxLines: 2,
-            decoration: const InputDecoration(
-              labelText: 'Description (optional)',
-              alignLabelWithHint: true,
-              border: OutlineInputBorder(),
+          children: [
+            AccountPreviewCard(
+              name: _nameController.text,
+              iconKey: _iconKey,
+              colorValue: _colorValue,
+              balanceLabel: MoneyFormatter.formatPaise(balance ?? 0),
             ),
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _openingBalanceController,
-            keyboardType: const TextInputType.numberWithOptions(
-              decimal: true,
-              signed: true,
+            const SizedBox(height: AppSpacing.lg),
+            const FieldHeading(title: 'Account name'),
+            TextFormField(
+              controller: _nameController,
+              autofocus: true,
+              maxLength: 100,
+              textCapitalization: TextCapitalization.words,
+              decoration: const InputDecoration(
+                hintText: 'e.g. HDFC Savings',
+                counterText: '',
+              ),
+              validator: (value) => value == null || value.trim().isEmpty
+                  ? 'Enter an Account name.'
+                  : null,
             ),
-            decoration: const InputDecoration(
-              labelText: 'Opening balance (₹)',
-              helperText:
-                  'Use a negative amount if the Account starts in deficit.',
-              border: OutlineInputBorder(),
+            const SizedBox(height: AppSpacing.md),
+            const FieldHeading(title: 'Description', hint: 'Optional'),
+            TextFormField(
+              controller: _descriptionController,
+              textCapitalization: TextCapitalization.sentences,
+              minLines: 1,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                hintText: 'What is this Account for?',
+              ),
             ),
-            validator: (value) => _parsePaise(value ?? '') == null
-                ? 'Enter a valid amount with up to 2 decimal places.'
-                : null,
-          ),
-          if (_error != null) ...[
-            const SizedBox(height: 12),
-            Text(
-              _error!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            const SizedBox(height: AppSpacing.md),
+            const FieldHeading(
+              title: 'Opening balance',
+              hint: 'Use - if it starts in deficit',
             ),
+            AmountFormField(
+              controller: _openingBalanceController,
+              allowSign: true,
+              accent: (balance ?? 0) < 0
+                  ? Theme.of(context).colorScheme.negativeText
+                  : null,
+              validator: (value) =>
+                  parseAmountPaise(value ?? '', allowSign: true) == null
+                  ? 'Enter a valid amount with up to 2 decimal places.'
+                  : null,
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            const FieldHeading(title: 'Icon'),
+            AccountIconPicker(
+              selected: _iconKey,
+              onChanged: (key) => setState(() => _iconKey = key),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            const FieldHeading(title: 'Card colour'),
+            ColorChoiceRow(
+              selected: _colorValue,
+              onChanged: (value) => setState(() => _colorValue = value),
+            ),
+            if (_error != null) ...[
+              const SizedBox(height: AppSpacing.md),
+              FormErrorBanner(_error!),
+            ],
           ],
-          const SizedBox(height: 16),
-          FilledButton(
-            onPressed: _saving ? null : _save,
-            child: _saving
-                ? const SizedBox(
-                    height: 18,
-                    width: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text('Save Account'),
-          ),
-        ],
+        ),
       ),
-    ),
-  );
+      bottomNavigationBar: StickyActionBar(
+        child: PrimaryButton(
+          label: 'Save Account',
+          icon: Icons.check_rounded,
+          gradient: AppColors.heroGradient,
+          loading: _saving,
+          onPressed: _save,
+        ),
+      ),
+    );
+  }
 }

@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/database/app_database.dart';
 import '../../core/database/database_provider.dart';
+import '../../core/time/today_provider.dart';
 import 'data/accounts_repository.dart';
 
 final accountsRepositoryProvider = Provider<AccountsRepository>((ref) {
@@ -22,24 +23,19 @@ final archivedAccountsProvider = StreamProvider<List<AccountRow>>((ref) {
   return ref.watch(accountsRepositoryProvider).watchArchivedAccounts();
 });
 
-int _todayUtcDate() {
-  final now = DateTime.now();
-  return DateTime.utc(now.year, now.month, now.day).millisecondsSinceEpoch;
-}
-
 final accountBalancePaiseProvider = StreamProvider.family<int?, String>((
   ref,
   id,
 ) {
   return ref
       .watch(accountsRepositoryProvider)
-      .watchBalancePaise(accountId: id, asOfDate: _todayUtcDate());
+      .watchBalancePaise(accountId: id, asOfDate: ref.watch(todayProvider));
 });
 
 final totalActiveBalancePaiseProvider = StreamProvider<int>((ref) {
   return ref
       .watch(accountsRepositoryProvider)
-      .watchTotalActiveBalancePaise(asOfDate: _todayUtcDate());
+      .watchTotalActiveBalancePaise(asOfDate: ref.watch(todayProvider));
 });
 
 final balanceAdjustmentsProvider =
