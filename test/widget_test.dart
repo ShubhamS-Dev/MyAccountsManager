@@ -763,10 +763,7 @@ void main() {
       // Inspect those concrete widgets instead of reading nonexistent
       // TextFormField.style/decoration properties.
       final amountEditableText = tester.widget<EditableText>(
-        find.descendant(
-          of: amountField,
-          matching: find.byType(EditableText),
-        ),
+        find.descendant(of: amountField, matching: find.byType(EditableText)),
       );
       expect(
         amountEditableText.style.fontSize,
