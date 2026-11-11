@@ -5,9 +5,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:my_accounts_manager/app/privacy_state.dart';
 import 'package:my_accounts_manager/core/database/app_database.dart';
 import 'package:my_accounts_manager/core/database/database_provider.dart';
+import 'package:my_accounts_manager/features/accounts/data/accounts_repository.dart';
 import 'package:my_accounts_manager/features/categories/data/categories_repository.dart';
 import 'package:my_accounts_manager/features/settings/data/settings_repository.dart';
 import 'package:my_accounts_manager/features/settings/settings_providers.dart';
+import 'package:my_accounts_manager/features/transactions/data/transactions_repository.dart';
 
 void main() {
   late AppDatabase database;
@@ -62,6 +64,42 @@ void main() {
   });
 
   group('CategoriesRepository management', () {
+    test(
+      'lists recently used categories first, then configured order',
+      () async {
+        final categories = CategoriesRepository(database);
+        final initial = await categories.watchActiveByType('expense').first;
+        final first = initial[0];
+        final third = initial[2];
+        final last = initial.last;
+        final accountId = await AccountsRepository(
+          database,
+        ).createAccount(name: 'Wallet');
+        final transactions = TransactionsRepository(database);
+        for (final category in [third, last]) {
+          await transactions.createTransaction(
+            accountId: accountId,
+            categoryId: category.id,
+            type: 'expense',
+            amountPaise: 100,
+            transactionDate: 0,
+          );
+          // created_at has millisecond resolution.
+          await Future<void>.delayed(const Duration(milliseconds: 5));
+        }
+
+        final ordered = await categories
+            .watchActiveByTypeByRecentUse('expense')
+            .first;
+        expect(ordered.map((category) => category.id).take(3), [
+          last.id,
+          third.id,
+          first.id,
+        ]);
+        expect(ordered, hasLength(initial.length));
+      },
+    );
+
     test('creates a custom category at the end of its type', () async {
       final categories = CategoriesRepository(database);
       final id = await categories.createCategory(

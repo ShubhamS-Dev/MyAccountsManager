@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/app_form_widgets.dart';
 import '../../../app/app_theme.dart';
 import '../../../app/app_widgets.dart';
+import '../../../app/icon_catalog.dart';
+import '../../../app/icon_picker_sheet.dart';
 import '../../../app/icon_resolvers.dart';
 import '../../../core/database/app_database.dart';
 import '../categories_providers.dart';
@@ -404,6 +406,16 @@ class _CategoryEditorState extends ConsumerState<_CategoryEditor> {
               spacing: AppSpacing.xs,
               runSpacing: AppSpacing.xs,
               children: [
+                // A key picked from the full catalog shows first, selected.
+                if (_iconKey.isNotEmpty &&
+                    !categoryIconChoices.contains(_iconKey))
+                  _IconChoice(
+                    label: _iconLabel(_iconKey),
+                    icon: resolveCategoryIcon(_iconKey, income: income),
+                    selected: true,
+                    color: preview,
+                    onTap: () {},
+                  ),
                 for (final key in categoryIconChoices)
                   _IconChoice(
                     label: _iconLabel(key),
@@ -412,6 +424,23 @@ class _CategoryEditorState extends ConsumerState<_CategoryEditor> {
                     color: preview,
                     onTap: () => setState(() => _iconKey = key),
                   ),
+                _IconChoice(
+                  key: const ValueKey('category-more-icons'),
+                  label: 'More icons',
+                  icon: Icons.grid_view_rounded,
+                  selected: false,
+                  color: preview,
+                  onTap: () async {
+                    final picked = await showIconPickerSheet(
+                      context,
+                      selected: _iconKey,
+                      color: preview,
+                    );
+                    if (picked != null && mounted) {
+                      setState(() => _iconKey = picked);
+                    }
+                  },
+                ),
               ],
             ),
             const SizedBox(height: AppSpacing.md),
@@ -441,12 +470,15 @@ class _CategoryEditorState extends ConsumerState<_CategoryEditor> {
 
 /// "personal_care" -> "Personal care icon", for screen readers.
 String _iconLabel(String key) {
+  final catalogLabel = catalogIconFor(key)?.label;
+  if (catalogLabel != null) return '$catalogLabel icon';
   final words = key.replaceAll('_', ' ');
   return '${words[0].toUpperCase()}${words.substring(1)} icon';
 }
 
 class _IconChoice extends StatelessWidget {
   const _IconChoice({
+    super.key,
     required this.label,
     required this.icon,
     required this.selected,

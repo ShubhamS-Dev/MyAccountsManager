@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/app_theme.dart';
 import '../../../app/app_widgets.dart';
+import '../../../app/icon_resolvers.dart';
 import '../../../app/privacy_state.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/formatting/date_timestamp.dart';
@@ -53,6 +54,15 @@ class AccountDetailsPage extends ConsumerWidget {
           ),
         ],
       ),
+      floatingActionButton: account.valueOrNull == null
+          ? null
+          : FloatingActionButton.extended(
+              key: const ValueKey('account-details-add-transaction'),
+              onPressed: () =>
+                  context.push('/transaction/new?accountId=$accountId'),
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Add transaction'),
+            ),
       body: account.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) =>
@@ -62,7 +72,8 @@ class AccountDetailsPage extends ConsumerWidget {
             return const Center(child: Text('Account not found.'));
           }
           return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+            // Bottom space keeps the last row clear of the Add transaction button.
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
             children: [
               _BalanceCard(
                 name: row.name,
@@ -397,6 +408,10 @@ class _TransactionTile extends StatelessWidget {
     final transaction = item.transaction;
     final income = transaction.type == 'income';
     final colors = Theme.of(context).colorScheme;
+    final fallbackColor = income ? AppColors.positive : AppColors.negative;
+    final categoryColor = item.categoryColorValue == null
+        ? fallbackColor
+        : Color(item.categoryColorValue!);
     return Card(
       child: ListTile(
         dense: true,
@@ -404,14 +419,15 @@ class _TransactionTile extends StatelessWidget {
         contentPadding: const EdgeInsets.symmetric(horizontal: 14),
         minVerticalPadding: 8,
         leading: CircleAvatar(
-          radius: 16,
-          backgroundColor: income
-              ? colors.tertiaryContainer
-              : colors.errorContainer,
+          radius: 18,
+          backgroundColor: categoryColor.withValues(alpha: .12),
           child: Icon(
-            income ? Icons.south_west_rounded : Icons.north_east_rounded,
-            size: 16,
-            color: income ? colors.tertiary : colors.error,
+            resolveCategoryIcon(
+              item.categoryIconKey ?? item.categoryName,
+              income: income,
+            ),
+            size: 18,
+            color: categoryColor,
           ),
         ),
         title: Text(

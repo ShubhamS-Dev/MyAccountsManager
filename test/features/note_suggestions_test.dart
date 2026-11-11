@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:my_accounts_manager/app/app_theme.dart';
+import 'package:my_accounts_manager/app/app_widgets.dart';
 import 'package:my_accounts_manager/app/privacy_state.dart';
 import 'package:my_accounts_manager/core/database/app_database.dart';
 import 'package:my_accounts_manager/features/accounts/accounts_providers.dart';
@@ -13,6 +14,7 @@ import 'package:my_accounts_manager/features/transactions/data/note_suggestions.
 import 'package:my_accounts_manager/features/transactions/data/transactions_repository.dart';
 import 'package:my_accounts_manager/features/transactions/presentation/add_transaction_page.dart';
 import 'package:my_accounts_manager/features/transactions/presentation/edit_transaction_page.dart';
+import 'package:my_accounts_manager/features/transactions/presentation/transaction_form_widgets.dart';
 import 'package:my_accounts_manager/features/transactions/transactions_providers.dart';
 
 CategoryRow category(String id, String name, {String type = 'expense'}) =>
@@ -283,6 +285,10 @@ void main() {
               (ref, type) =>
                   Stream.value(type == 'income' ? [salary] : expenseCategories),
             ),
+            recentCategoriesByTypeProvider.overrideWith(
+              (ref, type) =>
+                  Stream.value(type == 'income' ? [salary] : expenseCategories),
+            ),
             recentNotesProvider.overrideWith(
               (ref, type) async => recentNotesFrom(history),
             ),
@@ -298,23 +304,27 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
     }
 
-    bool chipSelected(WidgetTester tester, String label) =>
-        tester
-            .widget<Semantics>(
-              find
-                  .ancestor(
-                    of: find.text(label),
-                    matching: find.byWidgetPredicate(
-                      (widget) =>
-                          widget is Semantics &&
-                          widget.properties.button == true,
-                    ),
-                  )
-                  .first,
-            )
-            .properties
-            .selected ==
-        true;
+    String? selectedCategoryName(WidgetTester tester) {
+      final id = tester
+          .widget<CategoryDropdown>(
+            find.byKey(const ValueKey('add-transaction-category-dropdown')),
+          )
+          .selectedId;
+      return [
+        ...expenseCategories,
+        salary,
+      ].where((category) => category.id == id).firstOrNull?.name;
+    }
+
+    // Whether the suggestion chip offers [label] and it is the selection.
+    bool chipSelected(WidgetTester tester, String label) {
+      final chip = find.byKey(
+        const ValueKey('add-transaction-category-suggestion'),
+      );
+      if (chip.evaluate().isEmpty) return false;
+      final widget = tester.widget<CategoryChip>(chip);
+      return widget.label == label && widget.selected;
+    }
 
     testWidgets('Add shows recent notes and auto-selects the category', (
       tester,
@@ -333,6 +343,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
 
       expect(find.text('Suggested from note'), findsOneWidget);
+      expect(selectedCategoryName(tester), 'Groceries');
       expect(chipSelected(tester, 'Groceries'), isTrue);
 
       await tester.enterText(
@@ -342,8 +353,8 @@ void main() {
       await tester.pump(const Duration(milliseconds: 350));
       expect(find.text('Suggestions'), findsOneWidget);
       expect(find.text('Uber to office'), findsOneWidget);
+      expect(selectedCategoryName(tester), 'Transportation');
       expect(chipSelected(tester, 'Transportation'), isTrue);
-      expect(chipSelected(tester, 'Groceries'), isFalse);
     }, timeout: const Timeout(Duration(seconds: 30)));
 
     testWidgets('Add never overrides a category the user picked', (
@@ -351,21 +362,31 @@ void main() {
     ) async {
       await pump(tester, const AddTransactionPage(), history: const []);
 
-      await tester.ensureVisible(find.text('Shopping'));
-      await tester.tap(find.text('Shopping'));
-      await tester.pump();
+      final dropdown = find.byKey(
+        const ValueKey('add-transaction-category-dropdown'),
+      );
+      await tester.ensureVisible(dropdown);
+      await tester.tap(dropdown);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Shopping').last);
+      await tester.pumpAndSettle();
       await tester.enterText(
         find.byKey(const ValueKey('add-transaction-note-input')),
         'Swiggy dinner',
       );
       await tester.pump(const Duration(milliseconds: 350));
 
-      expect(chipSelected(tester, 'Shopping'), isTrue);
+      // The suggestion is offered as a chip but never applied.
+      expect(selectedCategoryName(tester), 'Shopping');
       expect(chipSelected(tester, 'Food & Dining'), isFalse);
-      expect(find.text('Suggested from note'), findsNothing);
+      await tester.tap(
+        find.byKey(const ValueKey('add-transaction-category-suggestion')),
+      );
+      await tester.pump();
+      expect(selectedCategoryName(tester), 'Food & Dining');
     }, timeout: const Timeout(Duration(seconds: 30)));
 
-    testWidgets('Edit suggests a category and applies it only on Use', (
+    testWidgets('Edit suggests a category and applies it only on tap', (
       tester,
     ) async {
       await pump(
@@ -399,21 +420,28 @@ void main() {
         findsNothing,
       );
       await tester.enterText(
-        find.widgetWithText(TextFormField, 'Gift'),
+        find.byKey(const ValueKey('edit-transaction-note-input')),
         'Zomato',
       );
       await tester.pump(const Duration(milliseconds: 350));
 
-      expect(find.text('Suggested from note: Food & Dining'), findsOneWidget);
-      expect(find.text('Shopping'), findsOneWidget);
-
-      await tester.tap(find.text('Use'));
-      await tester.pump();
-      expect(find.text('Food & Dining'), findsOneWidget);
-      expect(
-        find.byKey(const ValueKey('edit-transaction-category-suggestion')),
-        findsNothing,
+      // Offered as an unselected chip; the saved category stays put.
+      final suggestion = find.byKey(
+        const ValueKey('edit-transaction-category-suggestion'),
       );
+      expect(tester.widget<CategoryChip>(suggestion).label, 'Food & Dining');
+      expect(tester.widget<CategoryChip>(suggestion).selected, isFalse);
+      String? selectedId() => tester
+          .widget<CategoryDropdown>(
+            find.byKey(const ValueKey('edit-transaction-category-dropdown')),
+          )
+          .selectedId;
+      expect(selectedId(), 'shopping');
+
+      await tester.tap(suggestion);
+      await tester.pump();
+      expect(tester.widget<CategoryChip>(suggestion).selected, isTrue);
+      expect(selectedId(), isNot('shopping'));
     }, timeout: const Timeout(Duration(seconds: 30)));
   });
 }

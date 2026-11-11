@@ -538,4 +538,59 @@ void main() {
       );
     },
   );
+
+  test('duplicates a transaction to a new date and undo discards it', () async {
+    final accountId = await accounts.createAccount(name: 'Wallet');
+    final food = await (database.select(
+      database.categories,
+    )..where((category) => category.name.equals('Food & Dining'))).getSingle();
+    final sourceId = await transactions.createTransaction(
+      accountId: accountId,
+      categoryId: food.id,
+      type: 'expense',
+      amountPaise: 45000,
+      transactionDate: DateTime.utc(2026, 11, 1).millisecondsSinceEpoch,
+      note: 'Lunch',
+    );
+    final today = DateTime.utc(2026, 11, 11).millisecondsSinceEpoch;
+
+    final copyId = await transactions.duplicateTransaction(
+      sourceId,
+      transactionDate: today,
+    );
+    final copy = (await transactions.getTransaction(copyId))!;
+    expect(copyId, isNot(sourceId));
+    expect(copy.accountId, accountId);
+    expect(copy.categoryId, food.id);
+    expect(copy.amountPaise, 45000);
+    expect(copy.note, 'Lunch');
+    expect(copy.transactionDate, today);
+
+    await transactions.discardTransaction(copyId);
+    expect(await transactions.getTransaction(copyId), isNull);
+    expect(await transactions.getTransaction(sourceId), isNotNull);
+  });
+
+  test('refuses to duplicate onto an archived Account', () async {
+    final accountId = await accounts.createAccount(name: 'Old');
+    final food = await (database.select(
+      database.categories,
+    )..where((category) => category.name.equals('Food & Dining'))).getSingle();
+    final sourceId = await transactions.createTransaction(
+      accountId: accountId,
+      categoryId: food.id,
+      type: 'expense',
+      amountPaise: 100,
+      transactionDate: DateTime.utc(2026, 11, 1).millisecondsSinceEpoch,
+    );
+    await accounts.archiveAccount(accountId);
+
+    expect(
+      transactions.duplicateTransaction(
+        sourceId,
+        transactionDate: DateTime.utc(2026, 11, 11).millisecondsSinceEpoch,
+      ),
+      throwsStateError,
+    );
+  });
 }

@@ -88,6 +88,13 @@ class MorePage extends ConsumerWidget {
               onTap: () => context.push('/more/categories'),
             ),
             MoreTile(
+              icon: Icons.repeat_rounded,
+              color: const Color(0xFF0EA5E9),
+              title: 'Recurring transactions',
+              subtitle: 'Rent, salary, SIPs and bills on repeat',
+              onTap: () => context.push('/more/recurring'),
+            ),
+            MoreTile(
               icon: Icons.archive_outlined,
               color: scheme.primary,
               title: 'Archived Accounts',
@@ -135,7 +142,7 @@ class MorePage extends ConsumerWidget {
               icon: Icons.notifications_active_outlined,
               color: const Color(0xFFF59E0B),
               title: 'Budget Alerts',
-              subtitle: 'Coming soon',
+              subtitle: 'Monthly spending limit with 80% and 100% alerts',
               onTap: () => context.push('/more/budgets'),
             ),
           ],
@@ -155,7 +162,7 @@ class MorePage extends ConsumerWidget {
               icon: Icons.cloud_sync_outlined,
               color: const Color(0xFF0EA5E9),
               title: 'Backup & Restore',
-              subtitle: 'Encrypted .khata backups · coming soon',
+              subtitle: 'Password-protected .khata backups',
               onTap: () => context.push('/more/backup'),
             ),
             MoreTile(

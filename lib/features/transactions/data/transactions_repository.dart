@@ -283,6 +283,7 @@ class TransactionsRepository {
     required int amountPaise,
     required int transactionDate,
     String? note,
+    String? recurringRuleId,
   }) async {
     if (type != 'expense' && type != 'income') {
       throw ArgumentError.value(type, 'type', 'Expected expense or income.');
@@ -327,9 +328,42 @@ class TransactionsRepository {
               note: Value(note?.trim().isEmpty == true ? null : note?.trim()),
               createdAt: now,
               updatedAt: now,
+              recurringRuleId: Value(recurringRuleId),
             ),
           );
       return id;
     });
+  }
+
+  /// Saves an identical copy of [transactionId] on [transactionDate].
+  /// Fails like [createTransaction] when its Account is archived or its
+  /// category is hidden.
+  Future<String> duplicateTransaction(
+    String transactionId, {
+    required int transactionDate,
+  }) async {
+    final source = await getTransaction(transactionId);
+    if (source == null || source.deletedAt != null) {
+      throw StateError('Transaction was not found or is in Trash.');
+    }
+    return createTransaction(
+      accountId: source.accountId,
+      categoryId: source.categoryId,
+      type: source.type,
+      amountPaise: source.amountPaise,
+      transactionDate: transactionDate,
+      note: source.note,
+    );
+  }
+
+  /// Removes a just-created transaction outright, skipping Trash. Used to
+  /// undo a duplicate.
+  Future<void> discardTransaction(String transactionId) async {
+    final changed = await (_database.delete(
+      _database.transactions,
+    )..where((row) => row.id.equals(transactionId))).go();
+    if (changed == 0) {
+      throw StateError('Transaction was not found.');
+    }
   }
 }

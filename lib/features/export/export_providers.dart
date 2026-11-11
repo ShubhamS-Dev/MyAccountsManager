@@ -18,7 +18,13 @@ final fileSharerProvider = Provider<FileSharer>(
       (files, subject) => SharePlus.instance.share(
         ShareParams(
           files: [
-            for (final file in files) XFile(file.path, mimeType: 'text/csv'),
+            for (final file in files)
+              XFile(
+                file.path,
+                mimeType: file.path.endsWith('.csv')
+                    ? 'text/csv'
+                    : 'application/octet-stream',
+              ),
           ],
           subject: subject,
         ),

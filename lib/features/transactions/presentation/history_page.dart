@@ -4,18 +4,70 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/app_theme.dart';
 import '../../../app/app_widgets.dart';
+import '../../../app/date_range_chooser.dart';
 import '../../../app/icon_resolvers.dart';
 import '../../../app/privacy_state.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/formatting/date_timestamp.dart';
 import '../../../core/formatting/money_formatter.dart';
+import '../../../core/time/day_range.dart';
 import '../../../core/time/today_provider.dart';
 import '../../accounts/accounts_providers.dart';
 import '../data/transactions_repository.dart';
 import '../transactions_providers.dart';
+import 'transaction_copy_actions.dart';
+
+/// History as a full page, opened from Home and from Reports drill-downs.
+class HistoryScreen extends StatelessWidget {
+  const HistoryScreen({
+    this.accountId,
+    this.category,
+    this.type,
+    this.from,
+    this.through,
+    super.key,
+  });
+
+  final String? accountId;
+  final String? category;
+  final String? type;
+  final int? from;
+  final int? through;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('History')),
+    body: HistoryPage(
+      initialAccountId: accountId,
+      initialCategory: category,
+      initialType: type,
+      initialRange: from != null && through != null && from! <= through!
+          ? DayRange(from!, through!)
+          : null,
+    ),
+    floatingActionButton: FloatingActionButton(
+      onPressed: () => context.push('/transaction/new'),
+      tooltip: 'Add transaction',
+      child: const Icon(Icons.add_rounded),
+    ),
+  );
+}
 
 class HistoryPage extends ConsumerStatefulWidget {
-  const HistoryPage({super.key});
+  const HistoryPage({
+    this.initialAccountId,
+    this.initialCategory,
+    this.initialType,
+    this.initialRange,
+    super.key,
+  });
+
+  final String? initialAccountId;
+  final String? initialCategory;
+  final String? initialType;
+
+  /// Shows this range instead of a single month.
+  final DayRange? initialRange;
 
   @override
   ConsumerState<HistoryPage> createState() => _HistoryPageState();
@@ -23,10 +75,13 @@ class HistoryPage extends ConsumerStatefulWidget {
 
 class _HistoryPageState extends ConsumerState<HistoryPage> {
   final _search = TextEditingController();
-  String? _accountId;
-  String? _category;
-  String? _type;
+  late String? _accountId = widget.initialAccountId;
+  late String? _category = widget.initialCategory;
+  late String? _type = widget.initialType;
   DateTime _month = DateTime(DateTime.now().year, DateTime.now().month);
+
+  /// A chosen date range replaces the month view while set.
+  late DayRange? _range = widget.initialRange;
 
   static const _months = [
     'January',
@@ -53,6 +108,7 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
       DateTime.utc(date.year, date.month, date.day).millisecondsSinceEpoch;
 
   bool get _hasFilters =>
+      _range != null ||
       _accountId != null ||
       _category != null ||
       _type != null ||
@@ -137,13 +193,15 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
   }) async {
     var selectedAccount = _accountId;
     var selectedCategory = _category;
-    final result = await showModalBottomSheet<(String?, String?)>(
+    var selectedRange = _range;
+    final today = ref.read(todayProvider);
+    final result = await showModalBottomSheet<(String?, String?, DayRange?)>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
       builder: (sheetContext) => StatefulBuilder(
         builder: (context, setSheetState) => SafeArea(
-          child: Padding(
+          child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -152,6 +210,16 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                 const Text(
                   'Filter transactions',
                   style: AppTypography.screenTitle,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                const Text('Date range', style: AppTypography.sectionTitle),
+                const SizedBox(height: AppSpacing.sm),
+                DateRangeChooser(
+                  value: selectedRange,
+                  today: today,
+                  noneLabel: 'Month by month',
+                  onChanged: (range) =>
+                      setSheetState(() => selectedRange = range),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 const Text('Account', style: AppTypography.sectionTitle),
@@ -217,6 +285,7 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                         onPressed: () => setSheetState(() {
                           selectedAccount = null;
                           selectedCategory = null;
+                          selectedRange = null;
                         }),
                         child: const Text('Clear'),
                       ),
@@ -227,6 +296,7 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                         onPressed: () => Navigator.pop(sheetContext, (
                           selectedAccount,
                           selectedCategory,
+                          selectedRange,
                         )),
                         child: const Text('Apply'),
                       ),
@@ -243,6 +313,7 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
     setState(() {
       _accountId = result.$1;
       _category = result.$2;
+      _range = result.$3;
     });
   }
 
@@ -253,10 +324,16 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
     );
     final accountsAsync = ref.watch(allAccountsProvider);
     final colors = Theme.of(context).colorScheme;
-    final from = _day(DateTime(_month.year, _month.month));
-    final through = _day(
-      DateTime(_month.year, _month.month + 1).subtract(const Duration(days: 1)),
-    );
+    final range = _range;
+    final from = range?.from ?? _day(DateTime(_month.year, _month.month));
+    final through =
+        range?.through ??
+        _day(
+          DateTime(
+            _month.year,
+            _month.month + 1,
+          ).subtract(const Duration(days: 1)),
+        );
     final monthLabel = '${_months[_month.month - 1]} ${_month.year}';
     final today = ref.watch(todayProvider);
     final hidden = ref.watch(amountsHiddenProvider);
@@ -350,42 +427,51 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                   children: [
                     Row(
                       children: [
-                        const Expanded(
+                        Expanded(
                           child: Text(
-                            'Monthly overview',
+                            range == null ? 'Monthly overview' : 'Overview',
                             style: AppTypography.sectionTitle,
                           ),
                         ),
-                        _MonthPill(
-                          label: monthLabel,
-                          onPrevious: () => setState(
-                            () => _month = DateTime(
-                              _month.year,
-                              _month.month - 1,
+                        if (range != null)
+                          Flexible(
+                            flex: 3,
+                            child: _RangePill(
+                              label: range.label,
+                              onClear: () => setState(() => _range = null),
                             ),
-                          ),
-                          // Future months open only when something is
-                          // scheduled after this month.
-                          onNext:
-                              !_month.isBefore(
-                                    DateTime(
-                                      DateTime.now().year,
-                                      DateTime.now().month,
+                          )
+                        else
+                          _MonthPill(
+                            label: monthLabel,
+                            onPrevious: () => setState(
+                              () => _month = DateTime(
+                                _month.year,
+                                _month.month - 1,
+                              ),
+                            ),
+                            // Future months open only when something is
+                            // scheduled after this month.
+                            onNext:
+                                !_month.isBefore(
+                                      DateTime(
+                                        DateTime.now().year,
+                                        DateTime.now().month,
+                                      ),
+                                    ) &&
+                                    !items.any(
+                                      (item) =>
+                                          item.transaction.transactionDate >
+                                          through,
+                                    )
+                                ? null
+                                : () => setState(
+                                    () => _month = DateTime(
+                                      _month.year,
+                                      _month.month + 1,
                                     ),
-                                  ) &&
-                                  !items.any(
-                                    (item) =>
-                                        item.transaction.transactionDate >
-                                        through,
-                                  )
-                              ? null
-                              : () => setState(
-                                  () => _month = DateTime(
-                                    _month.year,
-                                    _month.month + 1,
                                   ),
-                                ),
-                        ),
+                          ),
                       ],
                     ),
                     const SizedBox(height: AppSpacing.sm),
@@ -469,9 +555,10 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                         error: (error, stack) => null,
                       ),
                       icon: const Icon(Icons.tune_rounded, size: 17),
-                      label: const Text('Account & Category filters'),
+                      label: const Text('Date, Account & Category filters'),
                     ),
-                    if (_accountId != null ||
+                    if (_range != null ||
+                        _accountId != null ||
                         _category != null ||
                         _type != null) ...[
                       const SizedBox(height: AppSpacing.xs),
@@ -479,6 +566,11 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                         spacing: AppSpacing.sm,
                         runSpacing: AppSpacing.xs,
                         children: [
+                          if (range != null)
+                            _SelectedFilterChip(
+                              label: range.label,
+                              onRemove: () => setState(() => _range = null),
+                            ),
                           if (_accountId != null)
                             _SelectedFilterChip(
                               label: selectedAccountName ?? 'Account',
@@ -528,6 +620,7 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                         icon: Icons.filter_alt_off_rounded,
                         actionLabel: 'Clear filters',
                         onAction: () => setState(() {
+                          _range = null;
                           _accountId = null;
                           _category = null;
                           _type = null;
@@ -565,6 +658,14 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                           '/transaction/${item.transaction.id}/edit',
                         ),
                         onTrash: () => _confirmTrash(item),
+                        onDuplicate: () => duplicateTransaction(
+                          context,
+                          ref,
+                          transactionId: item.transaction.id,
+                          accountId: item.transaction.accountId,
+                        ),
+                        onCopy: () =>
+                            copyTransactionAsNew(context, item.transaction.id),
                         onSwipeDelete: () => _moveToTrash(item),
                       );
                     }, childCount: group.value.length),
@@ -617,6 +718,48 @@ class _MonthPill extends StatelessWidget {
       ],
     ),
   );
+}
+
+class _RangePill extends StatelessWidget {
+  const _RangePill({required this.label, required this.onClear});
+
+  final String label;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.only(left: AppSpacing.md),
+      decoration: BoxDecoration(
+        color: scheme.primaryContainer,
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.date_range_rounded, size: 16, color: scheme.primary),
+          const SizedBox(width: AppSpacing.xs),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTypography.fieldValue.copyWith(
+                fontWeight: FontWeight.w700,
+                color: scheme.onPrimaryContainer,
+              ),
+            ),
+          ),
+          IconButton(
+            tooltip: 'Back to month view',
+            onPressed: onClear,
+            icon: const Icon(Icons.close_rounded, size: 18),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _SummaryCard extends StatelessWidget {
@@ -834,6 +977,8 @@ class _HistoryTile extends StatelessWidget {
     required this.onTap,
     required this.onEdit,
     required this.onTrash,
+    required this.onDuplicate,
+    required this.onCopy,
     required this.onSwipeDelete,
     this.scheduled = false,
     this.hidden = false,
@@ -846,6 +991,8 @@ class _HistoryTile extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onEdit;
   final VoidCallback onTrash;
+  final VoidCallback onDuplicate;
+  final VoidCallback onCopy;
   final Future<bool> Function() onSwipeDelete;
 
   @override
@@ -919,6 +1066,15 @@ class _HistoryTile extends StatelessWidget {
                           const ScheduledBadge(),
                           const SizedBox(width: AppSpacing.xs),
                         ],
+                        if (transaction.recurringRuleId != null) ...[
+                          Icon(
+                            Icons.repeat_rounded,
+                            size: 14,
+                            semanticLabel: 'Recurring',
+                            color: scheme.primary,
+                          ),
+                          const SizedBox(width: AppSpacing.xs),
+                        ],
                         Expanded(
                           child: Text(
                             '${item.categoryName} · ${item.accountName}',
@@ -947,11 +1103,37 @@ class _HistoryTile extends StatelessWidget {
                 tooltip: 'Transaction actions',
                 onSelected: (action) {
                   if (action == 'edit') onEdit();
+                  if (action == 'duplicate') onDuplicate();
+                  if (action == 'copy') onCopy();
                   if (action == 'trash') onTrash();
                 },
                 itemBuilder: (_) => const [
-                  PopupMenuItem(value: 'edit', child: Text('Edit')),
-                  PopupMenuItem(value: 'trash', child: Text('Move to Trash')),
+                  PopupMenuItem(
+                    value: 'edit',
+                    child: _MenuLabel(Icons.edit_outlined, 'Edit'),
+                  ),
+                  PopupMenuItem(
+                    value: 'duplicate',
+                    child: _MenuLabel(
+                      Icons.control_point_duplicate_rounded,
+                      'Duplicate',
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'copy',
+                    child: _MenuLabel(
+                      Icons.content_copy_rounded,
+                      'Copy as new',
+                    ),
+                  ),
+                  PopupMenuDivider(),
+                  PopupMenuItem(
+                    value: 'trash',
+                    child: _MenuLabel(
+                      Icons.delete_outline_rounded,
+                      'Move to Trash',
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -960,6 +1142,26 @@ class _HistoryTile extends StatelessWidget {
       ),
     );
   }
+}
+
+class _MenuLabel extends StatelessWidget {
+  const _MenuLabel(this.icon, this.label);
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      Icon(
+        icon,
+        size: 20,
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
+      const SizedBox(width: AppSpacing.sm + 4),
+      Text(label),
+    ],
+  );
 }
 
 class _HistoryShimmer extends StatefulWidget {

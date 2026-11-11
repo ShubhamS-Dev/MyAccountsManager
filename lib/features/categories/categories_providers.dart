@@ -13,6 +13,14 @@ final activeCategoriesByTypeProvider =
       return ref.watch(categoriesRepositoryProvider).watchActiveByType(type);
     });
 
+/// Active categories for transaction entry, most recently used first.
+final recentCategoriesByTypeProvider =
+    StreamProvider.family<List<CategoryRow>, String>((ref, type) {
+      return ref
+          .watch(categoriesRepositoryProvider)
+          .watchActiveByTypeByRecentUse(type);
+    });
+
 final allCategoriesByTypeProvider =
     StreamProvider.family<List<CategoryRow>, String>((ref, type) {
       return ref.watch(categoriesRepositoryProvider).watchAllByType(type);

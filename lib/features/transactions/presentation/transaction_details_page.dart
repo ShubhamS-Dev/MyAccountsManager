@@ -11,6 +11,7 @@ import '../../../core/time/today_provider.dart';
 import '../../accounts/accounts_providers.dart';
 import '../../categories/categories_providers.dart';
 import '../transactions_providers.dart';
+import 'transaction_copy_actions.dart';
 
 class TransactionDetailsPage extends ConsumerWidget {
   const TransactionDetailsPage({super.key, required this.transactionId});
@@ -133,6 +134,29 @@ class TransactionDetailsPage extends ConsumerWidget {
                 label: 'Transaction date',
                 value: DateOnly.format(row.transactionDate),
               ),
+              if (row.recurringRuleId != null)
+                ListTile(
+                  key: const ValueKey('transaction-recurring'),
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(Icons.repeat_rounded, color: colors.primary),
+                  title: Text(
+                    'Part of a recurring series',
+                    style: AppTypography.supporting.copyWith(
+                      color: colors.onSurface,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  subtitle: Text(
+                    'Changes here affect only this transaction.',
+                    style: AppTypography.metadata.copyWith(
+                      color: colors.onSurfaceVariant,
+                    ),
+                  ),
+                  trailing: TextButton(
+                    onPressed: () => context.push('/more/recurring'),
+                    child: const Text('Manage'),
+                  ),
+                ),
               _DetailRow(
                 label: 'Created',
                 value: AuditTimestamp.formatLocalDate(row.createdAt),
@@ -149,6 +173,44 @@ class TransactionDetailsPage extends ConsumerWidget {
                       context.push('/transaction/$transactionId/edit'),
                   icon: const Icon(Icons.edit_outlined, size: 16),
                   label: const Text('Edit transaction'),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      key: const ValueKey('transaction-duplicate'),
+                      onPressed: () => duplicateTransaction(
+                        context,
+                        ref,
+                        transactionId: row.id,
+                        accountId: row.accountId,
+                      ),
+                      icon: const Icon(Icons.control_point_duplicate_rounded),
+                      label: const Text('Duplicate'),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      key: const ValueKey('transaction-copy-as-new'),
+                      onPressed: () => copyTransactionAsNew(context, row.id),
+                      icon: const Icon(Icons.content_copy_rounded),
+                      label: const Text('Copy as new'),
+                    ),
+                  ),
+                ],
+              ),
+              Padding(
+                padding: const EdgeInsets.only(top: AppSpacing.xs),
+                child: Text(
+                  'Duplicate saves a copy dated today. Copy as new lets you '
+                  'change it first.',
+                  textAlign: TextAlign.center,
+                  style: AppTypography.metadata.copyWith(
+                    color: colors.onSurfaceVariant,
+                  ),
                 ),
               ),
             ],

@@ -11,12 +11,14 @@ import '../../../core/time/today_provider.dart';
 import '../../accounts/accounts_providers.dart';
 import '../../accounts/presentation/account_balance_label.dart';
 import '../../accounts/presentation/accounts_page.dart';
+import '../../budgets/budget_providers.dart';
+import '../../budgets/presentation/budget_page.dart';
 import '../../my_khata/khata_providers.dart';
 import '../../my_khata/presentation/my_khata_page.dart';
 import '../../notifications/notifications_providers.dart';
+import '../../reports/presentation/reports_page.dart';
 import '../../settings/presentation/more_page.dart';
 import '../../transactions/data/transactions_repository.dart';
-import '../../transactions/presentation/history_page.dart';
 import '../../transactions/transactions_providers.dart';
 
 class AppShell extends StatefulWidget {
@@ -35,7 +37,7 @@ class _AppShellState extends State<AppShell> {
       label: 'Accounts',
       icon: Icons.account_balance_wallet_rounded,
     ),
-    _ShellDestination(label: 'History', icon: Icons.receipt_long_rounded),
+    _ShellDestination(label: 'Reports', icon: Icons.insights_rounded),
     _ShellDestination(label: 'MyKhata', icon: Icons.people_alt_rounded),
     _ShellDestination(label: 'More', icon: Icons.grid_view_rounded),
   ];
@@ -56,9 +58,15 @@ class _AppShellState extends State<AppShell> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_destinations[_selectedIndex].label),
-        actions: const [
-          _ActivityBell(),
-          SizedBox(width: AppSpacing.sm),
+        actions: [
+          if (_selectedIndex == 0)
+            IconButton(
+              tooltip: 'History',
+              onPressed: () => context.push('/history'),
+              icon: const Icon(Icons.receipt_long_rounded),
+            ),
+          const _ActivityBell(),
+          const SizedBox(width: AppSpacing.sm),
         ],
       ),
       body: IndexedStack(
@@ -68,7 +76,7 @@ class _AppShellState extends State<AppShell> {
             onNavigate: (index) => setState(() => _selectedIndex = index),
           ),
           const AccountsPage(),
-          const HistoryPage(),
+          const ReportsPage(),
           const MyKhataPage(),
           const MorePage(),
         ],
@@ -372,6 +380,8 @@ class _HomeDashboardPageState extends ConsumerState<_HomeDashboardPage> {
             );
           },
         ),
+        const SizedBox(height: AppSpacing.sm),
+        const _BudgetSummary(),
         const SizedBox(height: AppSpacing.lg),
         const SectionHeader(title: 'Quick actions'),
         const SizedBox(height: AppSpacing.sm),
@@ -633,8 +643,8 @@ class _HomeDashboardPageState extends ConsumerState<_HomeDashboardPage> {
         const SizedBox(height: AppSpacing.lg),
         SectionHeader(
           title: 'Recent transactions',
-          action: 'See history',
-          onAction: () => widget.onNavigate(2),
+          action: 'View all',
+          onAction: () => context.push('/history'),
         ),
         const SizedBox(height: AppSpacing.sm),
         latestTransactions.when(
@@ -681,7 +691,7 @@ class _HomeDashboardPageState extends ConsumerState<_HomeDashboardPage> {
                   AppCard(
                     padding: EdgeInsets.zero,
                     child: ListTile(
-                      onTap: () => widget.onNavigate(2),
+                      onTap: () => context.push('/history'),
                       leading: Icon(
                         Icons.schedule_rounded,
                         color: scheme.secondary,
@@ -725,6 +735,60 @@ class _HomeDashboardPageState extends ConsumerState<_HomeDashboardPage> {
           },
         ),
       ],
+    );
+  }
+}
+
+/// Budget progress, or a prompt to set one.
+class _BudgetSummary extends ConsumerWidget {
+  const _BudgetSummary();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final scheme = Theme.of(context).colorScheme;
+    final status = ref.watch(budgetStatusProvider);
+    if (!status.hasValue) return const SizedBox.shrink();
+    final current = status.requireValue;
+    if (current != null) {
+      return BudgetProgressCard(
+        status: current,
+        onTap: () => context.push('/more/budgets'),
+      );
+    }
+    return AppCard(
+      key: const ValueKey('home-set-budget'),
+      onTap: () => context.push('/more/budgets'),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm + 4,
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.savings_outlined, color: scheme.primary),
+          const SizedBox(width: AppSpacing.sm + 4),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Set a monthly budget',
+                  style: AppTypography.fieldValue.copyWith(
+                    color: scheme.onSurface,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                Text(
+                  'Get alerts at 80% and 100%',
+                  style: AppTypography.metadata.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant),
+        ],
+      ),
     );
   }
 }

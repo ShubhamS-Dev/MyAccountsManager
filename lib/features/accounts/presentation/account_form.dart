@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../app/app_theme.dart';
 import '../../../app/app_widgets.dart';
+import '../../../app/icon_catalog.dart';
+import '../../../app/icon_picker_sheet.dart';
 import '../../../app/icon_resolvers.dart';
 
 /// Icon keys understood by [resolveAccountIcon].
@@ -108,17 +110,43 @@ class AccountIconPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final current = selected ?? 'wallet';
+    final custom = accountIconChoices.every((choice) => choice.$1 != current)
+        ? catalogIconFor(current)
+        : null;
     return Wrap(
       spacing: AppSpacing.sm,
       runSpacing: AppSpacing.sm,
       children: [
+        // A key picked from the full catalog shows first, selected.
+        if (custom != null)
+          CategoryChip(
+            label: custom.label,
+            icon: custom.icon,
+            selected: true,
+            onTap: () {},
+          ),
         for (final (key, label) in accountIconChoices)
           CategoryChip(
             label: label,
             icon: resolveAccountIcon(key),
-            selected: (selected ?? 'wallet') == key,
+            selected: current == key,
             onTap: () => onChanged(key),
           ),
+        CategoryChip(
+          key: const ValueKey('account-more-icons'),
+          label: 'More icons',
+          icon: Icons.grid_view_rounded,
+          selected: false,
+          onTap: () async {
+            final picked = await showIconPickerSheet(
+              context,
+              selected: current,
+              color: Theme.of(context).colorScheme.primary,
+            );
+            if (picked != null) onChanged(picked);
+          },
+        ),
       ],
     );
   }

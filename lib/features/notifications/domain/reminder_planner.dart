@@ -146,7 +146,11 @@ List<PlannedReminder> planReminders({
         PlannedReminder(
           key: 'transaction:${transaction.id}',
           fireAt: fireOn(transaction.transactionDate),
-          title: income
+          title: transaction.recurringRuleId != null
+              ? (income
+                    ? 'Recurring income added today'
+                    : 'Recurring expense added today')
+              : income
               ? 'Scheduled income counts from today'
               : 'Scheduled expense counts from today',
           body: details,

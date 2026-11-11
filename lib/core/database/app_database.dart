@@ -10,6 +10,7 @@ import 'tables/app_settings.dart';
 import 'tables/balance_adjustments.dart';
 import 'tables/categories.dart';
 import 'tables/khata.dart';
+import 'tables/recurring_rules.dart';
 import 'tables/transactions.dart';
 
 part 'app_database.g.dart';
@@ -24,6 +25,7 @@ part 'app_database.g.dart';
     KhataEntries,
     KhataRepayments,
     AppSettings,
+    RecurringRules,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -32,7 +34,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -67,6 +69,7 @@ class AppDatabase extends _$AppDatabase {
         'CREATE INDEX categories_type_active_sort_idx ON categories (type, is_active, sort_order)',
       );
       await _createKhataIndexes();
+      await _createRecurringIndexes();
     },
     onUpgrade: (migrator, from, to) async {
       if (from < 2) {
@@ -86,11 +89,23 @@ class AppDatabase extends _$AppDatabase {
         await migrator.createTable(appSettings);
         await _createKhataIndexes();
       }
+      if (from < 4) {
+        // Additive only: a new table and one nullable column.
+        await migrator.createTable(recurringRules);
+        await migrator.addColumn(transactions, transactions.recurringRuleId);
+        await _createRecurringIndexes();
+      }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
     },
   );
+
+  Future<void> _createRecurringIndexes() async {
+    await customStatement(
+      'CREATE INDEX transactions_recurring_rule_idx ON transactions (recurring_rule_id, transaction_date)',
+    );
+  }
 
   Future<void> _createKhataIndexes() async {
     await customStatement(

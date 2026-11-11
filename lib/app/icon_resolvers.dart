@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
+import 'icon_catalog.dart';
+
 IconData resolveAccountIcon(String? iconKey) {
+  final catalog = catalogIconFor(iconKey);
+  if (catalog != null) return catalog.icon;
   switch (iconKey?.trim().toLowerCase()) {
     case 'bank':
     case 'account_balance':
@@ -23,6 +27,8 @@ IconData resolveAccountIcon(String? iconKey) {
 }
 
 IconData resolveCategoryIcon(String? key, {required bool income}) {
+  final catalog = catalogIconFor(key);
+  if (catalog != null) return catalog.icon;
   switch (key?.trim().toLowerCase()) {
     case 'food':
     case 'restaurant':

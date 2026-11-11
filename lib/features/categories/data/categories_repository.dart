@@ -18,6 +18,28 @@ class CategoriesRepository {
         .watch();
   }
 
+  /// Active categories of a type, most recently used first. Categories never
+  /// used keep their configured order after the used ones.
+  Stream<List<CategoryRow>> watchActiveByTypeByRecentUse(String type) {
+    _requireType(type);
+    return _database
+        .customSelect(
+          'SELECT c.* FROM categories c '
+          'LEFT JOIN (SELECT category_id, MAX(created_at) AS last_used '
+          'FROM transactions WHERE deleted_at IS NULL '
+          'GROUP BY category_id) t ON t.category_id = c.id '
+          'WHERE c.type = ? AND c.is_active = 1 '
+          'ORDER BY t.last_used IS NULL, t.last_used DESC, c.sort_order ASC',
+          variables: [Variable.withString(type)],
+          readsFrom: {_database.categories, _database.transactions},
+        )
+        .watch()
+        .map(
+          (rows) =>
+              rows.map((row) => _database.categories.map(row.data)).toList(),
+        );
+  }
+
   /// All categories of a type, including hidden ones, for management.
   Stream<List<CategoryRow>> watchAllByType(String type) {
     _requireType(type);

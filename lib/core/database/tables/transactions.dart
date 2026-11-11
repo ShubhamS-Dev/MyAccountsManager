@@ -16,6 +16,10 @@ class Transactions extends Table {
   IntColumn get updatedAt => integer()();
   IntColumn get deletedAt => integer().nullable()();
 
+  /// The recurring rule that created this transaction, if any. Plain text,
+  /// not a foreign key, so the v4 migration can add it with ALTER TABLE.
+  TextColumn get recurringRuleId => text().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 

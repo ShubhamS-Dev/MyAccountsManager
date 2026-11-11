@@ -59,6 +59,15 @@ abstract class NotificationGateway {
   Future<void> replaceSchedule(List<PlannedReminder> reminders);
 
   Future<void> showTest({required String title, required String body});
+
+  /// Posts a notification right away, e.g. a budget alert. [key] gives it a
+  /// stable id, so a repeat replaces the earlier one.
+  Future<void> showNow({
+    required String key,
+    required String title,
+    required String body,
+    required String route,
+  });
 }
 
 /// Used in tests and on platforms without notification support.
@@ -95,6 +104,14 @@ class NoopNotificationGateway implements NotificationGateway {
   @override
   Future<void> showTest({required String title, required String body}) =>
       Future.value();
+
+  @override
+  Future<void> showNow({
+    required String key,
+    required String title,
+    required String body,
+    required String route,
+  }) => Future.value();
 }
 
 /// Android implementation backed by flutter_local_notifications.
@@ -256,6 +273,29 @@ class LocalNotificationGateway implements NotificationGateway {
       body: body,
       notificationDetails: _details(body),
       payload: '/activity',
+    );
+  }
+
+  @override
+  Future<void> showNow({
+    required String key,
+    required String title,
+    required String body,
+    required String route,
+  }) async {
+    await _initialized;
+    await _plugin.show(
+      id: PlannedReminder(
+        key: key,
+        fireAt: DateTime(0),
+        title: title,
+        body: body,
+        route: route,
+      ).id,
+      title: title,
+      body: body,
+      notificationDetails: _details(body),
+      payload: route,
     );
   }
 

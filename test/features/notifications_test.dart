@@ -49,6 +49,7 @@ TransactionHistoryItem scheduledTransaction({
   String type = 'expense',
   int amount = 120000,
   required int date,
+  String? recurringRuleId,
 }) => TransactionHistoryItem(
   transaction: TransactionRow(
     id: id,
@@ -59,6 +60,7 @@ TransactionHistoryItem scheduledTransaction({
     transactionDate: date,
     createdAt: 0,
     updatedAt: 0,
+    recurringRuleId: recurringRuleId,
   ),
   accountName: 'HDFC Savings',
   categoryName: 'Rent',
@@ -248,6 +250,27 @@ void main() {
       );
       expect(shown.single.body, startsWith('₹'));
     });
+
+    test(
+      'says recurring when the scheduled transaction is part of a series',
+      () {
+        final reminders = plan(
+          scheduled: [
+            scheduledTransaction(date: today + 5 * day, recurringRuleId: 'r1'),
+            scheduledTransaction(
+              id: 't2',
+              type: 'income',
+              date: today + 6 * day,
+              recurringRuleId: 'r2',
+            ),
+          ],
+        );
+        expect(reminders.map((r) => r.title), [
+          'Recurring expense added today',
+          'Recurring income added today',
+        ]);
+      },
+    );
 
     test('orders nearest first and caps the pending count', () {
       final reminders = plan(

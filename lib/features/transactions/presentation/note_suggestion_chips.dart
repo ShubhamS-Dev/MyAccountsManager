@@ -32,40 +32,39 @@ class NoteSuggestionChips extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.xs),
-          SizedBox(
-            height: AppSpacing.touchTarget,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: notes.length,
-              separatorBuilder: (context, index) =>
-                  const SizedBox(width: AppSpacing.sm),
-              itemBuilder: (context, index) {
-                final note = notes[index];
-                return Material(
-                  key: ValueKey('note-suggestion-$index'),
-                  color: scheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                  child: InkWell(
-                    onTap: () => onSelected(note),
+          // Chips size to their text; the row scrolls when it overflows.
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                for (var index = 0; index < notes.length; index++) ...[
+                  if (index > 0) const SizedBox(width: AppSpacing.sm),
+                  Material(
+                    key: ValueKey('note-suggestion-$index'),
+                    color: scheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(AppRadius.pill),
-                    child: Container(
-                      constraints: const BoxConstraints(maxWidth: 220),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.md,
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        note,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTypography.supporting.copyWith(
-                          color: scheme.onSurface,
+                    child: InkWell(
+                      onTap: () => onSelected(notes[index]),
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                      child: Container(
+                        constraints: const BoxConstraints(maxWidth: 220),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.sm + AppSpacing.xs,
+                          vertical: AppSpacing.xs + 2,
+                        ),
+                        child: Text(
+                          notes[index],
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTypography.fieldValue.copyWith(
+                            color: scheme.onSurface,
+                          ),
                         ),
                       ),
                     ),
                   ),
-                );
-              },
+                ],
+              ],
             ),
           ),
         ],

@@ -8,32 +8,41 @@ import 'package:go_router/go_router.dart';
 import '../../../app/app_form_widgets.dart';
 import '../../../app/app_theme.dart';
 import '../../../app/app_widgets.dart';
-import '../../../app/icon_resolvers.dart';
 import '../../../app/privacy_state.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/formatting/date_timestamp.dart';
-import '../../../core/formatting/indian_amount_input_formatter.dart';
 import '../../../core/formatting/money_formatter.dart';
 import '../../../core/time/today_provider.dart';
 import '../../accounts/accounts_providers.dart';
 import '../../categories/categories_providers.dart';
+import '../../recurring/domain/recurrence.dart';
+import '../../recurring/recurring_providers.dart';
 import '../transactions_providers.dart';
 import 'note_suggestion_chips.dart';
-
-enum TransactionKind { expense, income }
+import 'transaction_form_widgets.dart';
 
 class AddTransactionPage extends ConsumerStatefulWidget {
-  const AddTransactionPage({super.key, this.initialType});
+  const AddTransactionPage({
+    super.key,
+    this.initialType,
+    this.initialAccountId,
+    this.copyFromId,
+  });
 
   final String? initialType;
+
+  /// Preselects this Account, e.g. when opened from Account Details.
+  final String? initialAccountId;
+
+  /// Prefills type, Account, category, amount and note from this
+  /// transaction ("Copy as new"). The date stays today.
+  final String? copyFromId;
 
   @override
   ConsumerState<AddTransactionPage> createState() => _AddTransactionPageState();
 }
 
 class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
-  static const int _maxAmountPaise = 99999999999999;
-
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
   final _noteController = TextEditingController();
@@ -45,6 +54,8 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
   String? _categoryId;
   DateTime _date = DateTime.now();
   bool _saving = false;
+  RecurringFrequency? _repeat;
+  DateTime? _repeatEnd;
 
   // Note-driven suggestions. Once the user picks a Category themselves the
   // suggestion never overrides it.
@@ -55,9 +66,13 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
   int _suggestRequest = 0;
 
   // Unsaved-changes tracking for the back-navigation guard.
-  late final String _pristine = _snapshot;
-  String get _snapshot =>
-      [_amountController.text, _noteController.text, _date].join('\u0000');
+  late String _pristine = _snapshot;
+  String get _snapshot => [
+    _amountController.text,
+    _noteController.text,
+    _date,
+    _repeat,
+  ].join('\u0000');
   bool get _dirty => !_saving && !_saved && _snapshot != _pristine;
   bool _saved = false;
   bool _showValidation = false;
@@ -70,7 +85,39 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
     if (widget.initialType == 'income') {
       _kind = TransactionKind.income;
     }
+    _accountId = widget.initialAccountId;
     _noteController.addListener(_noteChanged);
+    if (widget.copyFromId != null) _prefillFromCopy(widget.copyFromId!);
+  }
+
+  Future<void> _prefillFromCopy(String transactionId) async {
+    TransactionRow? source;
+    try {
+      source = await ref
+          .read(transactionsRepositoryProvider)
+          .getTransaction(transactionId);
+    } catch (_) {
+      // Fall back to a blank form; copying is a convenience.
+    }
+    if (!mounted || source == null) return;
+    final amount = MoneyFormatter.formatPaise(
+      source.amountPaise,
+      includeSymbol: false,
+    );
+    setState(() {
+      _kind = source!.type == 'income'
+          ? TransactionKind.income
+          : TransactionKind.expense;
+      // An archived Account or hidden category is dropped by the build
+      // checks, so the user picks an active one instead.
+      _accountId = source.accountId;
+      _categoryId = source.categoryId;
+      _categoryTouched = true;
+      _amountController.text = amount;
+      _noteController.text = source.note ?? '';
+      // Leaving an untouched copy should not prompt about unsaved changes.
+      _pristine = _snapshot;
+    });
   }
 
   void _noteChanged() {
@@ -124,21 +171,11 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
     super.dispose();
   }
 
-  int? _parsePaise(String raw) {
-    final value = raw.trim();
-    if (value.isEmpty ||
-        !RegExp(
-          r'^\d{1,12}(\.\d{1,2})?$',
-        ).hasMatch(value.replaceAll(',', ''))) {
-      return null;
-    }
-    try {
-      final paise = MoneyFormatter.parseRupeesToPaise(value);
-      return paise > 0 && paise <= _maxAmountPaise ? paise : null;
-    } on FormatException {
-      return null;
-    }
-  }
+  /// The type's "Others" category, used when the user saves without picking.
+  String? _fallbackCategoryId() => othersCategoryId(
+    ref.read(recentCategoriesByTypeProvider(_kind.name)).valueOrNull ??
+        const <CategoryRow>[],
+  );
 
   bool _isToday(DateTime date) {
     final now = DateTime.now();
@@ -150,13 +187,6 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
   String _dateLabel() => _isToday(_date)
       ? 'Today'
       : DateOnly.format(DateOnly.toUtcEpochMilliseconds(_date));
-
-  Color _accent() {
-    final scheme = Theme.of(context).colorScheme;
-    return _kind == TransactionKind.expense
-        ? scheme.negativeText
-        : scheme.positiveText;
-  }
 
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
@@ -188,12 +218,12 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
   void _addQuickAmount(int rupees) {
     final current = _amountController.text.trim().isEmpty
         ? 0
-        : _parsePaise(_amountController.text) ?? 0;
+        : parseTransactionAmountPaise(_amountController.text) ?? 0;
     final next = current + rupees * 100;
-    if (next > _maxAmountPaise) {
+    if (next > maxTransactionAmountPaise) {
       setState(() {
         _amountError =
-            'Maximum amount is ${MoneyFormatter.formatPaise(_maxAmountPaise)}.';
+            'Maximum amount is ${MoneyFormatter.formatPaise(maxTransactionAmountPaise)}.';
       });
       return;
     }
@@ -213,21 +243,26 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
       _amountError = null;
     });
 
-    final valid = _formKey.currentState?.validate() ?? false;
-    if (!valid || _accountId == null || _categoryId == null) {
-      if (_accountId == null) {
+    final amountError = validateTransactionAmount(_amountController.text);
+    _categoryId ??= _fallbackCategoryId();
+    if (amountError != null || _accountId == null || _categoryId == null) {
+      if (amountError != null) setState(() => _amountError = amountError);
+      if (amountError != null) {
+        // The amount message is shown under the field.
+      } else if (_accountId == null) {
         setState(() => _error = 'Select an Account to continue.');
       } else if (_categoryId == null) {
         setState(() => _error = 'Select a Category to continue.');
       }
       return;
     }
-    final amountPaise = _parsePaise(_amountController.text);
+    final amountPaise = parseTransactionAmountPaise(_amountController.text);
     if (amountPaise == null) return;
 
     setState(() => _saving = true);
+    final messenger = ScaffoldMessenger.of(context);
     try {
-      await ref
+      final transactionId = await ref
           .read(transactionsRepositoryProvider)
           .createTransaction(
             accountId: _accountId!,
@@ -237,6 +272,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
             transactionDate: DateOnly.toUtcEpochMilliseconds(_date),
             note: _noteController.text,
           );
+      if (_repeat != null) await _startSeries(transactionId, messenger);
       ref.invalidate(accountBalancePaiseProvider(_accountId!));
       if (!mounted) return;
       try {
@@ -262,19 +298,51 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
     }
   }
 
+  /// The transaction is already saved; a failed series is reported, not
+  /// treated as a failed save.
+  Future<void> _startSeries(
+    String transactionId,
+    ScaffoldMessengerState messenger,
+  ) async {
+    final end = _repeatEnd;
+    try {
+      await ref
+          .read(recurringRepositoryProvider)
+          .createFromTransaction(
+            transactionId: transactionId,
+            frequency: _repeat!,
+            today: ref.read(todayProvider),
+            endDate: end != null && end.isAfter(_date)
+                ? DateOnly.toUtcEpochMilliseconds(end)
+                : null,
+          );
+    } catch (_) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Transaction saved, but the repeat could not be set up.',
+          ),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) =>
       UnsavedChangesGuard(dirty: _dirty, child: _buildPage(context));
 
   Widget _buildPage(BuildContext context) {
     final accounts = ref.watch(activeAccountsProvider);
-    final categories = ref.watch(activeCategoriesByTypeProvider(_kind.name));
+    final categories = ref.watch(recentCategoriesByTypeProvider(_kind.name));
     final scheme = Theme.of(context).colorScheme;
-    final accent = _accent();
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      appBar: AppBar(title: const Text('Add transaction')),
+      appBar: AppBar(
+        title: Text(
+          widget.copyFromId == null ? 'Add transaction' : 'Copy transaction',
+        ),
+      ),
       body: accounts.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(
@@ -317,7 +385,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                 AppSpacing.lg,
               ),
               children: [
-                _TypeSelector(
+                TransactionTypeSelector(
                   kind: _kind,
                   onChanged: (kind) {
                     setState(() {
@@ -334,7 +402,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                 const SizedBox(height: AppSpacing.md),
                 KeyedSubtree(
                   key: const ValueKey('add-transaction-account'),
-                  child: _AccountSelector(
+                  child: TransactionAccountSelector(
                     accounts: accountRows,
                     selectedId: _accountId,
                     hidden: ref.watch(amountsHiddenProvider),
@@ -346,7 +414,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                 const SizedBox(height: AppSpacing.md),
                 KeyedSubtree(
                   key: const ValueKey('add-transaction-date'),
-                  child: _DateSelector(
+                  child: TransactionDateSelector(
                     date: _date,
                     label: _dateLabel(),
                     onDate: (date) => setState(() => _date = date),
@@ -357,14 +425,14 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                   DateOnly.toUtcEpochMilliseconds(_date),
                   ref.watch(todayProvider),
                 ))
-                  const _ScheduledNote(),
+                  const TransactionScheduledNote(),
                 const SizedBox(height: AppSpacing.md),
                 KeyedSubtree(
                   key: const ValueKey('add-transaction-note'),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      _NoteInput(controller: _noteController),
+                      TransactionNoteInput(controller: _noteController),
                       if (_noteController.text.trim().isEmpty)
                         NoteSuggestionChips(
                           key: const ValueKey('add-transaction-recent-notes'),
@@ -389,24 +457,19 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                 const SizedBox(height: AppSpacing.md),
                 KeyedSubtree(
                   key: const ValueKey('add-transaction-amount'),
-                  child: _AmountInput(
+                  child: TransactionAmountInput(
                     controller: _amountController,
                     kind: _kind,
-                    accent: accent,
                     error: _amountError,
-                    onChanged: (_) {
-                      if (_amountError != null) {
-                        setState(() => _amountError = null);
+                    onChanged: (value) {
+                      final error = value.trim().isEmpty && !_showValidation
+                          ? null
+                          : validateTransactionAmount(value);
+                      if (error != _amountError) {
+                        setState(() => _amountError = error);
                       }
                     },
                     onQuickAdd: _addQuickAmount,
-                    validator: (value) {
-                      final amount = _parsePaise(value ?? '');
-                      if (amount == null) {
-                        return 'Enter an amount greater than ₹0 (up to 2 decimal places).';
-                      }
-                      return null;
-                    },
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -416,7 +479,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                     loading: () => const LinearProgressIndicator(),
                     error: (error, stack) => TextButton(
                       onPressed: () => ref.invalidate(
-                        activeCategoriesByTypeProvider(_kind.name),
+                        recentCategoriesByTypeProvider(_kind.name),
                       ),
                       child: const Text('Could not load categories. Retry'),
                     ),
@@ -427,13 +490,10 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                           )) {
                         _categoryId = null;
                       }
-                      return _CategorySelector(
+                      return TransactionCategorySelector(
                         categories: categoryRows,
                         selectedId: _categoryId,
-                        suggested:
-                            !_categoryTouched &&
-                            _categoryId != null &&
-                            _categoryId == _suggestedCategoryId,
+                        suggestedId: _suggestedCategoryId,
                         kind: _kind,
                         showValidation: _showValidation,
                         onSelected: (id) => setState(() {
@@ -443,6 +503,18 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                         }),
                       );
                     },
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                KeyedSubtree(
+                  key: const ValueKey('add-transaction-repeat'),
+                  child: TransactionRepeatSelector(
+                    frequency: _repeat,
+                    startDate: _date,
+                    endDate: _repeatEnd,
+                    onFrequency: (frequency) =>
+                        setState(() => _repeat = frequency),
+                    onEndDate: (date) => setState(() => _repeatEnd = date),
                   ),
                 ),
                 if (_error != null) ...[
@@ -492,773 +564,4 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
       ),
     );
   }
-}
-
-class _TypeSelector extends StatelessWidget {
-  const _TypeSelector({required this.kind, required this.onChanged});
-
-  final TransactionKind kind;
-  final ValueChanged<TransactionKind> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final expense = kind == TransactionKind.expense;
-    final selectedBackground = expense
-        ? scheme.errorContainer
-        : scheme.tertiaryContainer;
-    final selectedForeground = expense
-        ? scheme.onErrorContainer
-        : scheme.onTertiaryContainer;
-
-    return Container(
-      height: 48,
-      padding: EdgeInsets.zero,
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-      ),
-      child: Stack(
-        children: [
-          AnimatedAlign(
-            alignment: expense ? Alignment.centerLeft : Alignment.centerRight,
-            duration: const Duration(milliseconds: 180),
-            curve: Curves.easeOut,
-            child: FractionallySizedBox(
-              widthFactor: .5,
-              heightFactor: 1,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                decoration: BoxDecoration(
-                  color: selectedBackground,
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                ),
-              ),
-            ),
-          ),
-          Row(
-            children: [
-              _TypeOption(
-                label: 'Expense',
-                icon: Icons.north_east_rounded,
-                selected: expense,
-                selectedColor: selectedForeground,
-                onTap: () => onChanged(TransactionKind.expense),
-              ),
-              _TypeOption(
-                label: 'Income',
-                icon: Icons.south_west_rounded,
-                selected: !expense,
-                selectedColor: selectedForeground,
-                onTap: () => onChanged(TransactionKind.income),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TypeOption extends StatelessWidget {
-  const _TypeOption({
-    required this.label,
-    required this.icon,
-    required this.selected,
-    required this.selectedColor,
-    required this.onTap,
-  });
-
-  final String label;
-  final IconData icon;
-  final bool selected;
-  final Color selectedColor;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Expanded(
-      child: Semantics(
-        button: true,
-        selected: selected,
-        child: InkWell(
-          key: ValueKey(
-            'transaction-kind-${label.toLowerCase()}-${selected ? 'selected' : 'unselected'}',
-          ),
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(AppRadius.pill),
-          child: SizedBox(
-            height: 48,
-            child: Center(
-              child: AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 160),
-                style: AppTypography.button.copyWith(
-                  color: selected ? selectedColor : scheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w700,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      icon,
-                      size: 16,
-                      color: selected ? selectedColor : scheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: AppSpacing.xs),
-                    Text(label),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _AccountSelector extends StatelessWidget {
-  const _AccountSelector({
-    required this.accounts,
-    required this.selectedId,
-    required this.hidden,
-    required this.keys,
-    required this.controller,
-    required this.onSelected,
-  });
-
-  final List<AccountRow> accounts;
-  final String? selectedId;
-  final bool hidden;
-  final Map<String, GlobalKey> keys;
-  final ScrollController controller;
-  final ValueChanged<String> onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _FieldHeading(title: 'Account'),
-        const SizedBox(height: AppSpacing.sm),
-        SizedBox(
-          height: 20 + MediaQuery.textScalerOf(context).scale(48),
-          child: ListView.separated(
-            controller: controller,
-            scrollDirection: Axis.horizontal,
-            itemCount: accounts.length,
-            separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.sm),
-            itemBuilder: (context, index) {
-              final account = accounts[index];
-              final selected = account.id == selectedId;
-              final color = account.colorValue == null
-                  ? scheme.primary
-                  : Color(account.colorValue!);
-              final key = keys.putIfAbsent(
-                account.id,
-                () => GlobalKey(debugLabel: 'account-${account.id}'),
-              );
-              return SizedBox(
-                key: key,
-                width: 150,
-                child: Material(
-                  color: selected ? scheme.primaryContainer : scheme.surface,
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                  child: InkWell(
-                    onTap: () => onSelected(account.id),
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 160),
-                      padding: const EdgeInsets.all(AppSpacing.sm),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(AppRadius.md),
-                        border: Border.all(
-                          color: selected
-                              ? scheme.primary
-                              : scheme.outlineVariant,
-                          width: selected ? 1.5 : 1,
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                resolveAccountIcon(account.iconKey),
-                                size: 17,
-                                color: color,
-                              ),
-                              const SizedBox(width: AppSpacing.xs),
-                              Expanded(
-                                child: Text(
-                                  account.name,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: AppTypography.fieldValue.copyWith(
-                                    color: scheme.onSurface,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ),
-                              if (account.isPinned)
-                                Icon(
-                                  Icons.push_pin_rounded,
-                                  size: 12,
-                                  color: scheme.onSurfaceVariant,
-                                ),
-                            ],
-                          ),
-                          const SizedBox(height: AppSpacing.xs),
-                          _AccountBalance(
-                            accountId: account.id,
-                            hidden: hidden,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _AccountBalance extends ConsumerWidget {
-  const _AccountBalance({required this.accountId, required this.hidden});
-
-  final String accountId;
-  final bool hidden;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final scheme = Theme.of(context).colorScheme;
-    if (hidden) {
-      return Text(
-        hiddenAmountMask,
-        semanticsLabel: 'amount hidden',
-        style: AppTypography.metadata.copyWith(color: scheme.onSurfaceVariant),
-      );
-    }
-    final balance = ref.watch(accountBalancePaiseProvider(accountId));
-    return balance.when(
-      loading: () => Text(
-        'Balance',
-        style: AppTypography.metadata.copyWith(color: scheme.onSurfaceVariant),
-      ),
-      error: (error, stack) => Text(
-        'Unavailable',
-        style: AppTypography.metadata.copyWith(color: scheme.error),
-      ),
-      data: (value) => Text(
-        MoneyFormatter.formatPaise(value ?? 0),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: AppTypography.metadata.copyWith(
-          color: scheme.onSurfaceVariant,
-          fontFeatures: const [FontFeature.tabularFigures()],
-        ),
-      ),
-    );
-  }
-}
-
-class _DateSelector extends StatelessWidget {
-  const _DateSelector({
-    required this.date,
-    required this.label,
-    required this.onDate,
-    required this.onPick,
-  });
-
-  final DateTime date;
-  final String label;
-  final ValueChanged<DateTime> onDate;
-  final VoidCallback onPick;
-
-  @override
-  Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final yesterday = today.subtract(const Duration(days: 1));
-    final isToday =
-        date.year == today.year &&
-        date.month == today.month &&
-        date.day == today.day;
-    final isYesterday =
-        date.year == yesterday.year &&
-        date.month == yesterday.month &&
-        date.day == yesterday.day;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _FieldHeading(title: 'Transaction date'),
-        const SizedBox(height: AppSpacing.sm),
-        Wrap(
-          spacing: AppSpacing.sm,
-          runSpacing: AppSpacing.xs,
-          children: [
-            _DateChoice(
-              label: 'Today',
-              selected: isToday,
-              onTap: () => onDate(today),
-            ),
-            _DateChoice(
-              label: 'Yesterday',
-              selected: isYesterday,
-              onTap: () => onDate(yesterday),
-            ),
-            _DateChoice(
-              label: 'Pick date',
-              selected: !isToday && !isYesterday,
-              icon: Icons.calendar_month_rounded,
-              onTap: onPick,
-            ),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        if (!isToday)
-          Text(
-            label,
-            style: AppTypography.metadata.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-class _DateChoice extends StatelessWidget {
-  const _DateChoice({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-    this.icon,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  final IconData? icon;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Material(
-      color: selected ? scheme.primaryContainer : scheme.surface,
-      borderRadius: BorderRadius.circular(AppRadius.pill),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 40),
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppRadius.pill),
-            border: Border.all(
-              color: selected ? scheme.primary : scheme.outlineVariant,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (icon != null) ...[
-                Icon(
-                  icon,
-                  size: 15,
-                  color: selected ? scheme.primary : scheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: AppSpacing.xs),
-              ],
-              Text(
-                label,
-                style: AppTypography.button.copyWith(
-                  color: selected
-                      ? scheme.onPrimaryContainer
-                      : scheme.onSurface,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _NoteInput extends StatelessWidget {
-  const _NoteInput({required this.controller});
-
-  final TextEditingController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _FieldHeading(title: 'Note', hint: 'Optional'),
-        const SizedBox(height: AppSpacing.sm),
-        AppCard(
-          radius: AppRadius.md,
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.xs,
-          ),
-          child: TextField(
-            key: const ValueKey('add-transaction-note-input'),
-            controller: controller,
-            maxLength: 500,
-            minLines: 1,
-            maxLines: 4,
-            textCapitalization: TextCapitalization.sentences,
-            style: AppTypography.fieldValue.copyWith(color: scheme.onSurface),
-            decoration: InputDecoration(
-              hintText: 'What was this transaction for?',
-              filled: false,
-              fillColor: Colors.transparent,
-              isDense: true,
-              border: InputBorder.none,
-              enabledBorder: InputBorder.none,
-              focusedBorder: InputBorder.none,
-              contentPadding: EdgeInsets.zero,
-              counter: controller.text.length > 400
-                  ? Text(
-                      '${controller.text.length}/500',
-                      style: AppTypography.metadata.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
-                    )
-                  : const SizedBox.shrink(),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _AmountInput extends StatelessWidget {
-  const _AmountInput({
-    required this.controller,
-    required this.kind,
-    required this.accent,
-    required this.error,
-    required this.onChanged,
-    required this.onQuickAdd,
-    required this.validator,
-  });
-
-  final TextEditingController controller;
-  final TransactionKind kind;
-  final Color accent;
-  final String? error;
-  final ValueChanged<String> onChanged;
-  final ValueChanged<int> onQuickAdd;
-  final FormFieldValidator<String> validator;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _FieldHeading(title: 'Amount'),
-        const SizedBox(height: AppSpacing.sm),
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          decoration: BoxDecoration(
-            color: scheme.surface,
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            border: Border.all(
-              color: error == null ? scheme.outlineVariant : scheme.error,
-            ),
-          ),
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.sm,
-          ),
-          child: Row(
-            children: [
-              Align(
-                alignment: Alignment.center,
-                child: AnimatedDefaultTextStyle(
-                  duration: const Duration(milliseconds: 180),
-                  style: AppTypography.amountInput.copyWith(color: accent),
-                  child: const Text('₹'),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: TextFormField(
-                  key: const ValueKey('add-transaction-amount-input'),
-                  controller: controller,
-                  textAlignVertical: TextAlignVertical.center,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  inputFormatters: const [IndianAmountInputFormatter()],
-                  validator: validator,
-                  onChanged: onChanged,
-                  autovalidateMode: AutovalidateMode.onUserInteraction,
-                  style: AppTypography.amountInput.copyWith(
-                    color: accent,
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                  ),
-                  decoration: InputDecoration(
-                    hintText: '0.00',
-                    hintStyle: AppTypography.amountInput.copyWith(
-                      color: scheme.onSurfaceVariant.withValues(alpha: .55),
-                    ),
-                    filled: false,
-                    fillColor: Colors.transparent,
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    errorBorder: InputBorder.none,
-                    focusedErrorBorder: InputBorder.none,
-                    contentPadding: EdgeInsets.zero,
-                    isDense: true,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        if (error != null) ...[
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            error!,
-            style: AppTypography.supporting.copyWith(color: scheme.error),
-          ),
-        ],
-        const SizedBox(height: AppSpacing.sm),
-        Row(
-          children: [
-            Expanded(
-              child: _QuickAddChip(label: '+100', onTap: () => onQuickAdd(100)),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: _QuickAddChip(label: '+500', onTap: () => onQuickAdd(500)),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: _QuickAddChip(
-                label: '+1,000',
-                onTap: () => onQuickAdd(1000),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        Text(
-          kind == TransactionKind.expense
-              ? 'How much did you spend?'
-              : 'How much did you receive?',
-          style: AppTypography.supporting.copyWith(
-            color: scheme.onSurfaceVariant,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _QuickAddChip extends StatelessWidget {
-  const _QuickAddChip({required this.label, required this.onTap});
-
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Material(
-      color: scheme.surfaceContainerHighest,
-      borderRadius: BorderRadius.circular(AppRadius.pill),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-        child: Container(
-          constraints: const BoxConstraints(minHeight: AppSpacing.touchTarget),
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-          alignment: Alignment.center,
-          child: Text(
-            label,
-            style: AppTypography.button.copyWith(color: scheme.onSurface),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CategorySelector extends StatelessWidget {
-  const _CategorySelector({
-    required this.categories,
-    required this.selectedId,
-    required this.suggested,
-    required this.kind,
-    required this.showValidation,
-    required this.onSelected,
-  });
-
-  final List<CategoryRow> categories;
-  final String? selectedId;
-  final bool suggested;
-  final TransactionKind kind;
-  final bool showValidation;
-  final ValueChanged<String> onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final income = kind == TransactionKind.income;
-    final accent = income ? scheme.positiveText : scheme.negativeText;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _FieldHeading(
-          title: 'Category',
-          hint: suggested ? 'Suggested from note' : null,
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        if (categories.isEmpty)
-          AppCard(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            child: Text(
-              'No active categories for this transaction type.',
-              style: AppTypography.supporting.copyWith(
-                color: scheme.onSurfaceVariant,
-              ),
-            ),
-          )
-        else
-          Wrap(
-            spacing: AppSpacing.sm,
-            runSpacing: AppSpacing.sm,
-            children: [
-              for (final category in categories)
-                _CategoryChoice(
-                  category: category,
-                  selected: category.id == selectedId,
-                  accent: accent,
-                  income: income,
-                  onTap: () => onSelected(category.id),
-                ),
-            ],
-          ),
-        if (showValidation && selectedId == null) ...[
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            'Select a category.',
-            style: AppTypography.supporting.copyWith(color: scheme.error),
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-class _CategoryChoice extends StatelessWidget {
-  const _CategoryChoice({
-    required this.category,
-    required this.selected,
-    required this.accent,
-    required this.income,
-    required this.onTap,
-  });
-
-  final CategoryRow category;
-  final bool selected;
-  final Color accent;
-  final bool income;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = category.colorValue == null
-        ? accent
-        : Color(category.colorValue!);
-    return AnimatedScale(
-      scale: selected ? 1.025 : 1,
-      duration: const Duration(milliseconds: 160),
-      curve: Curves.easeOut,
-      child: CategoryChip(
-        label: category.name,
-        icon: resolveCategoryIcon(
-          category.iconKey ?? category.name,
-          income: income,
-        ),
-        selected: selected,
-        color: color,
-        iconColor: color,
-        onTap: onTap,
-      ),
-    );
-  }
-}
-
-class _FieldHeading extends StatelessWidget {
-  const _FieldHeading({required this.title, this.hint});
-
-  final String title;
-  final String? hint;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Row(
-      children: [
-        Text(
-          title,
-          style: AppTypography.fieldLabel.copyWith(color: scheme.onSurface),
-        ),
-        if (hint != null) ...[
-          const SizedBox(width: AppSpacing.xs),
-          Text(
-            hint!,
-            style: AppTypography.metadata.copyWith(
-              color: scheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-/// Explains that a future-dated transaction is saved as Scheduled.
-class _ScheduledNote extends StatelessWidget {
-  const _ScheduledNote();
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(top: AppSpacing.xs),
-    child: Row(
-      children: [
-        const ScheduledBadge(),
-        const SizedBox(width: AppSpacing.sm),
-        Expanded(
-          child: Text(
-            'Counts towards balances on this date.',
-            style: AppTypography.supporting.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
 }

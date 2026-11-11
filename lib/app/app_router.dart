@@ -5,6 +5,8 @@ import '../features/accounts/presentation/account_details_page.dart';
 import '../features/accounts/presentation/archived_accounts_page.dart';
 import '../features/accounts/presentation/create_account_page.dart';
 import '../features/accounts/presentation/edit_account_page.dart';
+import '../features/backup/presentation/backup_page.dart';
+import '../features/budgets/presentation/budget_page.dart';
 import '../features/categories/presentation/categories_page.dart';
 import '../features/export/presentation/export_page.dart';
 import '../features/my_khata/presentation/khata_entry_details_page.dart';
@@ -14,11 +16,13 @@ import '../features/my_khata/presentation/person_form_page.dart';
 import '../features/my_khata/presentation/record_repayment_page.dart';
 import '../features/notifications/presentation/activity_center_page.dart';
 import '../features/notifications/presentation/notification_settings_page.dart';
+import '../features/recurring/presentation/recurring_page.dart';
 import '../features/settings/presentation/appearance_page.dart';
 import '../features/settings/presentation/info_pages.dart';
 import '../features/shell/presentation/app_shell.dart';
 import '../features/transactions/presentation/add_transaction_page.dart';
 import '../features/transactions/presentation/edit_transaction_page.dart';
+import '../features/transactions/presentation/history_page.dart';
 import '../features/transactions/presentation/transaction_details_page.dart';
 import '../features/transactions/presentation/transaction_trash_page.dart';
 
@@ -58,13 +62,26 @@ final appRouter = GoRouter(
       ),
     ),
     GoRoute(
+      path: '/history',
+      builder: (context, state) => HistoryScreen(
+        accountId: state.uri.queryParameters['account'],
+        category: state.uri.queryParameters['category'],
+        type: state.uri.queryParameters['type'],
+        from: int.tryParse(state.uri.queryParameters['from'] ?? ''),
+        through: int.tryParse(state.uri.queryParameters['through'] ?? ''),
+      ),
+    ),
+    GoRoute(
       path: '/transactions/trash',
       builder: (context, state) => const TransactionTrashPage(),
     ),
     GoRoute(
       path: '/transaction/new',
-      builder: (context, state) =>
-          AddTransactionPage(initialType: state.uri.queryParameters['type']),
+      builder: (context, state) => AddTransactionPage(
+        initialType: state.uri.queryParameters['type'],
+        initialAccountId: state.uri.queryParameters['accountId'],
+        copyFromId: state.uri.queryParameters['copyOf'],
+      ),
     ),
     // Must follow /transaction/new so "new" is not read as an id.
     GoRoute(
@@ -131,8 +148,12 @@ final appRouter = GoRouter(
       builder: (context, state) => const CurrencyFormatPage(),
     ),
     GoRoute(
+      path: '/more/recurring',
+      builder: (context, state) => const RecurringPage(),
+    ),
+    GoRoute(
       path: '/more/budgets',
-      builder: (context, state) => const ComingSoonPage.budgets(),
+      builder: (context, state) => const BudgetPage(),
     ),
     GoRoute(
       path: '/more/export',
@@ -140,7 +161,7 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/more/backup',
-      builder: (context, state) => const ComingSoonPage.backup(),
+      builder: (context, state) => const BackupPage(),
     ),
     GoRoute(
       path: '/more/about',
