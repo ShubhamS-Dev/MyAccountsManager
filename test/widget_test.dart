@@ -758,20 +758,51 @@ void main() {
       await tester.enterText(amountField, '12,500.75');
       await tester.pump(const Duration(milliseconds: 200));
 
-      final amountWidget = tester.widget<TextFormField>(amountField);
-      expect(amountWidget.style?.fontSize, AppTypography.amountInput.fontSize);
+      // TextFormField is a FormField wrapper; its visual text style and
+      // decoration belong to the rendered EditableText and InputDecorator.
+      // Inspect those concrete widgets instead of reading nonexistent
+      // TextFormField.style/decoration properties.
+      final amountEditableText = tester.widget<EditableText>(
+        find.descendant(
+          of: amountField,
+          matching: find.byType(EditableText),
+        ),
+      );
       expect(
-        amountWidget.decoration.hintStyle?.fontSize,
+        amountEditableText.style.fontSize,
         AppTypography.amountInput.fontSize,
       );
-      expect(amountWidget.controller!.text, '12,500.75');
-
-      final noteField = tester.widget<TextField>(
-        find.byKey(const ValueKey('add-transaction-note-input')),
+      final amountDecoration = tester
+          .widget<InputDecorator>(
+            find.descendant(
+              of: amountField,
+              matching: find.byType(InputDecorator),
+            ),
+          )
+          .decoration;
+      expect(
+        amountDecoration.hintStyle?.fontSize,
+        AppTypography.amountInput.fontSize,
       );
-      expect(noteField.decoration.filled, isFalse);
-      expect(noteField.decoration.fillColor, Colors.transparent);
-      expect(noteField.decoration.border, InputBorder.none);
+      expect(
+        tester.widget<TextFormField>(amountField).controller!.text,
+        '12,500.75',
+      );
+
+      final noteFieldFinder = find.byKey(
+        const ValueKey('add-transaction-note-input'),
+      );
+      final noteDecoration = tester
+          .widget<InputDecorator>(
+            find.descendant(
+              of: noteFieldFinder,
+              matching: find.byType(InputDecorator),
+            ),
+          )
+          .decoration;
+      expect(noteDecoration.filled, isFalse);
+      expect(noteDecoration.fillColor, Colors.transparent);
+      expect(noteDecoration.border, InputBorder.none);
 
       final boundary = tester.renderObject<RenderRepaintBoundary>(
         find.byKey(const ValueKey('app-screenshot-boundary')),
