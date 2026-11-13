@@ -8,7 +8,6 @@ import 'package:go_router/go_router.dart';
 import '../../../app/app_theme.dart';
 import '../../../app/app_widgets.dart';
 import '../../../app/date_range_chooser.dart';
-import '../../../app/icon_resolvers.dart';
 import '../../../app/privacy_state.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/formatting/date_timestamp.dart';
@@ -447,12 +446,11 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                           onTap: () => context.push(
                             '/transaction/${item.transaction.id}',
                           ),
-                          leading: Icon(
-                            resolveCategoryIcon(
-                              item.categoryIconKey,
-                              income: !expenseSide,
-                            ),
-                            color: scheme.primary,
+                          leading: CategoryIconBadge(
+                            iconKey: item.categoryIconKey,
+                            categoryName: item.categoryName,
+                            colorValue: item.categoryColorValue,
+                            income: !expenseSide,
                           ),
                           title: Text(
                             item.transaction.note?.trim().isNotEmpty == true

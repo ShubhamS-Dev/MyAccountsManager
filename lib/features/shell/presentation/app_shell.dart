@@ -83,29 +83,15 @@ class _AppShellState extends State<AppShell> {
       ),
       floatingActionButton: _selectedIndex == 4
           ? null
-          : Container(
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(colors: AppColors.heroGradient),
-                boxShadow: AppShadows.card,
+          : AddTransactionFab(
+              // MyKhata entries never touch Accounts, so that tab adds a
+              // khata entry instead of a regular transaction.
+              onPressed: () => context.push(
+                _selectedIndex == 3 ? '/khata/entries/new' : '/transaction/new',
               ),
-              child: FloatingActionButton(
-                // MyKhata entries never touch Accounts, so that tab adds a
-                // khata entry instead of a regular transaction.
-                onPressed: () => context.push(
-                  _selectedIndex == 3
-                      ? '/khata/entries/new'
-                      : '/transaction/new',
-                ),
-                tooltip: _selectedIndex == 3
-                    ? 'Add khata entry'
-                    : 'Add transaction',
-                backgroundColor: Colors.transparent,
-                foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                elevation: 0,
-                highlightElevation: 0,
-                child: const Icon(Icons.add_rounded, size: 28),
-              ),
+              tooltip: _selectedIndex == 3
+                  ? 'Add khata entry'
+                  : 'Add transaction',
             ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
@@ -957,18 +943,11 @@ class _RecentTransaction extends StatelessWidget {
     return ListTile(
       minVerticalPadding: 10,
       onTap: () => context.push('/transaction/${item.transaction.id}'),
-      leading: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: .12),
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Icon(
-          income ? Icons.south_west_rounded : Icons.north_east_rounded,
-          color: color,
-          size: 18,
-        ),
+      leading: CategoryIconBadge(
+        iconKey: item.categoryIconKey,
+        categoryName: item.categoryName,
+        colorValue: item.categoryColorValue,
+        income: income,
       ),
       title: Text(
         item.transaction.note?.isNotEmpty == true

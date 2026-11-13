@@ -26,9 +26,11 @@ import 'package:my_accounts_manager/features/my_khata/data/khata_repository.dart
 import 'package:my_accounts_manager/features/my_khata/khata_providers.dart';
 import 'package:my_accounts_manager/features/notifications/data/notification_preferences.dart';
 import 'package:my_accounts_manager/features/notifications/notifications_providers.dart';
+import 'package:my_accounts_manager/features/reports/presentation/reports_page.dart';
 import 'package:my_accounts_manager/features/settings/settings_providers.dart';
 import 'package:my_accounts_manager/features/transactions/data/transactions_repository.dart';
 import 'package:my_accounts_manager/features/transactions/presentation/add_transaction_page.dart';
+import 'package:my_accounts_manager/features/transactions/presentation/transaction_list_tile.dart';
 import 'package:my_accounts_manager/features/transactions/transactions_providers.dart';
 
 late AppDatabase testDatabase;
@@ -66,6 +68,7 @@ void main() {
   Future<void> pumpApp(
     WidgetTester tester, {
     bool liveHistory = false,
+    List<TransactionHistoryItem>? historyItems,
     bool includeCategories = false,
     List<AccountRow>? accountRows,
     TransactionsRepository? repository,
@@ -156,6 +159,9 @@ void main() {
             if (repository != null)
               transactionsRepositoryProvider.overrideWithValue(repository),
             transactionHistoryProvider.overrideWith((ref, filter) {
+              if (historyItems != null) {
+                return Stream.value(historyItems);
+              }
               if (liveHistory) {
                 return TransactionsRepository(testDatabase).watchHistory(
                   accountId: filter.accountId,
@@ -184,6 +190,126 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
     }
   }
+
+  testWidgets('Home Recent transaction shows its category icon', (
+    tester,
+  ) async {
+    await TransactionsRepository(testDatabase).createTransaction(
+      accountId: testAccount.id,
+      categoryId: '10000000-0000-4000-8000-000000000002',
+      type: 'expense',
+      amountPaise: 12500,
+      transactionDate: DateTime.utc(
+        DateTime.now().year,
+        DateTime.now().month,
+        DateTime.now().day,
+      ).millisecondsSinceEpoch,
+      note: 'Home category icon',
+    );
+    final historyItems =
+        await tester.runAsync(
+          () => TransactionsRepository(testDatabase).watchHistory().first,
+        ) ??
+        <TransactionHistoryItem>[];
+    await pumpApp(tester, historyItems: historyItems);
+
+    final categoryBadge = find.byType(CategoryIconBadge);
+    await tester.scrollUntilVisible(
+      categoryBadge,
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await pumpUntilFound(tester, categoryBadge);
+    expect(
+      find.descendant(
+        of: categoryBadge,
+        matching: find.byIcon(Icons.shopping_basket_rounded),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: categoryBadge,
+        matching: find.byIcon(Icons.north_east_rounded),
+      ),
+      findsNothing,
+    );
+  }, timeout: const Timeout(Duration(seconds: 30)));
+
+  testWidgets('Reports Top transactions shows its category icon', (
+    tester,
+  ) async {
+    await TransactionsRepository(testDatabase).createTransaction(
+      accountId: testAccount.id,
+      categoryId: '10000000-0000-4000-8000-000000000002',
+      type: 'expense',
+      amountPaise: 12500,
+      transactionDate: DateTime.utc(
+        DateTime.now().year,
+        DateTime.now().month,
+        DateTime.now().day,
+      ).millisecondsSinceEpoch,
+      note: 'Reports category icon',
+    );
+    final historyItems =
+        await tester.runAsync(
+          () => TransactionsRepository(testDatabase).watchHistory().first,
+        ) ??
+        <TransactionHistoryItem>[];
+    await pumpApp(tester, historyItems: historyItems);
+
+    await tester.tap(find.text('Reports').last);
+    // Reports is a lazy ListView: the Largest expenses section sits below the
+    // fold and is not built until scrolled to. Wait for the page, then scroll.
+    await pumpUntilFound(tester, find.byType(ReportsPage));
+    await pumpUntilFound(
+      tester,
+      find.descendant(
+        of: find.byType(ReportsPage),
+        matching: find.byType(Scrollable),
+      ),
+    );
+
+    final reportsScrollable = find
+        .descendant(
+          of: find.byType(ReportsPage),
+          matching: find.byType(Scrollable),
+        )
+        .first;
+    final largestExpenseSubtitle = find.textContaining('Groceries ·');
+    await tester.scrollUntilVisible(
+      largestExpenseSubtitle,
+      300,
+      scrollable: reportsScrollable,
+    );
+    await pumpUntilFound(tester, largestExpenseSubtitle);
+
+    expect(find.text('Largest expenses'), findsOneWidget);
+
+    final largestExpenseRow = find.ancestor(
+      of: largestExpenseSubtitle,
+      matching: find.byType(ListTile),
+    );
+    final largestExpenseBadge = find.descendant(
+      of: largestExpenseRow,
+      matching: find.byType(CategoryIconBadge),
+    );
+    expect(largestExpenseBadge, findsOneWidget);
+    expect(
+      find.descendant(
+        of: largestExpenseBadge,
+        matching: find.byIcon(Icons.shopping_basket_rounded),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: largestExpenseRow,
+        matching: find.byIcon(Icons.north_east_rounded),
+      ),
+      findsNothing,
+    );
+  }, timeout: const Timeout(Duration(seconds: 30)));
 
   testWidgets('shared action buttons have a 40px face and 48px hit area', (
     tester,
@@ -702,6 +828,103 @@ void main() {
     await tester.tap(find.text('Details route transaction'));
     await pumpUntilFound(tester, find.text('Transaction details'));
     expect(find.text('Edit transaction'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 1));
+  }, timeout: const Timeout(Duration(seconds: 30)));
+
+  Future<String> createDeleteTestTransaction(String note) async {
+    final category =
+        await (testDatabase.select(testDatabase.categories)
+              ..where((row) => row.type.equals('expense'))
+              ..where((row) => row.name.equals('Food & Dining')))
+            .getSingle();
+    return TransactionsRepository(testDatabase).createTransaction(
+      accountId: testAccount.id,
+      categoryId: category.id,
+      type: 'expense',
+      amountPaise: 12500,
+      transactionDate: DateOnly.toUtcEpochMilliseconds(DateTime.now()),
+      note: note,
+    );
+  }
+
+  Future<void> tapDeleteAndConfirm(WidgetTester tester) async {
+    final deleteButton = find.byKey(const ValueKey('transaction-delete'));
+    await pumpUntilFound(tester, find.text('Edit transaction'));
+    await tester.scrollUntilVisible(
+      deleteButton,
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.tap(deleteButton);
+    await pumpUntilFound(tester, find.text('Delete this transaction?'));
+    await tester.tap(find.widgetWithText(TextButton, 'Delete'));
+  }
+
+  Future<int?> deletedAtOf(WidgetTester tester, String transactionId) async {
+    int? deletedAt;
+    await tester.runAsync(() async {
+      final row = await (testDatabase.select(
+        testDatabase.transactions,
+      )..where((row) => row.id.equals(transactionId))).getSingle();
+      deletedAt = row.deletedAt;
+    });
+    return deletedAt;
+  }
+
+  testWidgets('Details delete confirms, returns, and Undo restores it', (
+    tester,
+  ) async {
+    final transactionId = await createDeleteTestTransaction(
+      'Details delete transaction',
+    );
+
+    await pumpApp(tester, liveHistory: true);
+    appRouter.push('/transaction/$transactionId');
+    await tapDeleteAndConfirm(tester);
+
+    await pumpUntilFound(tester, find.text('Transaction moved to Trash'));
+    // Let the Details route finish its exit transition.
+    for (var i = 0; i < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.text('Transaction details'), findsNothing);
+    expect(find.text('Home'), findsWidgets);
+    expect(await deletedAtOf(tester, transactionId), isNotNull);
+
+    await tester.tap(find.text('Undo'));
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 50)),
+    );
+    expect(await deletedAtOf(tester, transactionId), isNull);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 1));
+  }, timeout: const Timeout(Duration(seconds: 30)));
+
+  testWidgets('Details delete from a deep link falls back to Home', (
+    tester,
+  ) async {
+    final transactionId = await createDeleteTestTransaction(
+      'Deep link delete transaction',
+    );
+
+    await pumpApp(tester, liveHistory: true);
+    // go() replaces the stack, as a notification or deep link would.
+    appRouter.go('/transaction/$transactionId');
+    await pumpUntilFound(tester, find.text('Transaction details'));
+    expect(appRouter.canPop(), isFalse);
+    await tapDeleteAndConfirm(tester);
+
+    await pumpUntilFound(tester, find.text('Transaction moved to Trash'));
+    // Let the Details route finish its exit transition.
+    for (var i = 0; i < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.text('Transaction details'), findsNothing);
+    expect(await deletedAtOf(tester, transactionId), isNotNull);
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(milliseconds: 1));
@@ -1316,6 +1539,60 @@ void main() {
           .initialAccountId,
       testAccount.id,
     );
+  }, timeout: const Timeout(Duration(seconds: 30)));
+
+  testWidgets('Account Details uses the shared transaction tile and FAB', (
+    tester,
+  ) async {
+    await TransactionsRepository(testDatabase).createTransaction(
+      accountId: testAccount.id,
+      categoryId: '10000000-0000-4000-8000-000000000002',
+      type: 'expense',
+      amountPaise: 12500,
+      transactionDate: DateTime.utc(
+        DateTime.now().year,
+        DateTime.now().month,
+        DateTime.now().day,
+      ).millisecondsSinceEpoch,
+      note: 'Account details row',
+    );
+    final historyItems =
+        await tester.runAsync(
+          () => TransactionsRepository(testDatabase).watchHistory().first,
+        ) ??
+        <TransactionHistoryItem>[];
+    await pumpApp(tester, historyItems: historyItems);
+    appRouter.push('/accounts/${testAccount.id}');
+    final tile = find.byType(TransactionListTile);
+    await pumpUntilFound(tester, find.text('Transaction history'));
+    await tester.pump(const Duration(seconds: 1));
+    await tester.scrollUntilVisible(
+      tile,
+      300,
+      scrollable: find.byType(Scrollable).last,
+    );
+
+    expect(tile, findsOneWidget);
+    // No card nested inside another card.
+    expect(
+      find.descendant(of: tile, matching: find.byType(Card)),
+      findsNothing,
+    );
+    expect(
+      find.descendant(of: tile, matching: find.byType(CategoryIconBadge)),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: tile,
+        matching: find.byTooltip('Transaction actions'),
+      ),
+      findsOneWidget,
+    );
+    // Same round FAB as the rest of the app, not an extended labelled one.
+    final fab = find.byKey(const ValueKey('account-details-add-transaction'));
+    expect(fab, findsOneWidget);
+    expect(tester.widget(fab), isA<AddTransactionFab>());
   }, timeout: const Timeout(Duration(seconds: 30)));
 
   testWidgets(

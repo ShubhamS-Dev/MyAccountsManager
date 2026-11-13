@@ -448,3 +448,86 @@ User approval: build steps 1 to 5. MyKhata defaults approved: block overpayment,
 - `flutter build apk --debug`: built `build/app/outputs/flutter-apk/app-debug.apk`.
 - A temporary phone-width check (360x780, light and dark, 11 new or refreshed screens) found two RenderFlex overflows with 12-digit amounts. Both were fixed and the check passed, then the temporary test was removed.
 - Not run: on-device or emulator visual review. CI has not run on these changes. Local Flutter is 3.47.5; CI uses 3.47.9.
+
+## Transaction Details — Delete transaction action (2026-11-13)
+
+- Branch: `feature/20261113/transaction-delete`, created directly from `development/20261111` at `8e04fe42bbade015ed893e6ef94c4900fd27f7fc`.
+- Updated `lib/features/transactions/presentation/transaction_details_page.dart`: added one full-width text-style Delete transaction action below the Duplicate / Copy as new helper text, using the existing 40px visual / 48px touch-target button theme and `ColorScheme.error`.
+- Confirmation displays the same signed MoneyFormatter amount and note/category title as the details presentation. The existing `hiddenAmountMask` is retained when Hide amounts is enabled.
+- Confirm calls the existing `TransactionsRepository.softDeleteTransaction`; success pops to the previous route and shows “Transaction moved to Trash” with Undo. Undo calls the existing `TransactionsRepository.restoreTransaction`. Feedback uses the captured page-level ScaffoldMessenger and repository so it remains valid after the details route is popped.
+- No manual refresh/invalidation was added; existing Drift/Riverpod streams remain responsible for dependent screen updates.
+- Added `docs/SCREENS/TRANSACTION_DETAILS.md` for the screen behavior. Updated CHANGELOG and this implementation log. `docs/DESIGN_SYSTEM.md` is unchanged because no shared component or token was added or changed.
+- No package, schema, migration, repository method, or database method was added. No existing test became outdated, so no test was changed.
+- Validation: Dart format, Flutter analyze, Flutter tests, and Android build have **not yet been run** in this session. Do not treat this implementation as Done until the feature-branch CI run passes.
+
+
+## Category icons on all transaction rows (2026-11-13)
+
+Root cause:
+- Built-in categories are seeded with null `iconKey` and `colorValue`. Some transaction-row consumers passed only the nullable icon key to the resolver or did not use the resolver/name fallback at all, so the generic income/expense arrow appeared.
+- `Rental Income` also needed an explicit name alias to the existing `rental_income` catalog key.
+
+Files changed:
+- `lib/app/icon_catalog.dart` — added the `rental income` alias.
+- `lib/app/icon_resolvers.dart` — added the matching `rental income` switch case.
+- `lib/app/app_widgets.dart` — added shared `CategoryIconBadge` with category-name and semantic-colour fallbacks.
+- `lib/features/transactions/presentation/history_page.dart` — migrated History rows to the shared badge without changing its size, tint or icon size.
+- `lib/features/shell/presentation/app_shell.dart` — Home Recent rows now use the shared badge; amount styling and tap behaviour are unchanged.
+- `lib/features/notifications/presentation/activity_center_page.dart` — scheduled transaction rows now use the shared badge.
+- `lib/features/reports/presentation/reports_page.dart` — Top transactions resolves `categoryIconKey ?? categoryName`.
+- `lib/features/transactions/presentation/transaction_details_page.dart` — the summary header resolves the Category from the existing `allCategoriesByTypeProvider(row.type)` list by `row.categoryId`, using the 48px shared badge and retaining the directional fallback when no Category is found.
+- `test/app/icon_catalog_test.dart` — verifies all 16 seeded expense and 8 seeded income names, including Rental Income, resolve away from directional arrows.
+- `test/app/design_system_test.dart` — verifies null-key name fallback and null-colour income/expense token fallbacks for `CategoryIconBadge`.
+- `test/widget_test.dart` — adds Home Recent and Reports Top transactions category-icon coverage.
+- `test/features/notifications_test.dart` — adds Activity Center scheduled-row category-icon coverage.
+- `docs/DESIGN_SYSTEM.md`, `docs/SCREENS/HISTORY.md`, `docs/SCREENS/TRANSACTION_DETAILS.md`, and `CHANGELOG.md` — document the shared badge and screen changes.
+
+Constraints:
+- UI-only. No package, schema, migration, repository, database method or milestone status change.
+- No Trash, Account Details or Recurring row migration was made; those rows were outside the required screen list and visual identity was not independently verified.
+
+Validation status:
+- Local `dart format --output=none --set-exit-if-changed .`, `flutter analyze`, and `flutter test` have NOT been run because Flutter/Dart are unavailable in this environment.
+- GitHub Actions CI is the validation gate. This work is NOT Done until CI passes and the user verifies the result in the APK.
+
+
+## Run #43399115251 RCA — category icon widget-test scope and scrolling (2026-11-13)
+
+- Run: [Flutter validation #43399115251](https://github.com/ShubhamS-Dev/MyAccountsManager/actions/runs/43399115251)
+- Analyze passed. The test step reported four failures; the failures were test-side issues, not production-code regressions.
+- `test/features/notifications_test.dart`: the Activity Center legitimately renders `north_east_rounded` for MyKhata rows via `khataDirectionIcon`. The test incorrectly searched the entire page for no such icon. Scoped both the shopping-basket and directional-icon assertions to the scheduled-transaction `ListTile` containing `Groceries`.
+- `test/widget_test.dart` — Home Recent: `Groceries` also appears in Spending by category, so it was an ambiguous `scrollUntilVisible` target. The test now scrolls to `CategoryIconBadge`, uses the bounded `pumpUntilFound` helper instead of `pumpAndSettle` (the live History shimmer repeats), and scopes both icon assertions to badge descendants.
+- `test/widget_test.dart` — Reports Top transactions: `pumpAndSettle` could not settle because the live History shimmer repeats, and the first global `Scrollable` could belong to Home in the shell's `IndexedStack`. The test now waits with `pumpUntilFound`, uses `ensureVisible` for the Reports section/row, and scopes icon assertions to the `ListTile` whose subtitle identifies the row in Largest expenses.
+- `shared action buttons have a 40px face and 48px hit area`: its `!inTest` assertion followed the Reports test timeout and was a cascading test-binding failure. No change was made to this test; confirm it passes in the next full run.
+- Tests only. No `lib/` files, package dependencies, schema, or `pubspec.yaml` were changed. The intentional app version remains `1.1.0+2`.
+- Do not mark this work Done until the follow-up CI run passes and the APK is verified.
+
+## Run #43400117474 RCA — deterministic transaction history in widget tests (2026-11-13)
+
+- Run: [Flutter validation #411](https://github.com/ShubhamS-Dev/MyAccountsManager/actions/runs/43400117474)
+- Format and Analyze passed. The test step reported the Home Recent and Reports Top transactions icon tests as failures.
+- The Home test log shows `A Timer is still pending even after the widget tree was disposed`. Both tests enabled the live Drift `watchHistory` stream through `liveHistory: true`; disposing the Riverpod stream subscription schedules Drift query-store cleanup in the widget-test FakeAsync zone. This caused the Home test to fail during teardown and left the Reports test to hit the cascading `!inTest` binding assertion.
+- `test/widget_test.dart`: the two icon tests now read the seeded history once via `tester.runAsync` and inject it through a deterministic `Stream.value` override. They no longer open live Drift history subscriptions, while the production Home and Reports widgets still render the same repository-shaped history items.
+- Home now scrolls to a unique transaction note within the Home dashboard's own scrollable and scopes icon assertions to that transaction's `ListTile` and `CategoryIconBadge`. Reports scrolls to its unique transaction note within the Reports scrollable and scopes assertions to that transaction's `ListTile`.
+- The shared action-buttons test remains unchanged; its prior `!inTest` error is consistent with the preceding test's timeout/teardown failure and must be confirmed by the next full run.
+- Tests and this RCA documentation only. No `lib/` files, package dependencies, schema, or `pubspec.yaml` were changed. The app version remains `1.1.0+2`.
+- Do not mark this work Done until the follow-up CI run passes and the APK is verified.
+
+
+## Run #43402075414 RCA — widget-test scroll targets (2026-11-13)
+
+- Run: [Flutter validation #413](https://github.com/ShubhamS-Dev/MyAccountsManager/actions/runs/43402075414)
+- Dart Format and Analyze passed. The two remaining failures were test finder issues.
+- Home Recent: the test tried to obtain the Home scrollable as an ancestor of the off-screen `Recent transactions` heading. The lazy `ListView` had not built that heading yet, so the ancestor finder was empty and `.first` threw `Bad state: No element`. The test now scrolls the Home list's first scrollable directly to the category badge and asserts the icon within that badge.
+- Reports Top transactions: the note-title target was not found after scrolling. The test now targets the existing category/date subtitle (`Groceries · …`) and obtains the scrollable from the `ReportsPage` subtree, avoiding the Home list retained by the shell's `IndexedStack`.
+- No production widget code changed. Only `test/widget_test.dart` and this log were updated. No package dependencies, schema, or `pubspec.yaml` changes; app version remains `1.1.0+2`.
+- Keep status NOT Done until the next full CI run passes and the APK is verified.
+
+## Account Details transaction history and Add button consistency (2026-11-13)
+
+- Problem: Account Details nested a `Card` per row inside an outer `Card` with dividers, used a one-off tile (raw `CircleAvatar`, `tertiary`/`error` amount colours, dense `ListTile`) and lacked History's actions. Its Add button was an extended labelled FAB; the shell used a round gradient FAB and standalone History a plain FAB.
+- New `TransactionListTile` (`lib/features/transactions/presentation/transaction_list_tile.dart`): the former `_HistoryTile`, shared by History and Account Details. `CategoryIconBadge`, `AmountText`, `positiveText`/`negativeText`, scheduled and recurring markers, swipe to Trash with Undo, overflow menu (Edit, Duplicate, Copy as new, Move to Trash). `showAccount: false` drops the redundant account name on Account Details. Trash helpers moved alongside it as `moveTransactionToTrash` / `confirmMoveTransactionToTrash`.
+- Account Details: rows grouped under date headers like History, newest 30 inline, `SectionHeader` with View all opening `/history` filtered to the account across its full date span.
+- New `AddTransactionFab` (`lib/app/app_widgets.dart`): round, icon-only, brand-gradient FAB used by the shell, Account Details (still preselects the account, key `account-details-add-transaction` kept) and standalone History (preselects the account when filtered).
+- Test: `Account Details uses the shared transaction tile and FAB`. `flutter analyze` clean; `flutter test` 218 passed.
+- No schema, dependency or `pubspec.yaml` changes; app version remains `1.1.0+2`.

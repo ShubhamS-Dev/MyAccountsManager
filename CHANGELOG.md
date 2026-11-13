@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Category icons on all transaction rows (2026-11-13)
+- Added the `Rental Income` resolver alias for seeded categories whose icon key is null.
+- Added shared `CategoryIconBadge` and applied it to History, Home Recent, Activity Center scheduled transactions, Reports Largest expenses/income, and the Transaction Details header. Details shows no fallback icon while categories load and keeps theme-aware income/expense colours.
+- Added resolver coverage for all 16 seeded expense and 8 seeded income category names, badge colour/name-fallback coverage, and Home, Reports and Activity Center row coverage.
+- UI-only: no package, schema, migration, repository or database changes.
+- CI fix: the Reports widget test waited for "Largest expenses" before scrolling, but Reports is a lazy ListView and that section is below the fold, so it was never built. The test now waits for the page and scrolls first.
+
+### Transaction Details — delete to Trash (2026-11-13)
+- Added one full-width, low-emphasis Delete transaction action below the Duplicate / Copy as new helper text.
+- Confirmation shows the signed, formatted amount and transaction note (or category title); the existing hidden-amount preference is preserved.
+- Confirming uses the existing soft-delete operation, returns to the previous screen (or Home when opened from a notification or deep link with nothing to pop), and offers Undo through the existing restore operation. No schema, dependency, or repository API change.
+- Widget tests cover confirm, return, Trash persistence, Undo restore, and the deep-link fallback.
+
+
 ### Contrast, export and MyKhata reminders (2026-11-11)
 - Contrast: income and expense text now uses darker tones in light theme (#047857, #BE123C; 5.2 to 6.3:1 on light surfaces). The bright tones stay for icons, chart slices and category colours. Dark theme is unchanged. Selected segments pick black or white text by luminance.
 - Person Details hero and person avatars choose dark or white text by luminance. Light person colours (amber, sky, teal, emerald, rose, pink) previously had white text at 2.2 to 3.7:1.
