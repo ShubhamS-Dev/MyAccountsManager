@@ -489,3 +489,15 @@ Constraints:
 Validation status:
 - Local `dart format --output=none --set-exit-if-changed .`, `flutter analyze`, and `flutter test` have NOT been run because Flutter/Dart are unavailable in this environment.
 - GitHub Actions CI is the validation gate. This work is NOT Done until CI passes and the user verifies the result in the APK.
+
+
+## Run #43399115251 RCA — category icon widget-test scope and scrolling (2026-11-13)
+
+- Run: [Flutter validation #43399115251](https://github.com/ShubhamS-Dev/MyAccountsManager/actions/runs/43399115251)
+- Analyze passed. The test step reported four failures; the failures were test-side issues, not production-code regressions.
+- `test/features/notifications_test.dart`: the Activity Center legitimately renders `north_east_rounded` for MyKhata rows via `khataDirectionIcon`. The test incorrectly searched the entire page for no such icon. Scoped both the shopping-basket and directional-icon assertions to the scheduled-transaction `ListTile` containing `Groceries`.
+- `test/widget_test.dart` — Home Recent: `Groceries` also appears in Spending by category, so it was an ambiguous `scrollUntilVisible` target. The test now scrolls to `CategoryIconBadge`, uses the bounded `pumpUntilFound` helper instead of `pumpAndSettle` (the live History shimmer repeats), and scopes both icon assertions to badge descendants.
+- `test/widget_test.dart` — Reports Top transactions: `pumpAndSettle` could not settle because the live History shimmer repeats, and the first global `Scrollable` could belong to Home in the shell's `IndexedStack`. The test now waits with `pumpUntilFound`, uses `ensureVisible` for the Reports section/row, and scopes icon assertions to the `ListTile` whose subtitle identifies the row in Largest expenses.
+- `shared action buttons have a 40px face and 48px hit area`: its `!inTest` assertion followed the Reports test timeout and was a cascading test-binding failure. No change was made to this test; confirm it passes in the next full run.
+- Tests only. No `lib/` files, package dependencies, schema, or `pubspec.yaml` were changed. The intentional app version remains `1.1.0+2`.
+- Do not mark this work Done until the follow-up CI run passes and the APK is verified.

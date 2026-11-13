@@ -440,8 +440,24 @@ void main() {
       expect(find.text('Due tomorrow'), findsOneWidget);
       expect(find.text('Scheduled transactions (1)'), findsOneWidget);
       expect(find.text('Groceries'), findsOneWidget);
-      expect(find.byIcon(Icons.shopping_basket_rounded), findsOneWidget);
-      expect(find.byIcon(Icons.north_east_rounded), findsNothing);
+      final scheduledTile = find.ancestor(
+        of: find.text('Groceries'),
+        matching: find.byType(ListTile),
+      );
+      expect(
+        find.descendant(
+          of: scheduledTile,
+          matching: find.byIcon(Icons.shopping_basket_rounded),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: scheduledTile,
+          matching: find.byIcon(Icons.north_east_rounded),
+        ),
+        findsNothing,
+      );
     });
 
     testWidgets('Notification settings save each preference', (tester) async {
