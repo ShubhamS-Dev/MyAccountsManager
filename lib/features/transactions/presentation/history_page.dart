@@ -14,7 +14,7 @@ import '../../../core/time/today_provider.dart';
 import '../../accounts/accounts_providers.dart';
 import '../data/transactions_repository.dart';
 import '../transactions_providers.dart';
-import 'transaction_copy_actions.dart';
+import 'transaction_list_tile.dart';
 
 /// History as a full page, opened from Home and from Reports drill-downs.
 class HistoryScreen extends StatelessWidget {
@@ -44,10 +44,12 @@ class HistoryScreen extends StatelessWidget {
           ? DayRange(from!, through!)
           : null,
     ),
-    floatingActionButton: FloatingActionButton(
-      onPressed: () => context.push('/transaction/new'),
-      tooltip: 'Add transaction',
-      child: const Icon(Icons.add_rounded),
+    floatingActionButton: AddTransactionFab(
+      onPressed: () => context.push(
+        accountId == null
+            ? '/transaction/new'
+            : '/transaction/new?accountId=$accountId',
+      ),
     ),
   );
 }
@@ -112,79 +114,6 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
       _category != null ||
       _type != null ||
       _search.text.trim().isNotEmpty;
-
-  Future<bool> _moveToTrash(TransactionHistoryItem item) async {
-    // Capture the page-level messenger before awaiting the database write.
-    // The Dismissible may be removed as soon as confirmDismiss returns true.
-    final messenger = ScaffoldMessenger.of(context);
-    try {
-      await ref
-          .read(transactionsRepositoryProvider)
-          .softDeleteTransaction(item.transaction.id);
-      ref.invalidate(accountBalancePaiseProvider(item.transaction.accountId));
-      if (!mounted || !messenger.mounted) return true;
-      messenger.hideCurrentSnackBar();
-      messenger.showSnackBar(
-        SnackBar(
-          content: const Text('Transaction moved to Trash'),
-          action: SnackBarAction(
-            label: 'Undo',
-            onPressed: () async {
-              try {
-                await ref
-                    .read(transactionsRepositoryProvider)
-                    .restoreTransaction(item.transaction.id);
-                ref.invalidate(
-                  accountBalancePaiseProvider(item.transaction.accountId),
-                );
-              } catch (_) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Could not restore transaction.'),
-                    ),
-                  );
-                }
-              }
-            },
-          ),
-        ),
-      );
-      return true;
-    } catch (_) {
-      if (mounted && messenger.mounted) {
-        messenger.showSnackBar(
-          const SnackBar(
-            content: Text('Could not move transaction to Trash. Try again.'),
-          ),
-        );
-      }
-      return false;
-    }
-  }
-
-  Future<void> _confirmTrash(TransactionHistoryItem item) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Move to Trash?'),
-        content: const Text(
-          'You can restore this transaction later from Trash.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Move to Trash'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed == true) await _moveToTrash(item);
-  }
 
   Future<void> _openFilters({
     required List<AccountRow> accounts,
@@ -643,7 +572,7 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate((context, index) {
                       final item = group.value[index];
-                      return _HistoryTile(
+                      return TransactionListTile(
                         key: ValueKey(item.transaction.id),
                         item: item,
                         hidden: hidden,
@@ -651,21 +580,6 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                           item.transaction.transactionDate,
                           today,
                         ),
-                        onTap: () =>
-                            context.push('/transaction/${item.transaction.id}'),
-                        onEdit: () => context.push(
-                          '/transaction/${item.transaction.id}/edit',
-                        ),
-                        onTrash: () => _confirmTrash(item),
-                        onDuplicate: () => duplicateTransaction(
-                          context,
-                          ref,
-                          transactionId: item.transaction.id,
-                          accountId: item.transaction.accountId,
-                        ),
-                        onCopy: () =>
-                            copyTransactionAsNew(context, item.transaction.id),
-                        onSwipeDelete: () => _moveToTrash(item),
                       );
                     }, childCount: group.value.length),
                   ),
@@ -968,188 +882,6 @@ class _DateHeaderDelegate extends SliverPersistentHeaderDelegate {
   @override
   bool shouldRebuild(covariant _DateHeaderDelegate oldDelegate) =>
       oldDelegate.label != label;
-}
-
-class _HistoryTile extends StatelessWidget {
-  const _HistoryTile({
-    required this.item,
-    required this.onTap,
-    required this.onEdit,
-    required this.onTrash,
-    required this.onDuplicate,
-    required this.onCopy,
-    required this.onSwipeDelete,
-    this.scheduled = false,
-    this.hidden = false,
-    super.key,
-  });
-
-  final TransactionHistoryItem item;
-  final bool scheduled;
-  final bool hidden;
-  final VoidCallback onTap;
-  final VoidCallback onEdit;
-  final VoidCallback onTrash;
-  final VoidCallback onDuplicate;
-  final VoidCallback onCopy;
-  final Future<bool> Function() onSwipeDelete;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final transaction = item.transaction;
-    final income = transaction.type == 'income';
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: Dismissible(
-        key: ValueKey('dismiss-${transaction.id}'),
-        direction: DismissDirection.endToStart,
-        background: Container(
-          alignment: Alignment.centerRight,
-          padding: const EdgeInsets.only(right: AppSpacing.lg),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.errorContainer,
-            borderRadius: BorderRadius.circular(AppRadius.card),
-          ),
-          child: Icon(
-            Icons.delete_outline_rounded,
-            color: Theme.of(context).colorScheme.onErrorContainer,
-          ),
-        ),
-        confirmDismiss: (_) => onSwipeDelete(),
-        child: AppCard(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.sm,
-          ),
-          onTap: onTap,
-          child: Row(
-            children: [
-              CategoryIconBadge(
-                iconKey: item.categoryIconKey,
-                categoryName: item.categoryName,
-                colorValue: item.categoryColorValue,
-                income: income,
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      transaction.note?.isNotEmpty == true
-                          ? transaction.note!
-                          : item.categoryName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTypography.fieldValue.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        if (scheduled) ...[
-                          const ScheduledBadge(),
-                          const SizedBox(width: AppSpacing.xs),
-                        ],
-                        if (transaction.recurringRuleId != null) ...[
-                          Icon(
-                            Icons.repeat_rounded,
-                            size: 14,
-                            semanticLabel: 'Recurring',
-                            color: scheme.primary,
-                          ),
-                          const SizedBox(width: AppSpacing.xs),
-                        ],
-                        Expanded(
-                          child: Text(
-                            '${item.categoryName} · ${item.accountName}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTypography.metadata.copyWith(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: AppSpacing.xs),
-              AmountText(
-                hidden
-                    ? hiddenAmountMask
-                    : '${income ? '+' : '-'}${MoneyFormatter.formatPaise(transaction.amountPaise)}',
-                color: income ? scheme.positiveText : scheme.negativeText,
-              ),
-              PopupMenuButton<String>(
-                tooltip: 'Transaction actions',
-                onSelected: (action) {
-                  if (action == 'edit') onEdit();
-                  if (action == 'duplicate') onDuplicate();
-                  if (action == 'copy') onCopy();
-                  if (action == 'trash') onTrash();
-                },
-                itemBuilder: (_) => const [
-                  PopupMenuItem(
-                    value: 'edit',
-                    child: _MenuLabel(Icons.edit_outlined, 'Edit'),
-                  ),
-                  PopupMenuItem(
-                    value: 'duplicate',
-                    child: _MenuLabel(
-                      Icons.control_point_duplicate_rounded,
-                      'Duplicate',
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: 'copy',
-                    child: _MenuLabel(
-                      Icons.content_copy_rounded,
-                      'Copy as new',
-                    ),
-                  ),
-                  PopupMenuDivider(),
-                  PopupMenuItem(
-                    value: 'trash',
-                    child: _MenuLabel(
-                      Icons.delete_outline_rounded,
-                      'Move to Trash',
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _MenuLabel extends StatelessWidget {
-  const _MenuLabel(this.icon, this.label);
-
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) => Row(
-    children: [
-      Icon(
-        icon,
-        size: 20,
-        color: Theme.of(context).colorScheme.onSurfaceVariant,
-      ),
-      const SizedBox(width: AppSpacing.sm + 4),
-      Text(label),
-    ],
-  );
 }
 
 class _HistoryShimmer extends StatefulWidget {

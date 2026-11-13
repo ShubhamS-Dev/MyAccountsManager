@@ -30,6 +30,7 @@ import 'package:my_accounts_manager/features/reports/presentation/reports_page.d
 import 'package:my_accounts_manager/features/settings/settings_providers.dart';
 import 'package:my_accounts_manager/features/transactions/data/transactions_repository.dart';
 import 'package:my_accounts_manager/features/transactions/presentation/add_transaction_page.dart';
+import 'package:my_accounts_manager/features/transactions/presentation/transaction_list_tile.dart';
 import 'package:my_accounts_manager/features/transactions/transactions_providers.dart';
 
 late AppDatabase testDatabase;
@@ -1538,6 +1539,60 @@ void main() {
           .initialAccountId,
       testAccount.id,
     );
+  }, timeout: const Timeout(Duration(seconds: 30)));
+
+  testWidgets('Account Details uses the shared transaction tile and FAB', (
+    tester,
+  ) async {
+    await TransactionsRepository(testDatabase).createTransaction(
+      accountId: testAccount.id,
+      categoryId: '10000000-0000-4000-8000-000000000002',
+      type: 'expense',
+      amountPaise: 12500,
+      transactionDate: DateTime.utc(
+        DateTime.now().year,
+        DateTime.now().month,
+        DateTime.now().day,
+      ).millisecondsSinceEpoch,
+      note: 'Account details row',
+    );
+    final historyItems =
+        await tester.runAsync(
+          () => TransactionsRepository(testDatabase).watchHistory().first,
+        ) ??
+        <TransactionHistoryItem>[];
+    await pumpApp(tester, historyItems: historyItems);
+    appRouter.push('/accounts/${testAccount.id}');
+    final tile = find.byType(TransactionListTile);
+    await pumpUntilFound(tester, find.text('Transaction history'));
+    await tester.pump(const Duration(seconds: 1));
+    await tester.scrollUntilVisible(
+      tile,
+      300,
+      scrollable: find.byType(Scrollable).last,
+    );
+
+    expect(tile, findsOneWidget);
+    // No card nested inside another card.
+    expect(
+      find.descendant(of: tile, matching: find.byType(Card)),
+      findsNothing,
+    );
+    expect(
+      find.descendant(of: tile, matching: find.byType(CategoryIconBadge)),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: tile,
+        matching: find.byTooltip('Transaction actions'),
+      ),
+      findsOneWidget,
+    );
+    // Same round FAB as the rest of the app, not an extended labelled one.
+    final fab = find.byKey(const ValueKey('account-details-add-transaction'));
+    expect(fab, findsOneWidget);
+    expect(tester.widget(fab), isA<AddTransactionFab>());
   }, timeout: const Timeout(Duration(seconds: 30)));
 
   testWidgets(
