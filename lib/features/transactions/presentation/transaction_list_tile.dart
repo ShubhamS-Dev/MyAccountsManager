@@ -10,15 +10,14 @@ import '../data/transactions_repository.dart';
 import '../transactions_providers.dart';
 import 'transaction_copy_actions.dart';
 
-/// Soft-deletes [item] and offers Undo. Returns false if the write failed, so
-/// a swipe-to-delete can snap the row back.
+/// Soft-deletes [item] and offers Undo. Returns false if the write failed.
 Future<bool> moveTransactionToTrash(
   BuildContext context,
   WidgetRef ref,
   TransactionHistoryItem item,
 ) async {
-  // Capture before awaiting. A Dismissible may be removed as soon as
-  // confirmDismiss returns true, taking its context with it.
+  // Capture before awaiting. The row leaves the tree once the soft-delete
+  // lands, taking its context with it.
   final messenger = ScaffoldMessenger.of(context);
   final container = ProviderScope.containerOf(context, listen: false);
   final transaction = item.transaction;
@@ -98,7 +97,8 @@ Future<void> confirmMoveTransactionToTrash(
 }
 
 /// The standard transaction row used by History and Account Details: category
-/// badge, title, metadata, signed amount, overflow actions, swipe to Trash.
+/// badge, title, metadata, signed amount, overflow actions. No swipe-to-delete:
+/// it caused accidental deletes, so Trash is only reachable via the menu.
 class TransactionListTile extends ConsumerWidget {
   const TransactionListTile({
     required this.item,
@@ -122,22 +122,8 @@ class TransactionListTile extends ConsumerWidget {
     final income = transaction.type == 'income';
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: Dismissible(
-        key: ValueKey('dismiss-${transaction.id}'),
-        direction: DismissDirection.endToStart,
-        background: Container(
-          alignment: Alignment.centerRight,
-          padding: const EdgeInsets.only(right: AppSpacing.lg),
-          decoration: BoxDecoration(
-            color: scheme.errorContainer,
-            borderRadius: BorderRadius.circular(AppRadius.card),
-          ),
-          child: Icon(
-            Icons.delete_outline_rounded,
-            color: scheme.onErrorContainer,
-          ),
-        ),
-        confirmDismiss: (_) => moveTransactionToTrash(context, ref, item),
+      child: KeyedSubtree(
+        key: ValueKey('transaction-row-${transaction.id}'),
         child: AppCard(
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.md,

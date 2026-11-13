@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/database/app_database.dart';
+import '../../../core/formatting/date_timestamp.dart';
 
 const khataLent = 'lent';
 const khataBorrowed = 'borrowed';
@@ -84,6 +85,83 @@ class KhataTotals {
   }
 }
 
+/// How one payment splits across a person's open entries.
+class KhataPaymentPlan {
+  const KhataPaymentPlan({
+    required this.allocations,
+    required this.excessPaise,
+  });
+
+  /// Entry id to the amount applied to it, oldest entry first.
+  final List<({KhataEntryItem item, int paise})> allocations;
+
+  /// Amount left after every eligible entry is settled.
+  final int excessPaise;
+
+  int get appliedPaise =>
+      allocations.fold(0, (sum, allocation) => sum + allocation.paise);
+  int get settledCount => allocations
+      .where(
+        (allocation) => allocation.paise == allocation.item.outstandingPaise,
+      )
+      .length;
+}
+
+/// Splits [amountPaise] across [entries] oldest first. Only open entries in
+/// [direction] dated on or before [paymentDate] are eligible, because a
+/// repayment cannot predate its entry.
+KhataPaymentPlan planKhataPayment({
+  required List<KhataEntryItem> entries,
+  required String direction,
+  required int amountPaise,
+  required int paymentDate,
+}) {
+  final eligible =
+      entries
+          .where(
+            (item) =>
+                !item.isSettled &&
+                item.entry.direction == direction &&
+                item.entry.entryDate <= paymentDate,
+          )
+          .toList()
+        ..sort((a, b) {
+          final byDate = a.entry.entryDate.compareTo(b.entry.entryDate);
+          return byDate != 0
+              ? byDate
+              : a.entry.createdAt.compareTo(b.entry.createdAt);
+        });
+  var remaining = amountPaise;
+  final allocations = <({KhataEntryItem item, int paise})>[];
+  for (final item in eligible) {
+    if (remaining <= 0) break;
+    final applied = remaining < item.outstandingPaise
+        ? remaining
+        : item.outstandingPaise;
+    allocations.add((item: item, paise: applied));
+    remaining -= applied;
+  }
+  return KhataPaymentPlan(allocations: allocations, excessPaise: remaining);
+}
+
+/// Rows written by one payment, so the whole payment can be undone.
+class KhataPaymentResult {
+  const KhataPaymentResult({
+    required this.repaymentIds,
+    required this.settledCount,
+    this.excessEntryId,
+    this.excessPaise = 0,
+  });
+
+  final List<String> repaymentIds;
+  final int settledCount;
+  final String? excessEntryId;
+  final int excessPaise;
+}
+
+String khataOppositeDirection(String direction) =>
+    direction == khataLent ? khataBorrowed : khataLent;
+
 /// Independent MyKhata ledger. Never reads or writes Account tables.
 class KhataRepository {
   KhataRepository(this._database);
@@ -142,10 +220,14 @@ class KhataRepository {
         );
   }
 
-  Stream<List<KhataEntryItem>> watchEntries({String? personId}) {
-    return _database
-        .customSelect(
-          '''
+  Stream<List<KhataEntryItem>> watchEntries({String? personId}) =>
+      _entriesQuery(
+        personId,
+      ).watch().map((rows) => rows.map(_entryItem).toList());
+
+  Selectable<QueryRow> _entriesQuery(String? personId) {
+    return _database.customSelect(
+      '''
       SELECT e.*, p.name AS person_name, COALESCE(r.repaid, 0) AS repaid
       FROM khata_entries e
       INNER JOIN khata_people p ON p.id = e.person_id
@@ -154,15 +236,13 @@ class KhataRepository {
         ${personId == null ? '' : 'AND e.person_id = ?'}
       ORDER BY e.entry_date DESC, e.created_at DESC
       ''',
-          variables: [if (personId != null) Variable.withString(personId)],
-          readsFrom: {
-            _database.khataPeople,
-            _database.khataEntries,
-            _database.khataRepayments,
-          },
-        )
-        .watch()
-        .map((rows) => rows.map(_entryItem).toList());
+      variables: [if (personId != null) Variable.withString(personId)],
+      readsFrom: {
+        _database.khataPeople,
+        _database.khataEntries,
+        _database.khataRepayments,
+      },
+    );
   }
 
   Stream<KhataEntryItem?> watchEntry(String entryId) {
@@ -451,6 +531,150 @@ class KhataRepository {
         _database.khataRepayments,
       )..where((row) => row.id.equals(repaymentId))).write(
         KhataRepaymentsCompanion(deletedAt: Value(now), updatedAt: Value(now)),
+      );
+    });
+  }
+
+  /// Records one payment against a person's open entries in [direction]
+  /// (`lent`: they paid you, `borrowed`: you paid them), settling the oldest
+  /// first. Pass [entryId] to restrict it to one entry.
+  ///
+  /// Any amount above what is due is rejected unless [allowExcess] is set, in
+  /// which case it becomes a new entry in the opposite direction dated
+  /// [paymentDate]. Everything happens in one transaction.
+  Future<KhataPaymentResult> recordPayment({
+    required String personId,
+    required String direction,
+    required int amountPaise,
+    required int paymentDate,
+    String? entryId,
+    String? note,
+    bool allowExcess = false,
+  }) {
+    _requireDirection(direction);
+    _requireAmount(amountPaise);
+    final normalizedNote = _optionalNote(note);
+    return _database.transaction(() async {
+      final entries = (await _entriesQuery(
+        personId,
+      ).get()).map(_entryItem).toList();
+      final scoped = entryId == null
+          ? entries
+          : entries.where((item) => item.entry.id == entryId).toList();
+      if (entryId != null && scoped.isEmpty) {
+        throw StateError('Entry not found.');
+      }
+      final open = scoped
+          .where((item) => !item.isSettled && item.entry.direction == direction)
+          .toList();
+      if (open.isEmpty) throw StateError('Nothing is due.');
+      final plan = planKhataPayment(
+        entries: scoped,
+        direction: direction,
+        amountPaise: amountPaise,
+        paymentDate: paymentDate,
+      );
+      if (plan.allocations.isEmpty) {
+        throw StateError('Payment date cannot be before the entry date.');
+      }
+      if (plan.excessPaise > 0 && !allowExcess) {
+        throw StateError('Payment is more than the amount due.');
+      }
+      final now = _now();
+      final ids = <String>[];
+      for (final allocation in plan.allocations) {
+        final id = _uuid.v4();
+        await _database
+            .into(_database.khataRepayments)
+            .insert(
+              KhataRepaymentsCompanion.insert(
+                id: id,
+                entryId: allocation.item.entry.id,
+                amountPaise: allocation.paise,
+                note: Value(normalizedNote),
+                repaymentDate: paymentDate,
+                createdAt: now,
+                updatedAt: now,
+              ),
+            );
+        ids.add(id);
+      }
+      String? excessId;
+      if (plan.excessPaise > 0) {
+        excessId = _uuid.v4();
+        await _database
+            .into(_database.khataEntries)
+            .insert(
+              KhataEntriesCompanion.insert(
+                id: excessId,
+                personId: personId,
+                direction: khataOppositeDirection(direction),
+                amountPaise: plan.excessPaise,
+                note: Value(
+                  'Extra from payment on ${DateOnly.format(paymentDate)}',
+                ),
+                entryDate: paymentDate,
+                createdAt: now,
+                updatedAt: now,
+              ),
+            );
+      }
+      return KhataPaymentResult(
+        repaymentIds: ids,
+        settledCount: plan.settledCount,
+        excessEntryId: excessId,
+        excessPaise: plan.excessPaise,
+      );
+    });
+  }
+
+  /// Reverses [recordPayment]: removes the extra entry and every repayment it
+  /// created. Rows changed since then are left alone.
+  Future<void> undoPayment(KhataPaymentResult result) {
+    return _database.transaction(() async {
+      final now = _now();
+      final excessId = result.excessEntryId;
+      if (excessId != null && await _repaidPaise(excessId) == 0) {
+        await (_database.update(_database.khataEntries)
+              ..where((row) => row.id.equals(excessId))
+              ..where((row) => row.deletedAt.isNull()))
+            .write(
+              KhataEntriesCompanion(
+                deletedAt: Value(now),
+                updatedAt: Value(now),
+              ),
+            );
+      }
+      await (_database.update(_database.khataRepayments)
+            ..where((row) => row.id.isIn(result.repaymentIds))
+            ..where((row) => row.deletedAt.isNull()))
+          .write(
+            KhataRepaymentsCompanion(
+              deletedAt: Value(now),
+              updatedAt: Value(now),
+            ),
+          );
+    });
+  }
+
+  /// Adds more money to an open entry, for example a second loan on the same
+  /// terms. Settled entries stay locked; record a new entry instead.
+  Future<void> topUpEntry({required String entryId, required int amountPaise}) {
+    _requireAmount(amountPaise);
+    return _database.transaction(() async {
+      final entry = await _requireActiveEntry(entryId);
+      if (await _repaidPaise(entryId) >= entry.amountPaise) {
+        throw StateError('Settled entries cannot be topped up.');
+      }
+      final total = entry.amountPaise + amountPaise;
+      _requireAmount(total);
+      await (_database.update(
+        _database.khataEntries,
+      )..where((row) => row.id.equals(entryId))).write(
+        KhataEntriesCompanion(
+          amountPaise: Value(total),
+          updatedAt: Value(_now()),
+        ),
       );
     });
   }

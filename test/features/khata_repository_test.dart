@@ -313,4 +313,170 @@ void main() {
 
     expect(await emissions, [10000, 7500]);
   });
+
+  group('person-level payment', () {
+    final day3 = DateTime.utc(2026, 11, 3).millisecondsSinceEpoch;
+    final day9 = DateTime.utc(2026, 11, 9).millisecondsSinceEpoch;
+
+    Future<String> lendOn(String personId, int paise, int date) =>
+        khata.createEntry(
+          personId: personId,
+          direction: khataLent,
+          amountPaise: paise,
+          entryDate: date,
+        );
+
+    test('settles the oldest entries first and part-pays the next', () async {
+      final asha = await khata.createPerson(name: 'Asha');
+      final newer = await lendOn(asha, 30000, day5);
+      final older = await lendOn(asha, 20000, day1);
+
+      final result = await khata.recordPayment(
+        personId: asha,
+        direction: khataLent,
+        amountPaise: 25000,
+        paymentDate: day9,
+      );
+
+      expect(result.repaymentIds, hasLength(2));
+      expect(result.settledCount, 1);
+      expect(result.excessEntryId, isNull);
+      expect((await khata.watchEntry(older).first)!.isSettled, isTrue);
+      expect((await khata.watchEntry(newer).first)!.outstandingPaise, 25000);
+    });
+
+    test('settles everything when paid in one go', () async {
+      final asha = await khata.createPerson(name: 'Asha');
+      await lendOn(asha, 20000, day1);
+      await lendOn(asha, 30000, day5);
+
+      final result = await khata.recordPayment(
+        personId: asha,
+        direction: khataLent,
+        amountPaise: 50000,
+        paymentDate: day9,
+      );
+
+      expect(result.settledCount, 2);
+      final summary = (await khata.watchPeopleSummaries().first).single;
+      expect(summary.isSettled, isTrue);
+      expect(summary.netPaise, 0);
+    });
+
+    test('rejects excess unless confirmed, then books it as an opposite '
+        'entry', () async {
+      final asha = await khata.createPerson(name: 'Asha');
+      await lendOn(asha, 20000, day1);
+
+      expect(
+        () => khata.recordPayment(
+          personId: asha,
+          direction: khataLent,
+          amountPaise: 25000,
+          paymentDate: day9,
+        ),
+        throwsStateError,
+      );
+
+      final result = await khata.recordPayment(
+        personId: asha,
+        direction: khataLent,
+        amountPaise: 25000,
+        paymentDate: day9,
+        allowExcess: true,
+      );
+
+      expect(result.excessPaise, 5000);
+      final extra = (await khata.watchEntry(result.excessEntryId!).first)!;
+      expect(extra.entry.direction, khataBorrowed);
+      expect(extra.entry.amountPaise, 5000);
+      expect(extra.entry.entryDate, day9);
+      expect(extra.entry.note, 'Extra from payment on 09 Nov 2026');
+      final summary = (await khata.watchPeopleSummaries().first).single;
+      expect(summary.receivablePaise, 0);
+      expect(summary.payablePaise, 5000);
+    });
+
+    test('restricted to one entry, excess skips other open entries', () async {
+      final asha = await khata.createPerson(name: 'Asha');
+      final first = await lendOn(asha, 20000, day1);
+      final second = await lendOn(asha, 30000, day5);
+
+      final result = await khata.recordPayment(
+        personId: asha,
+        entryId: second,
+        direction: khataLent,
+        amountPaise: 35000,
+        paymentDate: day9,
+        allowExcess: true,
+      );
+
+      expect(result.excessPaise, 5000);
+      expect((await khata.watchEntry(first).first)!.outstandingPaise, 20000);
+      expect((await khata.watchEntry(second).first)!.isSettled, isTrue);
+    });
+
+    test('skips entries dated after the payment', () async {
+      final asha = await khata.createPerson(name: 'Asha');
+      final early = await lendOn(asha, 20000, day1);
+      final late = await lendOn(asha, 30000, day5);
+
+      final plan = planKhataPayment(
+        entries: await khata.watchEntries(personId: asha).first,
+        direction: khataLent,
+        amountPaise: 50000,
+        paymentDate: day3,
+      );
+      expect(plan.allocations.map((a) => a.item.entry.id), [early]);
+      expect(plan.excessPaise, 30000);
+
+      await khata.recordPayment(
+        personId: asha,
+        direction: khataLent,
+        amountPaise: 20000,
+        paymentDate: day3,
+      );
+      expect((await khata.watchEntry(late).first)!.outstandingPaise, 30000);
+    });
+
+    test('undo removes every repayment and the extra entry', () async {
+      final asha = await khata.createPerson(name: 'Asha');
+      final a = await lendOn(asha, 20000, day1);
+      final b = await lendOn(asha, 30000, day5);
+
+      final result = await khata.recordPayment(
+        personId: asha,
+        direction: khataLent,
+        amountPaise: 60000,
+        paymentDate: day9,
+        allowExcess: true,
+      );
+      await khata.undoPayment(result);
+
+      expect((await khata.watchEntry(a).first)!.outstandingPaise, 20000);
+      expect((await khata.watchEntry(b).first)!.outstandingPaise, 30000);
+      expect(await khata.watchEntry(result.excessEntryId!).first, isNull);
+      final summary = (await khata.watchPeopleSummaries().first).single;
+      expect(summary.receivablePaise, 50000);
+      expect(summary.payablePaise, 0);
+    });
+
+    test('top-up increases an open entry but not a settled one', () async {
+      final asha = await khata.createPerson(name: 'Asha');
+      final entry = await lendOn(asha, 20000, day1);
+
+      await khata.topUpEntry(entryId: entry, amountPaise: 5000);
+      expect((await khata.watchEntry(entry).first)!.outstandingPaise, 25000);
+
+      await khata.recordRepayment(
+        entryId: entry,
+        amountPaise: 25000,
+        repaymentDate: day5,
+      );
+      expect(
+        () => khata.topUpEntry(entryId: entry, amountPaise: 100),
+        throwsStateError,
+      );
+    });
+  });
 }
