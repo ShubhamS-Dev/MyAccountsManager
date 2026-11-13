@@ -12,7 +12,7 @@ Show a month-scoped transaction history with quick search, type selection, Accou
 - Active Account, Category, and type selections appear as removable chips.
 - When search or any filter is active, show `Showing X of Y transactions`. Both counts are based on the already-loaded History list; no additional query is issued.
 - Transactions are grouped by date using Flutter slivers and pinned `SliverPersistentHeader` date labels.
-- Each transaction uses existing Category `iconKey` and `colorValue` from the History projection. If no icon mapping exists, use the income/expense directional arrow.
+- Each transaction uses the shared `CategoryIconBadge` with Category `iconKey`, name and `colorValue` from the History projection. A null key falls back to the category name; an unknown category retains the income/expense directional arrow. Missing colour uses the semantic income/expense fallback token.
 - Existing transaction details/edit navigation and the Open Trash action remain available.
 
 ## Summary calculation
@@ -47,6 +47,7 @@ Account and Category filters open a bottom sheet. The current selection is highl
 
 
 ## Theme-aware visual refinements
+- History rows use the shared `CategoryIconBadge`; its dimensions, 12% circular tint and 19px icon preserve the previous History-row appearance.
 - Category metadata is read from the joined Category row and displayed as a coloured circular icon. Known icon keys are preferred; when legacy built-in records have no iconKey, their known category names map to the matching glyph. The income/expense arrow is reserved for an unknown category/key. A missing category colour uses the semantic income/expense fallback colour.
 - Selected All / Expense / Income segment uses the theme primary fill and onPrimary foreground for high contrast; unselected items use theme surface and onSurfaceVariant.
 - The shared Dashboard / Accounts / History FAB uses the shared hero gradient and theme onPrimary white foreground.

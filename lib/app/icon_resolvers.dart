@@ -91,6 +91,7 @@ IconData resolveCategoryIcon(String? key, {required bool income}) {
     case 'investment':
       return Icons.trending_up_rounded;
     case 'rental_income':
+    case 'rental income':
       return Icons.key_rounded;
     case 'refunds':
       return Icons.currency_exchange_rounded;
