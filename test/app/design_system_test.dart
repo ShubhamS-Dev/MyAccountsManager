@@ -60,48 +60,49 @@ void main() {
     },
   );
 
-  testWidgets('CategoryIconBadge resolves names and semantic fallback colours', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: buildAppTheme(brightness: Brightness.light),
-        home: const Scaffold(
-          body: Row(
-            children: [
-              CategoryIconBadge(
-                iconKey: null,
-                categoryName: 'Groceries',
-                colorValue: null,
-                income: false,
-              ),
-              CategoryIconBadge(
-                iconKey: null,
-                categoryName: 'Rental Income',
-                colorValue: null,
-                income: true,
-              ),
-            ],
+  testWidgets(
+    'CategoryIconBadge resolves names and semantic fallback colours',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(brightness: Brightness.light),
+          home: const Scaffold(
+            body: Row(
+              children: [
+                CategoryIconBadge(
+                  iconKey: null,
+                  categoryName: 'Groceries',
+                  colorValue: null,
+                  income: false,
+                ),
+                CategoryIconBadge(
+                  iconKey: null,
+                  categoryName: 'Rental Income',
+                  colorValue: null,
+                  income: true,
+                ),
+              ],
+            ),
           ),
         ),
-      ),
-    );
+      );
 
-    expect(find.byIcon(Icons.shopping_basket_rounded), findsOneWidget);
-    expect(find.byIcon(Icons.key_rounded), findsOneWidget);
-    final badges = tester.widgetList<CategoryIconBadge>(
-      find.byType(CategoryIconBadge),
-    );
-    expect(badges.length, 2);
-    final icons = tester.widgetList<Icon>(
-      find.descendant(
-        of: find.byType(CategoryIconBadge),
-        matching: find.byType(Icon),
-      ),
-    );
-    expect(icons.first.color, AppColors.negative);
-    expect(icons.last.color, AppColors.positive);
-  });
+      expect(find.byIcon(Icons.shopping_basket_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.key_rounded), findsOneWidget);
+      final badges = tester.widgetList<CategoryIconBadge>(
+        find.byType(CategoryIconBadge),
+      );
+      expect(badges.length, 2);
+      final icons = tester.widgetList<Icon>(
+        find.descendant(
+          of: find.byType(CategoryIconBadge),
+          matching: find.byType(Icon),
+        ),
+      );
+      expect(icons.first.color, AppColors.negative);
+      expect(icons.last.color, AppColors.positive);
+    },
+  );
 
   testWidgets('CategoryChip can tint an unselected icon per category', (
     tester,
