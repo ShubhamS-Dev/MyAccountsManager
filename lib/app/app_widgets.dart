@@ -10,6 +10,7 @@ class CategoryIconBadge extends StatelessWidget {
     required this.colorValue,
     required this.income,
     super.key,
+    this.fallbackColor,
     this.size = 40,
   });
 
@@ -17,12 +18,15 @@ class CategoryIconBadge extends StatelessWidget {
   final String categoryName;
   final int? colorValue;
   final bool income;
+
+  /// Used when the category has no colour; defaults to the income/expense hue.
+  final Color? fallbackColor;
   final double size;
 
   @override
   Widget build(BuildContext context) {
     final color = colorValue == null
-        ? (income ? AppColors.positive : AppColors.negative)
+        ? fallbackColor ?? (income ? AppColors.positive : AppColors.negative)
         : Color(colorValue!);
     return Container(
       width: size,
