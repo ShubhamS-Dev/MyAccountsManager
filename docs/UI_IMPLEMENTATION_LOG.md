@@ -501,3 +501,14 @@ Validation status:
 - `shared action buttons have a 40px face and 48px hit area`: its `!inTest` assertion followed the Reports test timeout and was a cascading test-binding failure. No change was made to this test; confirm it passes in the next full run.
 - Tests only. No `lib/` files, package dependencies, schema, or `pubspec.yaml` were changed. The intentional app version remains `1.1.0+2`.
 - Do not mark this work Done until the follow-up CI run passes and the APK is verified.
+
+## Run #43400117474 RCA — deterministic transaction history in widget tests (2026-11-13)
+
+- Run: [Flutter validation #411](https://github.com/ShubhamS-Dev/MyAccountsManager/actions/runs/43400117474)
+- Format and Analyze passed. The test step reported the Home Recent and Reports Top transactions icon tests as failures.
+- The Home test log shows `A Timer is still pending even after the widget tree was disposed`. Both tests enabled the live Drift `watchHistory` stream through `liveHistory: true`; disposing the Riverpod stream subscription schedules Drift query-store cleanup in the widget-test FakeAsync zone. This caused the Home test to fail during teardown and left the Reports test to hit the cascading `!inTest` binding assertion.
+- `test/widget_test.dart`: the two icon tests now read the seeded history once via `tester.runAsync` and inject it through a deterministic `Stream.value` override. They no longer open live Drift history subscriptions, while the production Home and Reports widgets still render the same repository-shaped history items.
+- Home now scrolls to a unique transaction note within the Home dashboard's own scrollable and scopes icon assertions to that transaction's `ListTile` and `CategoryIconBadge`. Reports scrolls to its unique transaction note within the Reports scrollable and scopes assertions to that transaction's `ListTile`.
+- The shared action-buttons test remains unchanged; its prior `!inTest` error is consistent with the preceding test's timeout/teardown failure and must be confirmed by the next full run.
+- Tests and this RCA documentation only. No `lib/` files, package dependencies, schema, or `pubspec.yaml` were changed. The app version remains `1.1.0+2`.
+- Do not mark this work Done until the follow-up CI run passes and the APK is verified.
