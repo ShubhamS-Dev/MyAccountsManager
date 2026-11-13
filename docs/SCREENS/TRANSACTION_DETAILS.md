@@ -4,6 +4,7 @@
 Show the selected transaction's amount, note, Account, Category, transaction date, and audit timestamps, with actions to edit or create a copy.
 
 ## Layout
+- The top summary card uses the shared `CategoryIconBadge` at 48px, resolving the Category by `row.categoryId` from the existing type-scoped category provider. If the Category is unavailable, the income/expense directional arrow remains the fallback.
 - The existing Edit transaction action remains first.
 - Duplicate and Copy as new remain side by side.
 - The helper text “Duplicate saves a copy dated today. Copy as new lets you change it first.” remains directly below those actions.

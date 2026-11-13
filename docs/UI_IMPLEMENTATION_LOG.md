@@ -459,3 +459,33 @@ User approval: build steps 1 to 5. MyKhata defaults approved: block overpayment,
 - Added `docs/SCREENS/TRANSACTION_DETAILS.md` for the screen behavior. Updated CHANGELOG and this implementation log. `docs/DESIGN_SYSTEM.md` is unchanged because no shared component or token was added or changed.
 - No package, schema, migration, repository method, or database method was added. No existing test became outdated, so no test was changed.
 - Validation: Dart format, Flutter analyze, Flutter tests, and Android build have **not yet been run** in this session. Do not treat this implementation as Done until the feature-branch CI run passes.
+
+
+## Category icons on all transaction rows (2026-11-13)
+
+Root cause:
+- Built-in categories are seeded with null `iconKey` and `colorValue`. Some transaction-row consumers passed only the nullable icon key to the resolver or did not use the resolver/name fallback at all, so the generic income/expense arrow appeared.
+- `Rental Income` also needed an explicit name alias to the existing `rental_income` catalog key.
+
+Files changed:
+- `lib/app/icon_catalog.dart` — added the `rental income` alias.
+- `lib/app/icon_resolvers.dart` — added the matching `rental income` switch case.
+- `lib/app/app_widgets.dart` — added shared `CategoryIconBadge` with category-name and semantic-colour fallbacks.
+- `lib/features/transactions/presentation/history_page.dart` — migrated History rows to the shared badge without changing its size, tint or icon size.
+- `lib/features/shell/presentation/app_shell.dart` — Home Recent rows now use the shared badge; amount styling and tap behaviour are unchanged.
+- `lib/features/notifications/presentation/activity_center_page.dart` — scheduled transaction rows now use the shared badge.
+- `lib/features/reports/presentation/reports_page.dart` — Top transactions resolves `categoryIconKey ?? categoryName`.
+- `lib/features/transactions/presentation/transaction_details_page.dart` — the summary header resolves the Category from the existing `allCategoriesByTypeProvider(row.type)` list by `row.categoryId`, using the 48px shared badge and retaining the directional fallback when no Category is found.
+- `test/app/icon_catalog_test.dart` — verifies all 16 seeded expense and 8 seeded income names, including Rental Income, resolve away from directional arrows.
+- `test/app/design_system_test.dart` — verifies null-key name fallback and null-colour income/expense token fallbacks for `CategoryIconBadge`.
+- `test/widget_test.dart` — adds Home Recent and Reports Top transactions category-icon coverage.
+- `test/features/notifications_test.dart` — adds Activity Center scheduled-row category-icon coverage.
+- `docs/DESIGN_SYSTEM.md`, `docs/SCREENS/HISTORY.md`, `docs/SCREENS/TRANSACTION_DETAILS.md`, and `CHANGELOG.md` — document the shared badge and screen changes.
+
+Constraints:
+- UI-only. No package, schema, migration, repository, database method or milestone status change.
+- No Trash, Account Details or Recurring row migration was made; those rows were outside the required screen list and visual identity was not independently verified.
+
+Validation status:
+- Local `dart format --output=none --set-exit-if-changed .`, `flutter analyze`, and `flutter test` have NOT been run because Flutter/Dart are unavailable in this environment.
+- GitHub Actions CI is the validation gate. This work is NOT Done until CI passes and the user verifies the result in the APK.

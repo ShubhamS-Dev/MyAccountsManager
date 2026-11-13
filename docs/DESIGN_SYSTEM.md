@@ -39,6 +39,7 @@ The theme's `textTheme` maps every M3 role. Text always honours the device font-
 - `SectionHeader`: section title and optional action.
 - `PrimaryButton`: 40px action button (grows with the device font size) with a 48px touch area. Optional `gradient` is opt-in; omitted gradient retains the default solid style.
 - `CategoryChip`: accessible selectable chip with optional per-category icon tint (`iconColor`).
+- `CategoryIconBadge`: shared circular category icon for transaction rows and the Transaction Details header. Inputs: `iconKey`, `categoryName`, nullable integer `colorValue`, `income`, and optional `size` (40 by default; 48 for the Details header). It resolves `iconKey ?? categoryName`; a missing colour uses `AppColors.positive` for income or `AppColors.negative` for expense. The circle background is the resolved colour at 12% opacity and the icon is 19px in that colour.
 - `EmptyState`: icon-led empty/error illustration, supporting copy, and optional CTA.
 
 ## Motion and accessibility
