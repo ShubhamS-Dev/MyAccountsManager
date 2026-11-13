@@ -306,3 +306,10 @@ The source changes are committed, but the new workflow must pass before this sli
 - New dependencies approved by the user: share_plus, url_launcher. No schema change.
 - Evidence: local format (0 changed), analyze (no issues), 151 tests passing (22 new: test/app/accessibility_test.dart, test/features/csv_export_test.dart, test/features/khata_reminders_and_export_test.dart, and a History/Details masking test in test/widget_test.dart). Debug APK built. CI not run. Call, WhatsApp and the share sheet were tested with fakes only, not on a device or emulator.
 
+## Transaction Details delete action — 2026-11-13
+
+- Status: **In Progress** (M5 and M12 remain In Progress; this task is not marked Done).
+- Implemented on `feature/20261113/transaction-delete`, based on `development/20261111` at `8e04fe42bbade015ed893e6ef94c4900fd27f7fc`.
+- Added a Transaction Details soft-delete entry point, confirmation with privacy-aware amount display, return-to-previous-screen feedback, and Undo using the existing restore operation.
+- No schema change, migration, package, or repository/database method was added.
+- Validation is pending: Dart format, Flutter analyze, Flutter tests, Android build, and the feature-branch CI result must be checked before completion.

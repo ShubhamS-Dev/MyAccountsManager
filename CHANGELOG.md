@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Transaction Details — delete to Trash (2026-11-13)
+- Added one full-width, low-emphasis Delete transaction action below the Duplicate / Copy as new helper text.
+- Confirmation shows the signed, formatted amount and transaction note (or category title); the existing hidden-amount preference is preserved.
+- Confirming uses the existing soft-delete operation, returns to the previous screen, and offers Undo through the existing restore operation. No schema, dependency, or repository API change.
+
+
 ### Contrast, export and MyKhata reminders (2026-11-11)
 - Contrast: income and expense text now uses darker tones in light theme (#047857, #BE123C; 5.2 to 6.3:1 on light surfaces). The bright tones stay for icons, chart slices and category colours. Dark theme is unchanged. Selected segments pick black or white text by luminance.
 - Person Details hero and person avatars choose dark or white text by luminance. Light person colours (amber, sky, teal, emerald, rose, pink) previously had white text at 2.2 to 3.7:1.
