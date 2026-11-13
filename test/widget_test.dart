@@ -274,10 +274,7 @@ void main() {
     await pumpUntilFound(tester, find.text('Largest expenses'));
 
     final reportsScrollable = find
-        .ancestor(
-          of: find.text('Cash flow'),
-          matching: find.byType(Scrollable),
-        )
+        .ancestor(of: find.text('Cash flow'), matching: find.byType(Scrollable))
         .first;
     await tester.scrollUntilVisible(
       find.text('Reports category icon'),
