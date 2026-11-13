@@ -951,24 +951,18 @@ class _RecentTransaction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final income = item.transaction.type == 'income';
-    final color = income ? scheme.positiveText : scheme.negativeText;
+    final color = income
+        ? AppColors.positiveTextLight
+        : AppColors.negativeTextLight;
     return ListTile(
       minVerticalPadding: 10,
       onTap: () => context.push('/transaction/${item.transaction.id}'),
-      leading: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: .12),
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Icon(
-          income ? Icons.south_west_rounded : Icons.north_east_rounded,
-          color: color,
-          size: 18,
-        ),
+      leading: CategoryIconBadge(
+        iconKey: item.categoryIconKey,
+        categoryName: item.categoryName,
+        colorValue: item.categoryColorValue,
+        income: income,
       ),
       title: Text(
         item.transaction.note?.isNotEmpty == true

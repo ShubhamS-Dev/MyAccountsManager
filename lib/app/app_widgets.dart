@@ -1,44 +1,6 @@
 import 'package:flutter/material.dart';
 
 import 'app_theme.dart';
-import 'icon_resolvers.dart';
-
-class CategoryIconBadge extends StatelessWidget {
-  const CategoryIconBadge({
-    required this.iconKey,
-    required this.categoryName,
-    required this.colorValue,
-    required this.income,
-    super.key,
-    this.size = 40,
-  });
-
-  final String? iconKey;
-  final String categoryName;
-  final int? colorValue;
-  final bool income;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = colorValue == null
-        ? (income ? AppColors.positive : AppColors.negative)
-        : Color(colorValue!);
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: color.withValues(alpha: .12),
-      ),
-      child: Icon(
-        resolveCategoryIcon(iconKey ?? categoryName, income: income),
-        size: 19,
-        color: color,
-      ),
-    );
-  }
-}
 
 class AppCard extends StatelessWidget {
   const AppCard({

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../app/app_theme.dart';
 import '../../../app/app_widgets.dart';
 import '../../../app/date_range_chooser.dart';
+import '../../../app/icon_resolvers.dart';
 import '../../../app/privacy_state.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/formatting/date_timestamp.dart';
@@ -999,6 +1000,14 @@ class _HistoryTile extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final transaction = item.transaction;
     final income = transaction.type == 'income';
+    final fallbackColor = income ? AppColors.positive : AppColors.negative;
+    final categoryColor = item.categoryColorValue == null
+        ? fallbackColor
+        : Color(item.categoryColorValue!);
+    final categoryIcon = resolveCategoryIcon(
+      item.categoryIconKey ?? item.categoryName,
+      income: income,
+    );
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: Dismissible(
@@ -1025,11 +1034,14 @@ class _HistoryTile extends StatelessWidget {
           onTap: onTap,
           child: Row(
             children: [
-              CategoryIconBadge(
-                iconKey: item.categoryIconKey,
-                categoryName: item.categoryName,
-                colorValue: item.categoryColorValue,
-                income: income,
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: categoryColor.withValues(alpha: .12),
+                ),
+                child: Icon(categoryIcon, size: 19, color: categoryColor),
               ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
