@@ -202,13 +202,19 @@ void main() {
     await pumpApp(tester, liveHistory: true);
 
     await tester.scrollUntilVisible(
-      find.text('Groceries'),
+      find.byType(CategoryIconBadge),
       300,
       scrollable: find.byType(Scrollable).first,
     );
-    await tester.pumpAndSettle();
+    await pumpUntilFound(tester, find.byType(CategoryIconBadge));
 
-    expect(find.byIcon(Icons.shopping_basket_rounded), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(CategoryIconBadge),
+        matching: find.byIcon(Icons.shopping_basket_rounded),
+      ),
+      findsOneWidget,
+    );
     expect(
       find.descendant(
         of: find.byType(CategoryIconBadge),
@@ -235,16 +241,29 @@ void main() {
     await pumpApp(tester, liveHistory: true);
 
     await tester.tap(find.text('Reports').last);
-    await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(
-      find.text('Largest expenses'),
-      300,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.pumpAndSettle();
+    await pumpUntilFound(tester, find.text('Largest expenses'));
+    await tester.ensureVisible(find.text('Largest expenses'));
+    await pumpUntilFound(tester, find.textContaining('Groceries ·'));
+    await tester.ensureVisible(find.textContaining('Groceries ·'));
 
-    expect(find.byIcon(Icons.shopping_basket_rounded), findsOneWidget);
-    expect(find.byIcon(Icons.north_east_rounded), findsNothing);
+    final largestExpenseRow = find.ancestor(
+      of: find.textContaining('Groceries ·'),
+      matching: find.byType(ListTile),
+    );
+    expect(
+      find.descendant(
+        of: largestExpenseRow,
+        matching: find.byIcon(Icons.shopping_basket_rounded),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: largestExpenseRow,
+        matching: find.byIcon(Icons.north_east_rounded),
+      ),
+      findsNothing,
+    );
   }, timeout: const Timeout(Duration(seconds: 30)));
 
   testWidgets('shared action buttons have a 40px face and 48px hit area', (
