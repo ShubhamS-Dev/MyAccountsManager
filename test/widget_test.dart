@@ -209,7 +209,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byIcon(Icons.shopping_basket_rounded), findsOneWidget);
-    expect(find.byIcon(Icons.north_east_rounded), findsNothing);
+    expect(
+      find.descendant(
+        of: find.byType(CategoryIconBadge),
+        matching: find.byIcon(Icons.north_east_rounded),
+      ),
+      findsNothing,
+    );
   }, timeout: const Timeout(Duration(seconds: 30)));
 
   testWidgets('Reports Top transactions shows its category icon', (

@@ -45,6 +45,13 @@ class TransactionDetailsPage extends ConsumerWidget {
           // Include hidden categories so older transactions keep their label.
           final categories = ref.watch(allCategoriesByTypeProvider(row.type));
           final income = row.type == 'income';
+          final matchingCategories = categories.valueOrNull
+                  ?.where((category) => category.id == row.categoryId)
+                  .toList() ??
+              <CategoryRow>[];
+          final category = matchingCategories.isEmpty
+              ? null
+              : matchingCategories.first;
           final scheduled = isScheduledDate(
             row.transactionDate,
             ref.watch(todayProvider),
@@ -61,12 +68,12 @@ class TransactionDetailsPage extends ConsumerWidget {
                 ),
                 child: Column(
                   children: [
-                    Icon(
-                      income
-                          ? Icons.south_west_rounded
-                          : Icons.north_east_rounded,
-                      size: 28,
-                      color: income ? colors.positiveText : colors.negativeText,
+                    CategoryIconBadge(
+                      iconKey: category?.iconKey,
+                      categoryName: category?.name ?? '',
+                      colorValue: category?.colorValue,
+                      income: income,
+                      size: 48,
                     ),
                     const SizedBox(height: 10),
                     Text(

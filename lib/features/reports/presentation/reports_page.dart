@@ -449,7 +449,7 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                           ),
                           leading: Icon(
                             resolveCategoryIcon(
-                              item.categoryIconKey,
+                              item.categoryIconKey ?? item.categoryName,
                               income: !expenseSide,
                             ),
                             color: scheme.primary,
