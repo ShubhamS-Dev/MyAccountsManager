@@ -62,6 +62,39 @@ class KhataEntryDetailsPage extends ConsumerWidget {
     }
   }
 
+  Future<void> _topUp(
+    BuildContext context,
+    WidgetRef ref,
+    KhataEntryItem item,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final amount = await showDialog<int>(
+      context: context,
+      builder: (dialogContext) => _TopUpDialog(item: item),
+    );
+    if (amount == null) return;
+    try {
+      await ref
+          .read(khataRepositoryProvider)
+          .topUpEntry(entryId: entryId, amountPaise: amount);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            ref.read(amountsHiddenProvider)
+                ? 'Amount added'
+                : '${MoneyFormatter.formatPaise(amount)} added',
+          ),
+        ),
+      );
+    } on StateError catch (error) {
+      messenger.showSnackBar(SnackBar(content: Text(error.message)));
+    } on ArgumentError {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('That amount is too large.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final entry = ref.watch(khataEntryProvider(entryId));
@@ -193,6 +226,15 @@ class KhataEntryDetailsPage extends ConsumerWidget {
                 ),
                 Row(
                   children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        key: const ValueKey('khata-entry-add-more'),
+                        onPressed: () => _topUp(context, ref, item),
+                        icon: const Icon(Icons.add_rounded, size: 16),
+                        label: const Text('Add more'),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: () =>
@@ -385,6 +427,83 @@ class _DetailRow extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Asks how much to add to an open entry; pops the amount in paise.
+class _TopUpDialog extends StatefulWidget {
+  const _TopUpDialog({required this.item});
+
+  final KhataEntryItem item;
+
+  @override
+  State<_TopUpDialog> createState() => _TopUpDialogState();
+}
+
+class _TopUpDialogState extends State<_TopUpDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    if (!_formKey.currentState!.validate()) return;
+    Navigator.pop(context, parseAmountPaise(_controller.text));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final item = widget.item;
+    return AlertDialog(
+      title: Text(
+        item.isLent
+            ? 'Add more lent to ${item.personName}'
+            : 'Add more borrowed from ${item.personName}',
+      ),
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Increases this entry and what is outstanding on it.',
+              style: AppTypography.supporting.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            AmountFormField(
+              key: const ValueKey('khata-top-up-amount'),
+              controller: _controller,
+              autofocus: true,
+              accent: khataDirectionColor(context, item.entry.direction),
+              validator: (value) {
+                final amount = parseAmountPaise(value ?? '');
+                if (amount == null || amount <= 0) {
+                  return 'Enter an amount greater than zero.';
+                }
+                if (amount + item.entry.amountPaise > khataMaxAmountPaise) {
+                  return 'Amount is too large.';
+                }
+                return null;
+              },
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(onPressed: _submit, child: const Text('Add')),
+      ],
     );
   }
 }

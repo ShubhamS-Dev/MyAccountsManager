@@ -2,6 +2,7 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:my_accounts_manager/app/app_form_widgets.dart';
 import 'package:my_accounts_manager/app/app_theme.dart';
 import 'package:my_accounts_manager/app/privacy_state.dart';
 import 'package:my_accounts_manager/core/database/app_database.dart';
@@ -155,7 +156,7 @@ void main() {
     expect(find.text('Add person'), findsOneWidget);
   }, timeout: const Timeout(Duration(seconds: 30)));
 
-  testWidgets('Record repayment blocks amounts above the outstanding', (
+  testWidgets('Record repayment confirms an amount above the outstanding', (
     tester,
   ) async {
     await pumpScreen(
@@ -173,14 +174,80 @@ void main() {
     );
     await tester.pump();
     expect(find.text('80,000'), findsOneWidget);
+    expect(find.text('Extra: you will owe Asha Rao'), findsOneWidget);
+    expect(find.text('₹5,000'), findsOneWidget);
 
     await tester.tap(find.text('Save repayment'));
-    await tester.pump();
-    expect(find.text('Cannot exceed the outstanding ₹75,000.'), findsOneWidget);
+    await tester.pumpAndSettle();
+    expect(find.text('More than the amount due'), findsOneWidget);
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
 
     await tester.tap(find.text('Full ₹75,000'));
     await tester.pump();
     expect(find.text('75,000'), findsOneWidget);
+    expect(find.byKey(const ValueKey('khata-payment-preview')), findsNothing);
+  }, timeout: const Timeout(Duration(seconds: 30)));
+
+  testWidgets('Person payment previews oldest-first split', (tester) async {
+    KhataEntryItem item(String id, int day, int amount) => KhataEntryItem(
+      entry: KhataEntryRow(
+        id: id,
+        personId: 'p1',
+        direction: khataLent,
+        amountPaise: amount,
+        entryDate: DateTime.utc(2026, 11, day).millisecondsSinceEpoch,
+        createdAt: day,
+        updatedAt: day,
+      ),
+      personName: 'Asha Rao',
+      repaidPaise: 0,
+    );
+    await pumpScreen(
+      tester,
+      const RecordRepaymentPage.forPerson(personId: 'p1'),
+      overrides: [
+        khataEntriesProvider.overrideWith(
+          (ref, personId) =>
+              Stream.value([item('e2', 5, 30000), item('e1', 1, 20000)]),
+        ),
+      ],
+    );
+
+    expect(find.text('Record payment'), findsOneWidget);
+    expect(find.text('Due ₹500 across 2 entries'), findsOneWidget);
+    await tester.enterText(
+      find.byKey(const ValueKey('khata-repayment-amount')),
+      '250',
+    );
+    await tester.pump();
+    expect(find.text('Settles 01 Nov 2026'), findsOneWidget);
+    expect(find.text('Part of 05 Nov 2026'), findsOneWidget);
+    expect(find.text('Save payment'), findsOneWidget);
+  }, timeout: const Timeout(Duration(seconds: 30)));
+
+  testWidgets('Date field names a picked date on its chip like Add '
+      'Transaction', (tester) async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final picked = DateTime(2026, 3, 9);
+    await pumpScreen(
+      tester,
+      DateShortcutField(
+        title: 'Date',
+        date: picked,
+        firstDate: today,
+        lastDate: today,
+        onChanged: (_) {},
+      ),
+    );
+    expect(find.text('09 Mar 2026'), findsOneWidget);
+    expect(find.text('Pick date'), findsNothing);
+    // Yesterday is before firstDate: visible but disabled.
+    final yesterday = tester.widget<InkWell>(
+      find.ancestor(of: find.text('Yesterday'), matching: find.byType(InkWell)),
+    );
+    expect(yesterday.onTap, isNull);
   }, timeout: const Timeout(Duration(seconds: 30)));
 
   testWidgets('Khata entry form keeps Person, Date, Note, Amount order', (

@@ -268,9 +268,14 @@ class DateShortcutField extends StatelessWidget {
     final yesterday = today.subtract(const Duration(days: 1));
     final isToday = _same(date, today);
     final isYesterday = _same(date, yesterday);
-    final first = firstDate;
-    bool allowed(DateTime value) => first == null || !value.isBefore(first);
+    bool allowed(DateTime value) =>
+        (firstDate == null || !value.isBefore(firstDate!)) &&
+        (lastDate == null || !value.isAfter(lastDate!));
+    final label = DateOnly.format(DateOnly.toUtcEpochMilliseconds(date));
 
+    // Mirrors Add Transaction's date selector: the picked chip names its
+    // date, Yesterday states its date underneath, and shortcuts outside the
+    // allowed range stay visible but disabled.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -279,32 +284,30 @@ class DateShortcutField extends StatelessWidget {
           spacing: AppSpacing.sm,
           runSpacing: AppSpacing.xs,
           children: [
-            if (allowed(today))
-              _DateChoice(
-                label: 'Today',
-                selected: isToday,
-                onTap: () => onChanged(today),
-              ),
-            if (allowed(yesterday))
-              _DateChoice(
-                label: 'Yesterday',
-                selected: isYesterday,
-                onTap: () => onChanged(yesterday),
-              ),
             _DateChoice(
-              label: 'Pick date',
+              label: 'Today',
+              selected: isToday,
+              onTap: allowed(today) ? () => onChanged(today) : null,
+            ),
+            _DateChoice(
+              label: 'Yesterday',
+              selected: isYesterday,
+              onTap: allowed(yesterday) ? () => onChanged(yesterday) : null,
+            ),
+            _DateChoice(
+              label: isToday || isYesterday ? 'Pick date' : label,
               icon: Icons.calendar_month_rounded,
               selected: !isToday && !isYesterday,
               onTap: () => _pick(context),
             ),
           ],
         ),
-        if (!isToday) ...[
+        if (isYesterday) ...[
           const SizedBox(height: AppSpacing.xs),
           Text(
-            dateLabel(date),
-            style: AppTypography.metadata.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            label,
+            style: AppTypography.fieldValue.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ],
@@ -323,48 +326,61 @@ class _DateChoice extends StatelessWidget {
 
   final String label;
   final bool selected;
-  final VoidCallback onTap;
+
+  /// Null disables the chip.
+  final VoidCallback? onTap;
   final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Material(
-      color: selected ? scheme.primaryContainer : scheme.surface,
-      borderRadius: BorderRadius.circular(AppRadius.pill),
-      child: InkWell(
-        onTap: onTap,
+    final enabled = onTap != null;
+    final foreground = !enabled
+        ? scheme.onSurface.withValues(alpha: .38)
+        : selected
+        ? scheme.onPrimaryContainer
+        : scheme.onSurface;
+    return Semantics(
+      button: true,
+      selected: selected,
+      enabled: enabled,
+      child: Material(
+        color: selected ? scheme.primaryContainer : scheme.surface,
         borderRadius: BorderRadius.circular(AppRadius.pill),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          constraints: const BoxConstraints(minHeight: AppSpacing.buttonHeight),
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppRadius.pill),
-            border: Border.all(
-              color: selected ? scheme.primary : scheme.outlineVariant,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 160),
+            constraints: const BoxConstraints(
+              minHeight: AppSpacing.touchTarget,
             ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (icon != null) ...[
-                Icon(
-                  icon,
-                  size: 15,
-                  color: selected ? scheme.primary : scheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: AppSpacing.xs),
-              ],
-              Text(
-                label,
-                style: AppTypography.button.copyWith(
-                  color: selected
-                      ? scheme.onPrimaryContainer
-                      : scheme.onSurface,
-                ),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+              border: Border.all(
+                color: selected
+                    ? scheme.primary
+                    : scheme.outlineVariant.withValues(alpha: enabled ? 1 : .5),
               ),
-            ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (icon != null) ...[
+                  Icon(
+                    icon,
+                    size: 18,
+                    color: selected ? scheme.primary : scheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                ],
+                Text(
+                  label,
+                  style: AppTypography.button.copyWith(color: foreground),
+                ),
+              ],
+            ),
           ),
         ),
       ),
