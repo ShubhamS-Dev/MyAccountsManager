@@ -512,3 +512,13 @@ Validation status:
 - The shared action-buttons test remains unchanged; its prior `!inTest` error is consistent with the preceding test's timeout/teardown failure and must be confirmed by the next full run.
 - Tests and this RCA documentation only. No `lib/` files, package dependencies, schema, or `pubspec.yaml` were changed. The app version remains `1.1.0+2`.
 - Do not mark this work Done until the follow-up CI run passes and the APK is verified.
+
+
+## Run #43402075414 RCA — widget-test scroll targets (2026-11-13)
+
+- Run: [Flutter validation #413](https://github.com/ShubhamS-Dev/MyAccountsManager/actions/runs/43402075414)
+- Dart Format and Analyze passed. The two remaining failures were test finder issues.
+- Home Recent: the test tried to obtain the Home scrollable as an ancestor of the off-screen `Recent transactions` heading. The lazy `ListView` had not built that heading yet, so the ancestor finder was empty and `.first` threw `Bad state: No element`. The test now scrolls the Home list's first scrollable directly to the category badge and asserts the icon within that badge.
+- Reports Top transactions: the note-title target was not found after scrolling. The test now targets the existing category/date subtitle (`Groceries · …`) and obtains the scrollable from the `ReportsPage` subtree, avoiding the Home list retained by the shell's `IndexedStack`.
+- No production widget code changed. Only `test/widget_test.dart` and this log were updated. No package dependencies, schema, or `pubspec.yaml` changes; app version remains `1.1.0+2`.
+- Keep status NOT Done until the next full CI run passes and the APK is verified.

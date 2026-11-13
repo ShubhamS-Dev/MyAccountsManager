@@ -26,6 +26,7 @@ import 'package:my_accounts_manager/features/my_khata/data/khata_repository.dart
 import 'package:my_accounts_manager/features/my_khata/khata_providers.dart';
 import 'package:my_accounts_manager/features/notifications/data/notification_preferences.dart';
 import 'package:my_accounts_manager/features/notifications/notifications_providers.dart';
+import 'package:my_accounts_manager/features/reports/presentation/reports_page.dart';
 import 'package:my_accounts_manager/features/settings/settings_providers.dart';
 import 'package:my_accounts_manager/features/transactions/data/transactions_repository.dart';
 import 'package:my_accounts_manager/features/transactions/presentation/add_transaction_page.dart';
@@ -211,27 +212,13 @@ void main() {
         <TransactionHistoryItem>[];
     await pumpApp(tester, historyItems: historyItems);
 
-    final homeScrollable = find
-        .ancestor(
-          of: find.text('Recent transactions'),
-          matching: find.byType(Scrollable),
-        )
-        .first;
+    final categoryBadge = find.byType(CategoryIconBadge);
     await tester.scrollUntilVisible(
-      find.text('Home category icon'),
+      categoryBadge,
       300,
-      scrollable: homeScrollable,
+      scrollable: find.byType(Scrollable).first,
     );
-    await pumpUntilFound(tester, find.text('Home category icon'));
-
-    final recentTransactionRow = find.ancestor(
-      of: find.text('Home category icon'),
-      matching: find.byType(ListTile),
-    );
-    final categoryBadge = find.descendant(
-      of: recentTransactionRow,
-      matching: find.byType(CategoryIconBadge),
-    );
+    await pumpUntilFound(tester, categoryBadge);
     expect(
       find.descendant(
         of: categoryBadge,
@@ -273,18 +260,20 @@ void main() {
     await tester.tap(find.text('Reports').last);
     await pumpUntilFound(tester, find.text('Largest expenses'));
 
-    final reportsScrollable = find
-        .ancestor(of: find.text('Cash flow'), matching: find.byType(Scrollable))
-        .first;
+    final reportsScrollable = find.descendant(
+      of: find.byType(ReportsPage),
+      matching: find.byType(Scrollable),
+    ).first;
+    final largestExpenseSubtitle = find.textContaining('Groceries ·');
     await tester.scrollUntilVisible(
-      find.text('Reports category icon'),
+      largestExpenseSubtitle,
       300,
       scrollable: reportsScrollable,
     );
-    await pumpUntilFound(tester, find.text('Reports category icon'));
+    await pumpUntilFound(tester, largestExpenseSubtitle);
 
     final largestExpenseRow = find.ancestor(
-      of: find.text('Reports category icon'),
+      of: largestExpenseSubtitle,
       matching: find.byType(ListTile),
     );
     expect(
