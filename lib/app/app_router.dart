@@ -101,6 +101,13 @@ final appRouter = GoRouter(
           PersonFormPage(personId: state.pathParameters['personId']!),
     ),
     GoRoute(
+      path: '/khata/people/:personId/repay',
+      builder: (context, state) => RecordRepaymentPage.forPerson(
+        personId: state.pathParameters['personId']!,
+        initialDirection: state.uri.queryParameters['direction'],
+      ),
+    ),
+    GoRoute(
       path: '/khata/people/:personId',
       builder: (context, state) =>
           PersonDetailsPage(personId: state.pathParameters['personId']!),

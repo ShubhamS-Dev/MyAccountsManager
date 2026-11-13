@@ -236,6 +236,7 @@ class PersonDetailsPage extends ConsumerWidget {
     final row = person.valueOrNull;
     final entryItems = entries.valueOrNull ?? const <KhataEntryItem>[];
     final owedPaise = summary?.receivablePaise ?? 0;
+    final hasOpen = entryItems.any((item) => !item.isSettled);
     final reminder = row == null || owedPaise <= 0
         ? null
         : KhataMessages.reminder(
@@ -246,6 +247,14 @@ class PersonDetailsPage extends ConsumerWidget {
           );
 
     return Scaffold(
+      floatingActionButton: row == null
+          ? null
+          : AddTransactionFab(
+              key: const ValueKey('person-details-add-entry'),
+              tooltip: 'Add entry',
+              onPressed: () =>
+                  context.push('/khata/entries/new?personId=$personId'),
+            ),
       appBar: AppBar(
         title: Text(row?.name ?? 'Person'),
         actions: [
@@ -284,7 +293,7 @@ class PersonDetailsPage extends ConsumerWidget {
               AppSpacing.md,
               AppSpacing.sm,
               AppSpacing.md,
-              AppSpacing.xl,
+              AppSpacing.xl + 72,
             ),
             children: [
               _PersonHero(
@@ -323,6 +332,17 @@ class PersonDetailsPage extends ConsumerWidget {
                   ),
                 ],
               ),
+              if (hasOpen) ...[
+                const SizedBox(height: AppSpacing.sm),
+                PrimaryButton(
+                  key: const ValueKey('person-details-record-payment'),
+                  label: 'Record payment',
+                  icon: Icons.payments_outlined,
+                  gradient: AppColors.heroGradient,
+                  onPressed: () =>
+                      context.push('/khata/people/$personId/repay'),
+                ),
+              ],
               if (reminder != null || entryItems.isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.sm),
                 Row(

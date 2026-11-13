@@ -723,86 +723,97 @@ void main() {
     expect(find.text('No transactions yet'), findsOneWidget);
   }, timeout: const Timeout(Duration(seconds: 30)));
 
-  testWidgets('swiping a History row moves it to Trash and Undo restores it', (
-    tester,
-  ) async {
-    final category =
-        await (testDatabase.select(testDatabase.categories)
-              ..where((row) => row.type.equals('expense'))
-              ..where((row) => row.name.equals('Food & Dining')))
-            .getSingle();
-    final transactionId = await TransactionsRepository(testDatabase)
-        .createTransaction(
-          accountId: testAccount.id,
-          categoryId: category.id,
-          type: 'expense',
-          amountPaise: 12500,
-          transactionDate: DateTime.now().millisecondsSinceEpoch,
-          note: 'Swipe test transaction',
-        );
+  testWidgets(
+    'swiping a History row does not delete it; menu Trash and Undo work',
+    (tester) async {
+      final category =
+          await (testDatabase.select(testDatabase.categories)
+                ..where((row) => row.type.equals('expense'))
+                ..where((row) => row.name.equals('Food & Dining')))
+              .getSingle();
+      final transactionId = await TransactionsRepository(testDatabase)
+          .createTransaction(
+            accountId: testAccount.id,
+            categoryId: category.id,
+            type: 'expense',
+            amountPaise: 12500,
+            transactionDate: DateTime.now().millisecondsSinceEpoch,
+            note: 'Trash test transaction',
+          );
 
-    await pumpApp(tester, liveHistory: true);
-    printOnFailure('step 1: pumpApp completed and app is mounted');
-    await openHistory(tester);
-    await pumpUntilFound(tester, find.text('Swipe test transaction'));
-    printOnFailure('step 2: History opened and transaction row appeared');
+      await pumpApp(tester, liveHistory: true);
+      await openHistory(tester);
+      await pumpUntilFound(tester, find.text('Trash test transaction'));
+      printOnFailure('step 1: History opened and transaction row appeared');
 
-    final row = find.byKey(ValueKey('dismiss-$transactionId'));
-    expect(row, findsOneWidget);
-    // Use a high-velocity left fling, matching endToStart and exceeding the
-    // Dismissible threshold without depending on a long pointer drag.
-    await tester.fling(row, const Offset(-1000, 0), 2000);
-    printOnFailure('step 3: left swipe fling completed');
+      final row = find.byKey(ValueKey('transaction-row-$transactionId'));
+      expect(row, findsOneWidget);
+      expect(find.byType(Dismissible), findsNothing);
 
-    // confirmDismiss awaits the real Drift soft-delete future before allowing
-    // the row to leave. Pump the dismissal and snackbar animations explicitly;
-    // avoid pumpAndSettle because History's shimmer repeats while loading.
-    await tester.pump(const Duration(milliseconds: 250));
-    await tester.pump(const Duration(milliseconds: 250));
-    await pumpUntilFound(tester, find.text('Transaction moved to Trash'));
-    printOnFailure('step 4: Trash snackbar appeared');
-    expect(find.text('Swipe test transaction'), findsNothing);
-    expect(
-      row,
-      findsNothing,
-      reason: 'Dismissible must leave the widget tree.',
-    );
+      // A hard left fling used to trigger swipe-to-delete. It must now be inert.
+      await tester.fling(row, const Offset(-1000, 0), 2000);
+      await tester.pump(const Duration(milliseconds: 250));
+      await tester.pump(const Duration(milliseconds: 250));
+      expect(find.text('Trash test transaction'), findsOneWidget);
+      expect(find.text('Transaction moved to Trash'), findsNothing);
+      await tester.runAsync(() async {
+        final trashItems = await TransactionsRepository(
+          testDatabase,
+        ).watchTrash().first;
+        expect(trashItems, isEmpty);
+      });
+      printOnFailure('step 2: swipe left the row in place');
 
-    // Native Drift work must run outside the widget test's FakeAsync zone.
-    await tester.runAsync(() async {
-      final trashItems = await TransactionsRepository(
-        testDatabase,
-      ).watchTrash().first;
-      expect(trashItems, hasLength(1));
-      expect(trashItems.single.transaction.id, transactionId);
-      expect(trashItems.single.transaction.deletedAt, isNotNull);
-    });
-    printOnFailure('step 5: runAsync Trash persistence check completed');
+      // Delete through the overflow menu, which asks for confirmation.
+      await tester.tap(
+        find.descendant(
+          of: row,
+          matching: find.byTooltip('Transaction actions'),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      await tester.tap(find.text('Move to Trash').last);
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.text('Move to Trash?'), findsOneWidget);
+      await tester.tap(find.widgetWithText(FilledButton, 'Move to Trash'));
+      await tester.pump(const Duration(milliseconds: 250));
+      await pumpUntilFound(tester, find.text('Transaction moved to Trash'));
+      expect(find.text('Trash test transaction'), findsNothing);
+      printOnFailure('step 3: menu delete moved row to Trash');
 
-    // Exercise Undo through the rendered action, not its void callback.
-    expect(find.text('Undo'), findsOneWidget);
-    await tester.tap(find.text('Undo'));
-    printOnFailure('step 6: rendered Undo action tap completed');
-    await pumpUntilFound(tester, find.text('Swipe test transaction'));
-    expect(find.text('Swipe test transaction'), findsOneWidget);
-    printOnFailure('step 7: History row returned after Undo');
+      await tester.runAsync(() async {
+        final trashItems = await TransactionsRepository(
+          testDatabase,
+        ).watchTrash().first;
+        expect(trashItems, hasLength(1));
+        expect(trashItems.single.transaction.id, transactionId);
+        expect(trashItems.single.transaction.deletedAt, isNotNull);
+      });
 
-    // The live History stream proves the row returned; also verify the
-    // persisted soft-delete flag was cleared using real async Drift work.
-    await tester.runAsync(() async {
-      final restored = await (testDatabase.select(
-        testDatabase.transactions,
-      )..where((row) => row.id.equals(transactionId))).getSingle();
-      expect(restored.deletedAt, isNull);
-    });
-    printOnFailure('step 8: persisted restore check completed');
+      // Let the snackbar finish sliding in before tapping its action.
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.text('Undo'), findsOneWidget);
+      await tester.tap(find.text('Undo'));
+      await pumpUntilFound(tester, find.text('Trash test transaction'));
+      expect(find.text('Trash test transaction'), findsOneWidget);
+      printOnFailure('step 4: History row returned after Undo');
 
-    // Dispose the live Drift-backed History subscription before the test
-    // binding performs its pending-timer invariant check.
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump(const Duration(milliseconds: 1));
-    printOnFailure('step 9: widget tree unmounted inside the test body');
-  }, timeout: const Timeout(Duration(seconds: 30)));
+      await tester.runAsync(() async {
+        final restored = await (testDatabase.select(
+          testDatabase.transactions,
+        )..where((row) => row.id.equals(transactionId))).getSingle();
+        expect(restored.deletedAt, isNull);
+      });
+
+      // Dispose the live Drift-backed History subscription before the test
+      // binding performs its pending-timer invariant check.
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 1));
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
 
   testWidgets('tapping a History row opens Transaction details', (
     tester,
