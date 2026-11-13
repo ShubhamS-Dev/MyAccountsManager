@@ -19,7 +19,7 @@ Show the selected transaction's amount, note, Account, Category, transaction dat
 
 ## Trash and Undo flow
 - Confirming calls the existing `TransactionsRepository.softDeleteTransaction`; it never permanently deletes the record.
-- After a successful soft delete, the details route is popped and the previous screen receives a “Transaction moved to trash” SnackBar with an Undo action.
+- After a successful soft delete, the details route is popped (or replaced with Home when there is nothing to pop) and the previous screen receives a “Transaction moved to Trash” SnackBar with an Undo action.
 - Undo calls the existing `TransactionsRepository.restoreTransaction`. Restore failures use the existing “Could not restore transaction.” feedback.
 - Delete failures use the existing History error feedback pattern and leave the details screen open.
 - Balance, History, Dashboard, and Account updates continue through the existing reactive Drift/Riverpod streams. No manual refresh is added.

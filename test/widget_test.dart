@@ -258,7 +258,16 @@ void main() {
     await pumpApp(tester, historyItems: historyItems);
 
     await tester.tap(find.text('Reports').last);
-    await pumpUntilFound(tester, find.text('Largest expenses'));
+    // Reports is a lazy ListView: the Largest expenses section sits below the
+    // fold and is not built until scrolled to. Wait for the page, then scroll.
+    await pumpUntilFound(tester, find.byType(ReportsPage));
+    await pumpUntilFound(
+      tester,
+      find.descendant(
+        of: find.byType(ReportsPage),
+        matching: find.byType(Scrollable),
+      ),
+    );
 
     final reportsScrollable = find
         .descendant(
@@ -274,13 +283,20 @@ void main() {
     );
     await pumpUntilFound(tester, largestExpenseSubtitle);
 
+    expect(find.text('Largest expenses'), findsOneWidget);
+
     final largestExpenseRow = find.ancestor(
       of: largestExpenseSubtitle,
       matching: find.byType(ListTile),
     );
+    final largestExpenseBadge = find.descendant(
+      of: largestExpenseRow,
+      matching: find.byType(CategoryIconBadge),
+    );
+    expect(largestExpenseBadge, findsOneWidget);
     expect(
       find.descendant(
-        of: largestExpenseRow,
+        of: largestExpenseBadge,
         matching: find.byIcon(Icons.shopping_basket_rounded),
       ),
       findsOneWidget,
@@ -811,6 +827,103 @@ void main() {
     await tester.tap(find.text('Details route transaction'));
     await pumpUntilFound(tester, find.text('Transaction details'));
     expect(find.text('Edit transaction'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 1));
+  }, timeout: const Timeout(Duration(seconds: 30)));
+
+  Future<String> createDeleteTestTransaction(String note) async {
+    final category =
+        await (testDatabase.select(testDatabase.categories)
+              ..where((row) => row.type.equals('expense'))
+              ..where((row) => row.name.equals('Food & Dining')))
+            .getSingle();
+    return TransactionsRepository(testDatabase).createTransaction(
+      accountId: testAccount.id,
+      categoryId: category.id,
+      type: 'expense',
+      amountPaise: 12500,
+      transactionDate: DateOnly.toUtcEpochMilliseconds(DateTime.now()),
+      note: note,
+    );
+  }
+
+  Future<void> tapDeleteAndConfirm(WidgetTester tester) async {
+    final deleteButton = find.byKey(const ValueKey('transaction-delete'));
+    await pumpUntilFound(tester, find.text('Edit transaction'));
+    await tester.scrollUntilVisible(
+      deleteButton,
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.tap(deleteButton);
+    await pumpUntilFound(tester, find.text('Delete this transaction?'));
+    await tester.tap(find.widgetWithText(TextButton, 'Delete'));
+  }
+
+  Future<int?> deletedAtOf(WidgetTester tester, String transactionId) async {
+    int? deletedAt;
+    await tester.runAsync(() async {
+      final row = await (testDatabase.select(
+        testDatabase.transactions,
+      )..where((row) => row.id.equals(transactionId))).getSingle();
+      deletedAt = row.deletedAt;
+    });
+    return deletedAt;
+  }
+
+  testWidgets('Details delete confirms, returns, and Undo restores it', (
+    tester,
+  ) async {
+    final transactionId = await createDeleteTestTransaction(
+      'Details delete transaction',
+    );
+
+    await pumpApp(tester, liveHistory: true);
+    appRouter.push('/transaction/$transactionId');
+    await tapDeleteAndConfirm(tester);
+
+    await pumpUntilFound(tester, find.text('Transaction moved to Trash'));
+    // Let the Details route finish its exit transition.
+    for (var i = 0; i < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.text('Transaction details'), findsNothing);
+    expect(find.text('Home'), findsWidgets);
+    expect(await deletedAtOf(tester, transactionId), isNotNull);
+
+    await tester.tap(find.text('Undo'));
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 50)),
+    );
+    expect(await deletedAtOf(tester, transactionId), isNull);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 1));
+  }, timeout: const Timeout(Duration(seconds: 30)));
+
+  testWidgets('Details delete from a deep link falls back to Home', (
+    tester,
+  ) async {
+    final transactionId = await createDeleteTestTransaction(
+      'Deep link delete transaction',
+    );
+
+    await pumpApp(tester, liveHistory: true);
+    // go() replaces the stack, as a notification or deep link would.
+    appRouter.go('/transaction/$transactionId');
+    await pumpUntilFound(tester, find.text('Transaction details'));
+    expect(appRouter.canPop(), isFalse);
+    await tapDeleteAndConfirm(tester);
+
+    await pumpUntilFound(tester, find.text('Transaction moved to Trash'));
+    // Let the Details route finish its exit transition.
+    for (var i = 0; i < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.text('Transaction details'), findsNothing);
+    expect(await deletedAtOf(tester, transactionId), isNotNull);
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(milliseconds: 1));

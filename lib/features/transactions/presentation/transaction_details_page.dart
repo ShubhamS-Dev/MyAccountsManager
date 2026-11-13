@@ -67,13 +67,19 @@ class TransactionDetailsPage extends ConsumerWidget {
                 ),
                 child: Column(
                   children: [
-                    CategoryIconBadge(
-                      iconKey: category?.iconKey,
-                      categoryName: category?.name ?? '',
-                      colorValue: category?.colorValue,
-                      income: income,
-                      size: 48,
-                    ),
+                    if (categories.isLoading && category == null)
+                      const SizedBox.square(dimension: 48)
+                    else
+                      CategoryIconBadge(
+                        iconKey: category?.iconKey,
+                        categoryName: category?.name ?? '',
+                        colorValue: category?.colorValue,
+                        income: income,
+                        fallbackColor: income
+                            ? colors.positiveText
+                            : colors.negativeText,
+                        size: 48,
+                      ),
                     const SizedBox(height: 10),
                     Text(
                       income ? 'Income' : 'Expense',
@@ -224,107 +230,18 @@ class TransactionDetailsPage extends ConsumerWidget {
                 width: double.infinity,
                 child: TextButton.icon(
                   key: const ValueKey('transaction-delete'),
-                  onPressed: () async {
-                    final amount = hidden
+                  onPressed: () => _confirmAndDeleteTransaction(
+                    context,
+                    ref,
+                    transactionId: row.id,
+                    amount: hidden
                         ? hiddenAmountMask
-                        : '${income ? '+' : '-'}${MoneyFormatter.formatPaise(row.amountPaise)}';
-                    final transactionTitle = row.note?.trim().isNotEmpty == true
+                        : '${income ? '+' : '-'}'
+                              '${MoneyFormatter.formatPaise(row.amountPaise)}',
+                    title: row.note?.trim().isNotEmpty == true
                         ? row.note!.trim()
-                        : categories.when(
-                            data: (v) {
-                              final matches = v.where(
-                                (c) => c.id == row.categoryId,
-                              );
-                              return matches.isEmpty
-                                  ? 'Transaction'
-                                  : matches.first.name;
-                            },
-                            loading: () => 'Transaction',
-                            error: (e, s) => 'Transaction',
-                          );
-                    final confirmed = await showDialog<bool>(
-                      context: context,
-                      builder: (dialogContext) => AlertDialog(
-                        title: const Text('Delete this transaction?'),
-                        content: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              amount,
-                              style: AppTypography.transactionAmount.copyWith(
-                                color: colors.onSurface,
-                              ),
-                            ),
-                            const SizedBox(height: AppSpacing.xs),
-                            Text(
-                              transactionTitle,
-                              style: AppTypography.body.copyWith(
-                                color: colors.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () =>
-                                Navigator.pop(dialogContext, false),
-                            child: const Text('Cancel'),
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.pop(dialogContext, true),
-                            style: TextButton.styleFrom(
-                              foregroundColor: colors.error,
-                            ),
-                            child: const Text('Delete'),
-                          ),
-                        ],
-                      ),
-                    );
-                    if (confirmed != true || !context.mounted) return;
-                    final messenger = ScaffoldMessenger.of(context);
-                    final repository = ref.read(transactionsRepositoryProvider);
-                    try {
-                      await repository.softDeleteTransaction(row.id);
-                      if (!context.mounted || !messenger.mounted) return;
-                      context.pop();
-                      messenger
-                        ..hideCurrentSnackBar()
-                        ..showSnackBar(
-                          SnackBar(
-                            content: const Text('Transaction moved to trash'),
-                            action: SnackBarAction(
-                              label: 'Undo',
-                              onPressed: () async {
-                                try {
-                                  await repository.restoreTransaction(row.id);
-                                } catch (_) {
-                                  if (messenger.mounted) {
-                                    messenger.showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'Could not restore transaction.',
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                }
-                              },
-                            ),
-                          ),
-                        );
-                    } catch (_) {
-                      if (context.mounted && messenger.mounted) {
-                        messenger.showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Could not move transaction to Trash. Try again.',
-                            ),
-                          ),
-                        );
-                      }
-                    }
-                  },
+                        : category?.name ?? 'Transaction',
+                  ),
                   style: TextButton.styleFrom(foregroundColor: colors.error),
                   icon: const Icon(Icons.delete_outline_rounded),
                   label: const Text('Delete transaction'),
@@ -336,6 +253,102 @@ class TransactionDetailsPage extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// Confirms, soft-deletes, and leaves the details page with an Undo snackbar.
+Future<void> _confirmAndDeleteTransaction(
+  BuildContext context,
+  WidgetRef ref, {
+  required String transactionId,
+  required String amount,
+  required String title,
+}) async {
+  final colors = Theme.of(context).colorScheme;
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: const Text('Delete this transaction?'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            amount,
+            style: AppTypography.transactionAmount.copyWith(
+              color: colors.onSurface,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            title,
+            style: AppTypography.body.copyWith(color: colors.onSurfaceVariant),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext, false),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext, true),
+          style: TextButton.styleFrom(foregroundColor: colors.error),
+          child: const Text('Delete'),
+        ),
+      ],
+    ),
+  );
+  if (confirmed != true || !context.mounted) return;
+
+  // Capture before awaiting; this page closes once the delete succeeds.
+  final messenger = ScaffoldMessenger.of(context);
+  final repository = ref.read(transactionsRepositoryProvider);
+  try {
+    await repository.softDeleteTransaction(transactionId);
+  } catch (_) {
+    if (messenger.mounted) {
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('Could not move transaction to Trash. Try again.'),
+          ),
+        );
+    }
+    return;
+  }
+  if (!context.mounted) return;
+
+  // Opened from a notification or deep link there is nothing to pop to.
+  if (context.canPop()) {
+    context.pop();
+  } else {
+    context.go('/');
+  }
+  if (!messenger.mounted) return;
+  messenger
+    ..hideCurrentSnackBar()
+    ..showSnackBar(
+      SnackBar(
+        content: const Text('Transaction moved to Trash'),
+        action: SnackBarAction(
+          label: 'Undo',
+          onPressed: () async {
+            try {
+              await repository.restoreTransaction(transactionId);
+            } catch (_) {
+              if (messenger.mounted) {
+                messenger.showSnackBar(
+                  const SnackBar(
+                    content: Text('Could not restore transaction.'),
+                  ),
+                );
+              }
+            }
+          },
+        ),
+      ),
+    );
 }
 
 class _DetailRow extends StatelessWidget {
