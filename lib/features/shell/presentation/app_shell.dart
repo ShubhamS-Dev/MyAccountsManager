@@ -83,29 +83,15 @@ class _AppShellState extends State<AppShell> {
       ),
       floatingActionButton: _selectedIndex == 4
           ? null
-          : Container(
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(colors: AppColors.heroGradient),
-                boxShadow: AppShadows.card,
+          : AddTransactionFab(
+              // MyKhata entries never touch Accounts, so that tab adds a
+              // khata entry instead of a regular transaction.
+              onPressed: () => context.push(
+                _selectedIndex == 3 ? '/khata/entries/new' : '/transaction/new',
               ),
-              child: FloatingActionButton(
-                // MyKhata entries never touch Accounts, so that tab adds a
-                // khata entry instead of a regular transaction.
-                onPressed: () => context.push(
-                  _selectedIndex == 3
-                      ? '/khata/entries/new'
-                      : '/transaction/new',
-                ),
-                tooltip: _selectedIndex == 3
-                    ? 'Add khata entry'
-                    : 'Add transaction',
-                backgroundColor: Colors.transparent,
-                foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                elevation: 0,
-                highlightElevation: 0,
-                child: const Icon(Icons.add_rounded, size: 28),
-              ),
+              tooltip: _selectedIndex == 3
+                  ? 'Add khata entry'
+                  : 'Add transaction',
             ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,

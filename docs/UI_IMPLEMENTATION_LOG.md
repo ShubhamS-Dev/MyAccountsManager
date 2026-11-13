@@ -522,3 +522,12 @@ Validation status:
 - Reports Top transactions: the note-title target was not found after scrolling. The test now targets the existing category/date subtitle (`Groceries · …`) and obtains the scrollable from the `ReportsPage` subtree, avoiding the Home list retained by the shell's `IndexedStack`.
 - No production widget code changed. Only `test/widget_test.dart` and this log were updated. No package dependencies, schema, or `pubspec.yaml` changes; app version remains `1.1.0+2`.
 - Keep status NOT Done until the next full CI run passes and the APK is verified.
+
+## Account Details transaction history and Add button consistency (2026-11-13)
+
+- Problem: Account Details nested a `Card` per row inside an outer `Card` with dividers, used a one-off tile (raw `CircleAvatar`, `tertiary`/`error` amount colours, dense `ListTile`) and lacked History's actions. Its Add button was an extended labelled FAB; the shell used a round gradient FAB and standalone History a plain FAB.
+- New `TransactionListTile` (`lib/features/transactions/presentation/transaction_list_tile.dart`): the former `_HistoryTile`, shared by History and Account Details. `CategoryIconBadge`, `AmountText`, `positiveText`/`negativeText`, scheduled and recurring markers, swipe to Trash with Undo, overflow menu (Edit, Duplicate, Copy as new, Move to Trash). `showAccount: false` drops the redundant account name on Account Details. Trash helpers moved alongside it as `moveTransactionToTrash` / `confirmMoveTransactionToTrash`.
+- Account Details: rows grouped under date headers like History, newest 30 inline, `SectionHeader` with View all opening `/history` filtered to the account across its full date span.
+- New `AddTransactionFab` (`lib/app/app_widgets.dart`): round, icon-only, brand-gradient FAB used by the shell, Account Details (still preselects the account, key `account-details-add-transaction` kept) and standalone History (preselects the account when filtered).
+- Test: `Account Details uses the shared transaction tile and FAB`. `flutter analyze` clean; `flutter test` 218 passed.
+- No schema, dependency or `pubspec.yaml` changes; app version remains `1.1.0+2`.

@@ -4,13 +4,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/app_theme.dart';
 import '../../../app/app_widgets.dart';
-import '../../../app/icon_resolvers.dart';
 import '../../../app/privacy_state.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/formatting/date_timestamp.dart';
 import '../../../core/formatting/money_formatter.dart';
 import '../../../core/time/today_provider.dart';
 import '../../transactions/data/transactions_repository.dart';
+import '../../transactions/presentation/transaction_list_tile.dart';
 import '../../transactions/transactions_providers.dart';
 import '../accounts_providers.dart';
 
@@ -56,12 +56,10 @@ class AccountDetailsPage extends ConsumerWidget {
       ),
       floatingActionButton: account.valueOrNull == null
           ? null
-          : FloatingActionButton.extended(
+          : AddTransactionFab(
               key: const ValueKey('account-details-add-transaction'),
               onPressed: () =>
                   context.push('/transaction/new?accountId=$accountId'),
-              icon: const Icon(Icons.add_rounded),
-              label: const Text('Add transaction'),
             ),
       body: account.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -82,10 +80,7 @@ class AccountDetailsPage extends ConsumerWidget {
                 hidden: hideAmounts,
               ),
               const SizedBox(height: 16),
-              const Text(
-                'Balance breakdown',
-                style: AppTypography.sectionTitle,
-              ),
+              const SectionHeader(title: 'Balance breakdown'),
               const SizedBox(height: 8),
               _BreakdownCard(
                 openingBalance: row.openingBalancePaise,
@@ -94,69 +89,51 @@ class AccountDetailsPage extends ConsumerWidget {
                 hidden: hideAmounts,
               ),
               const SizedBox(height: 18),
-              const Text(
-                'Transaction history',
-                style: AppTypography.sectionTitle,
+              SectionHeader(
+                title: 'Transaction history',
+                action: history.valueOrNull?.isNotEmpty == true
+                    ? 'View all'
+                    : null,
+                onAction: () => _openFullHistory(context, history.valueOrNull),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.xs),
               history.when(
-                loading: () => const Card(
-                  child: Padding(
-                    padding: EdgeInsets.all(20),
-                    child: Center(child: CircularProgressIndicator()),
-                  ),
+                loading: () => const AppCard(
+                  child: Center(child: CircularProgressIndicator()),
                 ),
-                error: (error, stack) => Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      children: [
-                        const Text('Could not load history.'),
-                        TextButton(
-                          onPressed: () => ref.invalidate(
-                            transactionHistoryProvider(filter),
-                          ),
-                          child: const Text('Retry'),
-                        ),
-                      ],
-                    ),
+                error: (error, stack) => AppCard(
+                  child: Column(
+                    children: [
+                      const Text('Could not load history.'),
+                      TextButton(
+                        onPressed: () =>
+                            ref.invalidate(transactionHistoryProvider(filter)),
+                        child: const Text('Retry'),
+                      ),
+                    ],
                   ),
                 ),
                 data: (items) {
                   if (items.isEmpty) {
                     return const _EmptyHistory();
                   }
-                  return Card(
-                    clipBehavior: Clip.antiAlias,
-                    child: Column(
-                      children: [
-                        for (
-                          var index = 0;
-                          index < items.take(30).length;
-                          index++
-                        ) ...[
-                          _TransactionTile(
-                            item: items[index],
-                            hidden: hideAmounts,
-                            scheduled: isScheduledDate(
-                              items[index].transaction.transactionDate,
-                              today,
-                            ),
-                          ),
-                          if (index != items.take(30).length - 1)
-                            Divider(
-                              height: 1,
-                              indent: 56,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.outlineVariant,
-                            ),
-                        ],
-                      ],
-                    ),
+                  return _GroupedHistory(
+                    items: items.take(_historyPreviewLimit).toList(),
+                    hidden: hideAmounts,
+                    today: today,
                   );
                 },
               ),
+              if ((history.valueOrNull?.length ?? 0) > _historyPreviewLimit)
+                Center(
+                  child: TextButton(
+                    onPressed: () =>
+                        _openFullHistory(context, history.valueOrNull),
+                    child: Text(
+                      'View all ${history.valueOrNull!.length} transactions',
+                    ),
+                  ),
+                ),
               const SizedBox(height: 16),
               OutlinedButton.icon(
                 onPressed: () =>
@@ -168,6 +145,84 @@ class AccountDetailsPage extends ConsumerWidget {
           );
         },
       ),
+    );
+  }
+
+  /// Opens History filtered to this account, spanning every transaction it
+  /// has, instead of History's default single month.
+  void _openFullHistory(
+    BuildContext context,
+    List<TransactionHistoryItem>? items,
+  ) {
+    final params = <String, String>{'account': accountId};
+    if (items != null && items.isNotEmpty) {
+      final dates = items.map((item) => item.transaction.transactionDate);
+      params['from'] = '${dates.reduce((a, b) => a < b ? a : b)}';
+      params['through'] = '${dates.reduce((a, b) => a > b ? a : b)}';
+    }
+    context.push(Uri(path: '/history', queryParameters: params).toString());
+  }
+}
+
+/// Newest rows shown inline before handing off to History.
+const _historyPreviewLimit = 30;
+
+/// Rows grouped under date headers, matching the History screen.
+class _GroupedHistory extends StatelessWidget {
+  const _GroupedHistory({
+    required this.items,
+    required this.hidden,
+    required this.today,
+  });
+
+  final List<TransactionHistoryItem> items;
+  final bool hidden;
+  final int today;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final groups = <String, List<TransactionHistoryItem>>{};
+    for (final item in items) {
+      groups
+          .putIfAbsent(
+            DateOnly.format(item.transaction.transactionDate),
+            () => [],
+          )
+          .add(item);
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final group in groups.entries) ...[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.xs,
+              AppSpacing.sm,
+              AppSpacing.xs,
+              AppSpacing.xs,
+            ),
+            child: Text(
+              group.key,
+              style: AppTypography.metadata.copyWith(
+                color: scheme.onSurfaceVariant,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          for (final item in group.value)
+            TransactionListTile(
+              key: ValueKey(item.transaction.id),
+              item: item,
+              hidden: hidden,
+              showAccount: false,
+              scheduled: isScheduledDate(
+                item.transaction.transactionDate,
+                today,
+              ),
+            ),
+        ],
+      ],
     );
   }
 }
@@ -389,81 +444,6 @@ class _BreakdownRow extends StatelessWidget {
             style: AppTypography.transactionAmount.copyWith(color: color),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _TransactionTile extends StatelessWidget {
-  const _TransactionTile({
-    required this.item,
-    required this.hidden,
-    this.scheduled = false,
-  });
-  final TransactionHistoryItem item;
-  final bool hidden;
-  final bool scheduled;
-  @override
-  Widget build(BuildContext context) {
-    final transaction = item.transaction;
-    final income = transaction.type == 'income';
-    final colors = Theme.of(context).colorScheme;
-    final fallbackColor = income ? AppColors.positive : AppColors.negative;
-    final categoryColor = item.categoryColorValue == null
-        ? fallbackColor
-        : Color(item.categoryColorValue!);
-    return Card(
-      child: ListTile(
-        dense: true,
-        visualDensity: const VisualDensity(vertical: -1),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14),
-        minVerticalPadding: 8,
-        leading: CircleAvatar(
-          radius: 18,
-          backgroundColor: categoryColor.withValues(alpha: .12),
-          child: Icon(
-            resolveCategoryIcon(
-              item.categoryIconKey ?? item.categoryName,
-              income: income,
-            ),
-            size: 18,
-            color: categoryColor,
-          ),
-        ),
-        title: Text(
-          transaction.note?.isNotEmpty == true
-              ? transaction.note!
-              : item.categoryName,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: AppTypography.fieldValue.copyWith(fontWeight: FontWeight.w600),
-        ),
-        subtitle: Row(
-          children: [
-            if (scheduled) ...[
-              const ScheduledBadge(),
-              const SizedBox(width: AppSpacing.xs),
-            ],
-            Expanded(
-              child: Text(
-                '${item.categoryName} · ${DateOnly.format(transaction.transactionDate)}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ),
-          ],
-        ),
-        trailing: Text(
-          hidden
-              ? hiddenAmountMask
-              : '${income ? '+' : '-'}${MoneyFormatter.formatPaise(transaction.amountPaise)}',
-          semanticsLabel: hidden ? 'amount hidden' : null,
-          style: AppTypography.transactionAmount.copyWith(
-            color: income ? colors.tertiary : colors.error,
-          ),
-        ),
-        onTap: () => context.push('/transaction/${transaction.id}'),
       ),
     );
   }

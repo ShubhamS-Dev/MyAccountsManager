@@ -450,3 +450,34 @@ class ScheduledBadge extends StatelessWidget {
     );
   }
 }
+
+/// The app's single primary "add" action: a round, icon-only FAB on the brand
+/// gradient. Every screen uses this so the button looks and behaves the same.
+class AddTransactionFab extends StatelessWidget {
+  const AddTransactionFab({
+    required this.onPressed,
+    super.key,
+    this.tooltip = 'Add transaction',
+  });
+
+  final VoidCallback onPressed;
+  final String tooltip;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    decoration: const BoxDecoration(
+      shape: BoxShape.circle,
+      gradient: LinearGradient(colors: AppColors.heroGradient),
+      boxShadow: AppShadows.card,
+    ),
+    child: FloatingActionButton(
+      onPressed: onPressed,
+      tooltip: tooltip,
+      backgroundColor: Colors.transparent,
+      foregroundColor: Theme.of(context).colorScheme.onPrimary,
+      elevation: 0,
+      highlightElevation: 0,
+      child: const Icon(Icons.add_rounded, size: 28),
+    ),
+  );
+}
