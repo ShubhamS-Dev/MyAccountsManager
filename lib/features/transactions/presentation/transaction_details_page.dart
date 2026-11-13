@@ -319,9 +319,7 @@ class TransactionDetailsPage extends ConsumerWidget {
                       }
                     }
                   },
-                  style: TextButton.styleFrom(
-                    foregroundColor: colors.error,
-                  ),
+                  style: TextButton.styleFrom(foregroundColor: colors.error),
                   icon: const Icon(Icons.delete_outline_rounded),
                   label: const Text('Delete transaction'),
                 ),
