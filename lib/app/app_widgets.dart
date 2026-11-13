@@ -10,6 +10,7 @@ class CategoryIconBadge extends StatelessWidget {
     required this.colorValue,
     required this.income,
     super.key,
+    this.fallbackColor,
     this.size = 40,
   });
 
@@ -17,12 +18,15 @@ class CategoryIconBadge extends StatelessWidget {
   final String categoryName;
   final int? colorValue;
   final bool income;
+
+  /// Used when the category has no colour; defaults to the income/expense hue.
+  final Color? fallbackColor;
   final double size;
 
   @override
   Widget build(BuildContext context) {
     final color = colorValue == null
-        ? (income ? AppColors.positive : AppColors.negative)
+        ? fallbackColor ?? (income ? AppColors.positive : AppColors.negative)
         : Color(colorValue!);
     return Container(
       width: size,
@@ -445,4 +449,35 @@ class ScheduledBadge extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The app's single primary "add" action: a round, icon-only FAB on the brand
+/// gradient. Every screen uses this so the button looks and behaves the same.
+class AddTransactionFab extends StatelessWidget {
+  const AddTransactionFab({
+    required this.onPressed,
+    super.key,
+    this.tooltip = 'Add transaction',
+  });
+
+  final VoidCallback onPressed;
+  final String tooltip;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    decoration: const BoxDecoration(
+      shape: BoxShape.circle,
+      gradient: LinearGradient(colors: AppColors.heroGradient),
+      boxShadow: AppShadows.card,
+    ),
+    child: FloatingActionButton(
+      onPressed: onPressed,
+      tooltip: tooltip,
+      backgroundColor: Colors.transparent,
+      foregroundColor: Theme.of(context).colorScheme.onPrimary,
+      elevation: 0,
+      highlightElevation: 0,
+      child: const Icon(Icons.add_rounded, size: 28),
+    ),
+  );
 }
