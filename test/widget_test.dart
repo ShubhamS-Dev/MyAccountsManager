@@ -66,6 +66,7 @@ void main() {
   Future<void> pumpApp(
     WidgetTester tester, {
     bool liveHistory = false,
+    List<TransactionHistoryItem>? historyItems,
     bool includeCategories = false,
     List<AccountRow>? accountRows,
     TransactionsRepository? repository,
@@ -156,6 +157,9 @@ void main() {
             if (repository != null)
               transactionsRepositoryProvider.overrideWithValue(repository),
             transactionHistoryProvider.overrideWith((ref, filter) {
+              if (historyItems != null) {
+                return Stream.value(historyItems);
+              }
               if (liveHistory) {
                 return TransactionsRepository(testDatabase).watchHistory(
                   accountId: filter.accountId,
@@ -198,26 +202,46 @@ void main() {
         DateTime.now().month,
         DateTime.now().day,
       ).millisecondsSinceEpoch,
+      note: 'Home category icon',
     );
-    await pumpApp(tester, liveHistory: true);
+    final historyItems =
+        await tester.runAsync(
+          () => TransactionsRepository(testDatabase).watchHistory().first,
+        ) ??
+        <TransactionHistoryItem>[];
+    await pumpApp(tester, historyItems: historyItems);
 
+    final homeScrollable = find
+        .ancestor(
+          of: find.text('Recent transactions'),
+          matching: find.byType(Scrollable),
+        )
+        .first;
     await tester.scrollUntilVisible(
-      find.byType(CategoryIconBadge),
+      find.text('Home category icon'),
       300,
-      scrollable: find.byType(Scrollable).first,
+      scrollable: homeScrollable,
     );
-    await pumpUntilFound(tester, find.byType(CategoryIconBadge));
+    await pumpUntilFound(tester, find.text('Home category icon'));
 
+    final recentTransactionRow = find.ancestor(
+      of: find.text('Home category icon'),
+      matching: find.byType(ListTile),
+    );
+    final categoryBadge = find.descendant(
+      of: recentTransactionRow,
+      matching: find.byType(CategoryIconBadge),
+    );
     expect(
       find.descendant(
-        of: find.byType(CategoryIconBadge),
+        of: categoryBadge,
         matching: find.byIcon(Icons.shopping_basket_rounded),
       ),
       findsOneWidget,
     );
     expect(
       find.descendant(
-        of: find.byType(CategoryIconBadge),
+        of: categoryBadge,
         matching: find.byIcon(Icons.north_east_rounded),
       ),
       findsNothing,
@@ -237,17 +261,33 @@ void main() {
         DateTime.now().month,
         DateTime.now().day,
       ).millisecondsSinceEpoch,
+      note: 'Reports category icon',
     );
-    await pumpApp(tester, liveHistory: true);
+    final historyItems =
+        await tester.runAsync(
+          () => TransactionsRepository(testDatabase).watchHistory().first,
+        ) ??
+        <TransactionHistoryItem>[];
+    await pumpApp(tester, historyItems: historyItems);
 
     await tester.tap(find.text('Reports').last);
     await pumpUntilFound(tester, find.text('Largest expenses'));
-    await tester.ensureVisible(find.text('Largest expenses'));
-    await pumpUntilFound(tester, find.textContaining('Groceries ·'));
-    await tester.ensureVisible(find.textContaining('Groceries ·'));
+
+    final reportsScrollable = find
+        .ancestor(
+          of: find.text('Cash flow'),
+          matching: find.byType(Scrollable),
+        )
+        .first;
+    await tester.scrollUntilVisible(
+      find.text('Reports category icon'),
+      300,
+      scrollable: reportsScrollable,
+    );
+    await pumpUntilFound(tester, find.text('Reports category icon'));
 
     final largestExpenseRow = find.ancestor(
-      of: find.textContaining('Groceries ·'),
+      of: find.text('Reports category icon'),
       matching: find.byType(ListTile),
     );
     expect(
