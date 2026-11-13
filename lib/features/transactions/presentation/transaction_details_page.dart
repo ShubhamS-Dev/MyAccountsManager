@@ -46,12 +46,11 @@ class TransactionDetailsPage extends ConsumerWidget {
           final categories = ref.watch(allCategoriesByTypeProvider(row.type));
           final income = row.type == 'income';
           final matchingCategories = categories.valueOrNull
-                  ?.where((category) => category.id == row.categoryId)
-                  .toList() ??
-              <CategoryRow>[];
-          final category = matchingCategories.isEmpty
-              ? null
-              : matchingCategories.first;
+              ?.where((category) => category.id == row.categoryId)
+              .toList();
+          final category = matchingCategories?.isNotEmpty == true
+              ? matchingCategories!.first
+              : null;
           final scheduled = isScheduledDate(
             row.transactionDate,
             ref.watch(todayProvider),
