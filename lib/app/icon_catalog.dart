@@ -439,6 +439,7 @@ const _aliases = {
   'account_balance': 'bank',
   'money': 'cash',
   'credit_card': 'card',
+  'rental income': 'rental_income',
 };
 
 final Map<String, AppIconOption> _byKey = {
