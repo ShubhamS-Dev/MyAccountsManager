@@ -50,6 +50,7 @@ TransactionHistoryItem scheduledTransaction({
   int amount = 120000,
   required int date,
   String? recurringRuleId,
+  String categoryName = 'Rent',
 }) => TransactionHistoryItem(
   transaction: TransactionRow(
     id: id,
@@ -63,7 +64,7 @@ TransactionHistoryItem scheduledTransaction({
     recurringRuleId: recurringRuleId,
   ),
   accountName: 'HDFC Savings',
-  categoryName: 'Rent',
+  categoryName: categoryName,
 );
 
 List<PlannedReminder> plan({
@@ -424,7 +425,12 @@ void main() {
             dueDate: today + day,
           ),
         ],
-        scheduled: [scheduledTransaction(date: today + 4 * day)],
+        scheduled: [
+          scheduledTransaction(
+            date: today + 4 * day,
+            categoryName: 'Groceries',
+          ),
+        ],
       );
       expect(find.text('Overdue (1)'), findsOneWidget);
       expect(find.text('Collect from Ravi'), findsOneWidget);
@@ -433,7 +439,9 @@ void main() {
       expect(find.text('Pay Asha'), findsOneWidget);
       expect(find.text('Due tomorrow'), findsOneWidget);
       expect(find.text('Scheduled transactions (1)'), findsOneWidget);
-      expect(find.text('Rent'), findsOneWidget);
+      expect(find.text('Groceries'), findsOneWidget);
+      expect(find.byIcon(Icons.shopping_basket_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.north_east_rounded), findsNothing);
     });
 
     testWidgets('Notification settings save each preference', (tester) async {

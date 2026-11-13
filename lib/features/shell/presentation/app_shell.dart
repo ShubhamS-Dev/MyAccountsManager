@@ -957,11 +957,18 @@ class _RecentTransaction extends StatelessWidget {
     return ListTile(
       minVerticalPadding: 10,
       onTap: () => context.push('/transaction/${item.transaction.id}'),
-      leading: CategoryIconBadge(
-        iconKey: item.categoryIconKey,
-        categoryName: item.categoryName,
-        colorValue: item.categoryColorValue,
-        income: income,
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: .12),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Icon(
+          income ? Icons.south_west_rounded : Icons.north_east_rounded,
+          color: color,
+          size: 18,
+        ),
       ),
       title: Text(
         item.transaction.note?.isNotEmpty == true

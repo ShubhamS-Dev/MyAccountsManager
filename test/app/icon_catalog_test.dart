@@ -68,6 +68,52 @@ void main() {
       expect(canonicalIconKey('unknown'), isNull);
     });
 
+    test('all seeded category names resolve to category icons', () {
+      const expenseNames = [
+        'Food & Dining',
+        'Groceries',
+        'Transportation',
+        'Vehicle Maintenance',
+        'Housing & Utilities',
+        'Shopping',
+        'Household',
+        'Health & Medical',
+        'Personal Care',
+        'Travel & Stay',
+        'Entertainment',
+        'Education',
+        'Family & Gifts',
+        'Financial Payments',
+        'Donations',
+        'Others',
+      ];
+      const incomeNames = [
+        'Salary',
+        'Business',
+        'Freelancing',
+        'Investments',
+        'Rental Income',
+        'Gifts & Rewards',
+        'Refunds',
+        'Others',
+      ];
+
+      for (final name in expenseNames) {
+        expect(
+          resolveCategoryIcon(name, income: false),
+          isNot(Icons.north_east_rounded),
+          reason: name,
+        );
+      }
+      for (final name in incomeNames) {
+        expect(
+          resolveCategoryIcon(name, income: true),
+          isNot(Icons.south_west_rounded),
+          reason: name,
+        );
+      }
+    });
+
     test('search matches labels, keys and tags', () {
       final petrol = all.where((icon) => icon.matches('petrol'));
       expect(petrol.map((icon) => icon.key), contains('fuel'));

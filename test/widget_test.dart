@@ -185,6 +185,62 @@ void main() {
     }
   }
 
+  testWidgets('Home Recent transaction shows its category icon', (
+    tester,
+  ) async {
+    await TransactionsRepository(testDatabase).createTransaction(
+      accountId: testAccount.id,
+      categoryId: '10000000-0000-4000-8000-000000000002',
+      type: 'expense',
+      amountPaise: 12500,
+      transactionDate: DateTime.utc(
+        DateTime.now().year,
+        DateTime.now().month,
+        DateTime.now().day,
+      ).millisecondsSinceEpoch,
+    );
+    await pumpApp(tester, liveHistory: true);
+
+    await tester.scrollUntilVisible(
+      find.text('Groceries'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.shopping_basket_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.north_east_rounded), findsNothing);
+  }, timeout: const Timeout(Duration(seconds: 30)));
+
+  testWidgets('Reports Top transactions shows its category icon', (
+    tester,
+  ) async {
+    await TransactionsRepository(testDatabase).createTransaction(
+      accountId: testAccount.id,
+      categoryId: '10000000-0000-4000-8000-000000000002',
+      type: 'expense',
+      amountPaise: 12500,
+      transactionDate: DateTime.utc(
+        DateTime.now().year,
+        DateTime.now().month,
+        DateTime.now().day,
+      ).millisecondsSinceEpoch,
+    );
+    await pumpApp(tester, liveHistory: true);
+
+    await tester.tap(find.text('Reports').last);
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Largest expenses'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.shopping_basket_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.north_east_rounded), findsNothing);
+  }, timeout: const Timeout(Duration(seconds: 30)));
+
   testWidgets('shared action buttons have a 40px face and 48px hit area', (
     tester,
   ) async {
