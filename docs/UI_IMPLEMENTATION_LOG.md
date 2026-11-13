@@ -448,3 +448,14 @@ User approval: build steps 1 to 5. MyKhata defaults approved: block overpayment,
 - `flutter build apk --debug`: built `build/app/outputs/flutter-apk/app-debug.apk`.
 - A temporary phone-width check (360x780, light and dark, 11 new or refreshed screens) found two RenderFlex overflows with 12-digit amounts. Both were fixed and the check passed, then the temporary test was removed.
 - Not run: on-device or emulator visual review. CI has not run on these changes. Local Flutter is 3.47.5; CI uses 3.47.9.
+
+## Transaction Details — Delete transaction action (2026-11-13)
+
+- Branch: `feature/20261113/transaction-delete`, created directly from `development/20261111` at `8e04fe42bbade015ed893e6ef94c4900fd27f7fc`.
+- Updated `lib/features/transactions/presentation/transaction_details_page.dart`: added one full-width text-style Delete transaction action below the Duplicate / Copy as new helper text, using the existing 40px visual / 48px touch-target button theme and `ColorScheme.error`.
+- Confirmation displays the same signed MoneyFormatter amount and note/category title as the details presentation. The existing `hiddenAmountMask` is retained when Hide amounts is enabled.
+- Confirm calls the existing `TransactionsRepository.softDeleteTransaction`; success pops to the previous route and shows “Transaction moved to trash” with Undo. Undo calls the existing `TransactionsRepository.restoreTransaction`. Feedback uses the captured page-level ScaffoldMessenger and repository so it remains valid after the details route is popped.
+- No manual refresh/invalidation was added; existing Drift/Riverpod streams remain responsible for dependent screen updates.
+- Added `docs/SCREENS/TRANSACTION_DETAILS.md` for the screen behavior. Updated CHANGELOG and this implementation log. `docs/DESIGN_SYSTEM.md` is unchanged because no shared component or token was added or changed.
+- No package, schema, migration, repository method, or database method was added. No existing test became outdated, so no test was changed.
+- Validation: Dart format, Flutter analyze, Flutter tests, and Android build have **not yet been run** in this session. Do not treat this implementation as Done until the feature-branch CI run passes.

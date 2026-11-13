@@ -213,6 +213,117 @@ class TransactionDetailsPage extends ConsumerWidget {
                   ),
                 ),
               ),
+              const SizedBox(height: AppSpacing.sm),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton.icon(
+                  key: const ValueKey('transaction-delete'),
+                  onPressed: () async {
+                    final amount = hidden
+                        ? hiddenAmountMask
+                        : '${income ? '+' : '-'}${MoneyFormatter.formatPaise(row.amountPaise)}';
+                    final transactionTitle = row.note?.trim().isNotEmpty == true
+                        ? row.note!.trim()
+                        : categories.when(
+                            data: (v) {
+                              final matches = v.where(
+                                (c) => c.id == row.categoryId,
+                              );
+                              return matches.isEmpty
+                                  ? 'Transaction'
+                                  : matches.first.name;
+                            },
+                            loading: () => 'Transaction',
+                            error: (e, s) => 'Transaction',
+                          );
+                    final confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (dialogContext) => AlertDialog(
+                        title: const Text('Delete this transaction?'),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              amount,
+                              style: AppTypography.transactionAmount.copyWith(
+                                color: colors.onSurface,
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.xs),
+                            Text(
+                              transactionTitle,
+                              style: AppTypography.body.copyWith(
+                                color: colors.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () =>
+                                Navigator.pop(dialogContext, false),
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(dialogContext, true),
+                            style: TextButton.styleFrom(
+                              foregroundColor: colors.error,
+                            ),
+                            child: const Text('Delete'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirmed != true || !context.mounted) return;
+                    final messenger = ScaffoldMessenger.of(context);
+                    final repository = ref.read(transactionsRepositoryProvider);
+                    try {
+                      await repository.softDeleteTransaction(row.id);
+                      if (!context.mounted || !messenger.mounted) return;
+                      context.pop();
+                      messenger
+                        ..hideCurrentSnackBar()
+                        ..showSnackBar(
+                          SnackBar(
+                            content: const Text('Transaction moved to trash'),
+                            action: SnackBarAction(
+                              label: 'Undo',
+                              onPressed: () async {
+                                try {
+                                  await repository.restoreTransaction(row.id);
+                                } catch (_) {
+                                  if (messenger.mounted) {
+                                    messenger.showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Could not restore transaction.',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                            ),
+                          ),
+                        );
+                    } catch (_) {
+                      if (context.mounted && messenger.mounted) {
+                        messenger.showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Could not move transaction to Trash. Try again.',
+                            ),
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  style: TextButton.styleFrom(foregroundColor: colors.error),
+                  icon: const Icon(Icons.delete_outline_rounded),
+                  label: const Text('Delete transaction'),
+                ),
+              ),
             ],
           );
         },
