@@ -260,10 +260,12 @@ void main() {
     await tester.tap(find.text('Reports').last);
     await pumpUntilFound(tester, find.text('Largest expenses'));
 
-    final reportsScrollable = find.descendant(
-      of: find.byType(ReportsPage),
-      matching: find.byType(Scrollable),
-    ).first;
+    final reportsScrollable = find
+        .descendant(
+          of: find.byType(ReportsPage),
+          matching: find.byType(Scrollable),
+        )
+        .first;
     final largestExpenseSubtitle = find.textContaining('Groceries ·');
     await tester.scrollUntilVisible(
       largestExpenseSubtitle,
